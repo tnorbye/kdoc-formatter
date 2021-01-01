@@ -1,0 +1,30 @@
+<idea-plugin>
+  <id>org.norbye.tor.kdocformatter</id>
+  <name>KDoc Formatter</name>
+  <version>1.0</version>
+  <vendor email="tor.norbye@gmail.com" url="https://github.com/tnorbye/kdoc-formatter">Tor Norbye</vendor>
+
+  <description><![CDATA[
+      This plugin lets you reflow KDoc text -- meaning that it will reformat the
+      text and flowing the text up to the line width, collapsing comments that
+      fit on a single line, indenting text within a block tag, etc.
+    ]]></description>
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="201.0"/>
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.platform</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+  </extensions>
+
+  <actions>
+    <action id="ReflowKDoc" class="kdocformatter.plugin.ReformatKDocAction" text="Reformat KDoc"
+            description="Reformats the text within a KDoc comment">
+      <add-to-group group-id="CodeFormatGroup" anchor="first"/>
+    </action>
+  </actions>
+
+</idea-plugin>

@@ -1,0 +1,4 @@
+rootProject.name = 'kdocformatter'
+include 'plugin'
+include 'cli'
+include 'library'
