@@ -1,0 +1,41 @@
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.intellij' version '0.6.5'
+    id 'com.android.lint'
+}
+
+group = "kdoc-formatter.plugin"
+version = "1.0-SNAPSHOT"
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    implementation project(':library')
+}
+
+// See https://github.com/JetBrains/gradle-intellij-plugin/
+intellij {
+    version '2020.3'
+}
+
+patchPluginXml {
+    changeNotes """
+      First version!"""
+}
+
+test {
+    useJUnitPlatform()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.getByName("buildSearchableOptions").enabled = false

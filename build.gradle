@@ -1,0 +1,67 @@
+buildscript {
+    ext {
+        gradlePluginVersion = '7.0.0-alpha03'
+    }
+
+    repositories {
+        google()
+        jcenter()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$gradlePluginVersion"
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+}
+
+group 'kdoc-formatter'
+version '1.0-SNAPSHOT'
+
+repositories {
+    google()
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+configurations {
+    ktlint
+}
+
+dependencies {
+    ktlint "com.pinterest:ktlint:0.40.0"
+}
+
+task format(type: JavaExec, group: "verification") {
+    description = "Format lint Kotlin files"
+    classpath = configurations.ktlint
+    main = "com.pinterest.ktlint.Main"
+    args "-F", "--disabled_rules=import-ordering", "**/*.kt"
+}
+
+task lint {
+    dependsOn ':library:lint', ':cli:lint', ':plugin:lint'
+}
+
+task install {
+    dependsOn ':cli:installDist'
+}
+
+task zip {
+    dependsOn ':cli:distZip'
+}
+
+task runIde {
+    dependsOn ':plugin:runIde'
+}
