@@ -16,6 +16,8 @@ Features
   and subsequent lines are indented. Blank spaces between doc tags
   are removed. Preformatted text (indented 4 spaces or more) is left
   alone.
+* Can run in a mode where it only reformats comments that were touched
+  by the current git HEAD commit.
 * Multiline comments that would fit on a single line are converted
   to a single line comment (configurable via options)
 * Cleans up for the double spaces  left by the IntelliJ Convert to
@@ -35,8 +37,13 @@ Options:
     Turns multi-line comments into a single lint if it fits.
   --single-line-comments
     Always creates multi-line comments, even for comments that would fit on a single line.
+  --git-changes
+    If git is on the path, and the command is invoked in a git repository, kdoc-formatter
+    will invoke git to find the changes in the HEAD commit and will format only the KDoc
+    comments that overlap the changes.
   --dry-run, -n
-    Prints the paths of the files whose contents would change if the formatter were run normally.
+    Prints the paths of the files whose contents would change if the formatter were run
+    normally.
   --help, -help, -h
     Print this usage statement.
   @<filename>
@@ -79,6 +86,11 @@ To reformat the source tree run
 ```
 ./gradlew format
 ```
+
+Support Javadoc?
+----------------
+KDoc is pretty similar to javadoc and there's a good chance that most
+of this functionality would work well
 
 Integrate into ktlint?
 ----------------------

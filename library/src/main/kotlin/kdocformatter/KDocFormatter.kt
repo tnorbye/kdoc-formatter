@@ -1,5 +1,7 @@
 package kdocformatter
 
+import java.util.regex.Pattern
+
 /** Formatter which can reformat KDoc comments */
 class KDocFormatter(private val options: KDocFormattingOptions) {
     /**
@@ -10,7 +12,6 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         val indentSize = getIndentSize(indent)
         val paragraphs = findParagraphs(comment) // Make configurable?
         val lineSeparator = "\n$indent * "
-        val blankPrefix = "\n$lineSeparator"
 
         // Collapse single line?
         if (options.collapseSingleLine && paragraphs.isSingleParagraph()) {
@@ -45,10 +46,11 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
 
             var offset = 0
             val isBlockTag = paragraph.isDocTag()
+            val isListItem = paragraph.isListItem()
             while (offset < text.length) {
                 val isBeginning = offset == 0
                 var width = options.lineWidth - indentSize - 3
-                if (isBlockTag && !isBeginning) {
+                if (options.hangingIndents && (isBlockTag || isListItem) && !isBeginning) {
                     sb.append(paragraph.hangingIndent)
                     width -= getIndentSize(paragraph.hangingIndent)
                 }
@@ -92,15 +94,11 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         return sb.toString()
     }
 
-    private fun getIndentSize(indent: String): Int {
-        var size = 0
-        for (c in indent) {
-            if (c == '\t')
-                size += options.tabWidth
-            else
-                size++
+    private fun StringBuilder.appendFirstNewline(): StringBuilder {
+        if (length > 0 && !endsWith("\n")) {
+            append("\n")
         }
-        return size
+        return this
     }
 
     private fun findParagraphs(comment: String): ParagraphList {
@@ -119,10 +117,14 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 }
             }
             if (inPreformat) {
-                if (!rawText.endsWith("\n")) {
-                    rawText.append("\n")
-                }
+                rawText.appendFirstNewline()
                 rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
+                continue
+            }
+
+            if (line.isListItem()) {
+                rawText.appendFirstNewline()
+                rawText.append(line).append(' ')
                 continue
             }
 
@@ -133,9 +135,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 // KDoc block tag, must be on its own line.
                 rawText.append('\n')
             } else if (lineWithIndentation.startsWith("    ")) { // markdown preformatted text
-                if (!rawText.endsWith("\n")) {
-                    rawText.append("\n")
-                }
+                rawText.appendFirstNewline()
                 rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
                 continue
             }
@@ -144,7 +144,12 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                     rawText.append('\n')
                 }
             } else {
-                rawText.append(line).append(' ')
+                if (options.collapseSpaces) {
+                    rawText.append(line.collapseSpaces())
+                } else {
+                    rawText.append(line)
+                }
+                rawText.append(' ')
             }
         }
 
@@ -160,15 +165,36 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         return ParagraphList(paragraphs)
     }
 
+    private fun getIndent(width: Int): String {
+        val sb = StringBuilder()
+        for (i in 0 until width) {
+            sb.append(' ')
+        }
+        return sb.toString()
+    }
+
+    private fun getIndentSize(indent: String): Int {
+        var size = 0
+        for (c in indent) {
+            if (c == '\t')
+                size += options.tabWidth
+            else
+                size++
+        }
+        return size
+    }
+
     private class Paragraph(val text: String) {
-        var separate = true
         fun isDocTag() = text.startsWith("@")
+        fun isListItem() = listItem
+        var separate = true
+        val listItem = text.isListItem()
         var preformatted = text.startsWith("    ")
         var hangingIndent = if (isDocTag()) "    " else ""
         override fun toString(): String = text
     }
 
-    private class ParagraphList(val paragraphs: List<Paragraph>) : Iterable<Paragraph> {
+    private inner class ParagraphList(val paragraphs: List<Paragraph>) : Iterable<Paragraph> {
         init {
             var prev: Paragraph? = null
             var inPreformat = false
@@ -179,7 +205,11 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                     // Don't separate kdoc tags, except for the first one
                     paragraph.isDocTag() -> !prev.isDocTag()
                     paragraph.preformatted -> !prev.preformatted
+                    paragraph.listItem -> false
                     else -> true
+                }
+                if (paragraph.listItem) {
+                    paragraph.hangingIndent = getIndent(paragraph.text.indexOf(' ') + 1)
                 }
                 if (paragraph.text.startsWith("```")) {
                     if (!inPreformat) {
@@ -193,5 +223,32 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
 
         fun isSingleParagraph() = paragraphs.size == 1
         override fun iterator(): Iterator<Paragraph> = paragraphs.iterator()
+    }
+
+    companion object {
+        private val numberPattern = Pattern.compile("^\\d+\\. ")
+
+        private fun String.isListItem(): Boolean {
+            return startsWith("- ") || startsWith("* ") || startsWith("+ ") ||
+                firstOrNull()?.isDigit() == true && numberPattern.matcher(this).find()
+        }
+
+        private fun String.collapseSpaces(): String {
+            if (indexOf("  ") == -1) {
+                return this
+            }
+            val sb = StringBuilder()
+            var prev: Char = this[0]
+            for (i in 1 until length) {
+                if (prev == ' ') {
+                    if (this[i] == ' ') {
+                        continue
+                    }
+                }
+                sb.append(this[i])
+                prev = this[i]
+            }
+            return sb.toString()
+        }
     }
 }

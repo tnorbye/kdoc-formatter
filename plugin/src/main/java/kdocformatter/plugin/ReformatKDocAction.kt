@@ -50,8 +50,8 @@ class ReformatKDocAction : AnAction() {
         if (width <= 0) {
             width = KDocFormattingOptions().lineWidth
         }
-        val tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
-        val options = KDocFormattingOptions(lineWidth = width, tabWidth = tabWidth)
+        val options = KDocFormattingOptions(lineWidth = width)
+        options.tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
         return options
     }
 

@@ -2,38 +2,44 @@ package kdocformatter.cli
 
 import kdocformatter.KDocFormatter
 import kdocformatter.KDocFormattingOptions
+import java.io.File
 
 /**
  * This class attempts to iterate over an entire Kotlin source file
  * and reformat all the KDocs it finds within. This is based on some
  * light-weight lexical analysis to identify comments.
  */
-class KDocFileFormatter(private val options: KDocFormattingOptions) {
-    fun reformatFile(source: String): String {
+class KDocFileFormatter(private val options: KDocFormattingOptions, private val changes: GitModifiedRange? = null) {
+    fun reformatFile(file: File?, source: String): String {
         val sb = StringBuilder()
         val styles = tokenizeKotlin(source)
         val formatter = KDocFormatter(options)
 
         sb.clear()
         var nextIsComment = false
-        var prev = 0
-        for ((start, style) in styles.entries) {
-            if (nextIsComment) {
-                val comment = source.substring(prev, start)
-                val indent = getIndent(source, prev)
+        var start = 0
+        for ((end, style) in styles.entries) {
+            if (nextIsComment && (
+                changes == null || file != null &&
+                    changes.isInChangedRange(
+                            file,
+                            getLineNumber(source, start),
+                            getLineNumber(source, end)
+                        )
+                )
+            ) {
+                val comment = source.substring(start, end)
+                val indent = getIndent(source, start)
                 val rewritten = formatter.reformatComment(comment, indent)
                 sb.append(rewritten)
-                nextIsComment = false
             } else {
-                val segment = source.substring(prev, start)
+                val segment = source.substring(start, end)
                 sb.append(segment)
             }
-            if (style == STYLE_KDOC_COMMENT) {
-                nextIsComment = true
-            }
-            prev = start
+            nextIsComment = style == STYLE_KDOC_COMMENT
+            start = end
         }
-        sb.append(source.substring(prev, source.length))
+        sb.append(source.substring(start, source.length))
 
         return sb.toString()
     }
@@ -44,6 +50,17 @@ class KDocFileFormatter(private val options: KDocFormattingOptions) {
             i--
         }
         return source.substring(i + 1, start)
+    }
+
+    private fun getLineNumber(source: String, offset: Int): Int {
+        var line = 0
+        for (i in 0 until offset) {
+            val c = source[i]
+            if (c == '\n') {
+                line++
+            }
+        }
+        return line
     }
 
     // Extracted from LintSyntaxHighlighter. The purpose here is to
@@ -146,7 +163,6 @@ class KDocFileFormatter(private val options: KDocFormattingOptions) {
                     } else if (c == '"') {
                         state = STATE_INITIAL
                         offset++
-                        styles[offset] = STYLE_PLAIN_TEXT
                         continue
                     }
 
