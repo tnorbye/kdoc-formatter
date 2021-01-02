@@ -11,13 +11,15 @@ the cursor.
 Features
 --------
 * Command line script which can recursively format whole source folder
-* IDE plugin to format selected files or current comment
+* IDE plugin to format selected files or current comment. Preserves
+  caret position in the current comment.
 * Block tags (like @param) are separated out from the main text,
   and subsequent lines are indented. Blank spaces between doc tags
   are removed. Preformatted text (indented 4 spaces or more) is left
   alone.
 * Can run in a mode where it only reformats comments that were touched
-  by the current git HEAD commit.
+  by the current git HEAD commit, or the current staged files. Can
+  also be passed specific line ranges to limit formatting to.
 * Multiline comments that would fit on a single line are converted
   to a single line comment (configurable via options)
 * Cleans up for the double spaces  left by the IntelliJ Convert to
@@ -31,25 +33,30 @@ $ kdoc-formatter
 Usage: kdoc-formatter [options] file(s)
 
 Options:
-  --line-width
+  --max-line-width=<n>
     Sets the length of lines. Defaults to 72.
-  --single-line-comments
-    Turns multi-line comments into a single lint if it fits.
-  --single-line-comments
-    Always creates multi-line comments, even for comments that would fit on a single line.
-  --git-changes
+  --single-line-comments=<collapse | expand>
+    With `collapse`, turns multi-line comments into a single line if it fits, and with
+    `expand` it will always format commands with /** and */ on their own lines.
+    The default is `collapse`.
+  --overlaps-git-changes=<HEAD | staged>
     If git is on the path, and the command is invoked in a git repository, kdoc-formatter
-    will invoke git to find the changes in the HEAD commit and will format only the KDoc
-    comments that overlap the changes.
+    will invoke git to find the changes either in the HEAD commit or in the staged files,
+    and will format only the KDoc comments that overlap these changes.
+  --lines <start:end>, --line <start>
+    Line range(s) to format, like 5:10 (1-based; default is all). Can be specified multiple
+    times.
   --dry-run, -n
     Prints the paths of the files whose contents would change if the formatter were run
     normally.
+  --quiet, -q
+    Quiet mode
   --help, -help, -h
     Print this usage statement.
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.0-SNAPSHOT
+kdoc-formatter: Version 1.0
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -90,7 +97,11 @@ To reformat the source tree run
 Support Javadoc?
 ----------------
 KDoc is pretty similar to javadoc and there's a good chance that most
-of this functionality would work well
+of this functionality would work well. However, we already use
+[google-java-formatter](https://github.com/google/google-java-format)
+to format all Java source code, which does a great job reflowing
+javadoc comments already (along with formatting the rest of the file),
+so this is really not needed.
 
 Integrate into ktlint?
 ----------------------

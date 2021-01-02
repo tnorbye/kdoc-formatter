@@ -14,6 +14,7 @@ import com.intellij.refactoring.suggested.startOffset
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ThrowableRunnable
 import kdocformatter.KDocFormatter
+import kdocformatter.KDocFormatter.Companion.findSamePosition
 import kdocformatter.KDocFormattingOptions
 import org.jetbrains.annotations.Nullable
 
@@ -27,18 +28,26 @@ class ReformatKDocAction : AnAction() {
         if (editor != null) {
             val file = documentManager.getPsiFile(editor.document) ?: return
             val currentCaret = editor.caretModel.currentCaret
-            val element = file.findElementAt(currentCaret.offset) ?: return
+            val oldCaretOffset = currentCaret.offset
+            val element = file.findElementAt(oldCaretOffset) ?: return
             val kdoc = PsiTreeUtil.getParentOfType(element, PsiComment::class.java) ?: return
             val commentText = kdoc.text
             val options = getOptions(file, kdoc)
-            val indent = DocumentUtil.getIndent(editor.document, kdoc.startOffset)
+            val startOffset = kdoc.startOffset
+            val indent = DocumentUtil.getIndent(editor.document, startOffset)
             val updated = KDocFormatter(options).reformatComment(commentText, indent.toString())
+            // Attempt to preserve the caret position
+            val newDelta = findSamePosition(commentText, oldCaretOffset - startOffset, updated)
             WriteCommandAction.writeCommandAction(project, file).withName("Format KDoc").run(
                 ThrowableRunnable {
-                    editor.document.replaceString(kdoc.startOffset, kdoc.endOffset, updated)
+                    editor.document.replaceString(startOffset, kdoc.endOffset, updated)
                     documentManager.commitAllDocuments()
                 }
             )
+            val newCaretOffset = startOffset + newDelta
+            if (newCaretOffset != oldCaretOffset) {
+                editor.caretModel.currentCaret.moveToOffset(newCaretOffset)
+            }
         }
     }
 
