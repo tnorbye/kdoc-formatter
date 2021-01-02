@@ -14,11 +14,13 @@ Features
 * IDE plugin to format selected files or current comment
 * Block tags (like @param) are separated out from the main text,
   and subsequent lines are indented. Blank spaces between doc tags
-  are removed.
+  are removed. Preformatted text (indented 4 spaces or more) is left
+  alone.
 * Multiline comments that would fit on a single line are converted
   to a single line comment (configurable via options)
 * Cleans up for the double spaces  left by the IntelliJ Convert to
   Kotlin action right before  the closing comment token.
+* Removes trailing spaces.
 
 Usage
 -----
