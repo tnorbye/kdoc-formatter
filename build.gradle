@@ -6,6 +6,7 @@ buildscript {
     repositories {
         google()
         jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath "com.android.tools.build:gradle:$gradlePluginVersion"
@@ -22,6 +23,7 @@ version '1.0-SNAPSHOT'
 
 repositories {
     google()
+    jcenter()
     mavenCentral()
 }
 

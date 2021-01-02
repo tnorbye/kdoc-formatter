@@ -4,10 +4,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class KDocFormatterTest {
-    // TODO: Add preformatted text
-    // TODO: Add code snippets ([code])
-    // TODO: Bulleted lists
-
     private fun checkFormatter(
         source: String,
         options: KDocFormattingOptions,
@@ -295,7 +291,6 @@ class KDocFormatterTest {
              /**
               * This could all fit on one line
               */
-             val foo = ""
             """.trimIndent()
         checkFormatter(
             source, KDocFormattingOptions(72),
@@ -309,6 +304,36 @@ class KDocFormatterTest {
              /**
               * This could all fit on one line
               */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreformattedText() {
+        val source =
+            """
+            /**
+             * Code sample:
+             *
+             *     val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             *     println(s);
+             *
+             * This is not preformatted and can be combined into multiple sentences again.
+             */
+             """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * Code sample:
+             *
+             *     val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             *     println(s);
+             *
+             * This is not preformatted and can
+             * be combined into multiple
+             * sentences again.
+             */
             """.trimIndent()
         )
     }
