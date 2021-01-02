@@ -37,7 +37,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 sb.append(lineSeparator)
             }
             val text = paragraph.text
-            if (paragraph.isPreformatted()) {
+            if (paragraph.preformatted) {
                 sb.append(text)
                 sb.append(lineSeparator)
                 continue
@@ -106,10 +106,26 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
     private fun findParagraphs(comment: String): ParagraphList {
         val lines = comment.split("\n")
         val rawText = StringBuilder()
+        var inPreformat = false
         for (l in lines) {
             val trimmed = l.trim()
             val lineWithIndentation = trimmed.removePrefix("/**").removePrefix(("*"))
             val line = lineWithIndentation.trim()
+            if (line.startsWith("```")) {
+                inPreformat = !inPreformat
+                if (!inPreformat) {
+                    rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
+                    continue
+                }
+            }
+            if (inPreformat) {
+                if (!rawText.endsWith("\n")) {
+                    rawText.append("\n")
+                }
+                rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
+                continue
+            }
+
             if (trimmed.endsWith("*/")) {
                 rawText.append(line.removeSuffix("*/").removeSuffix("/").trim())
                 break
@@ -120,8 +136,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 if (!rawText.endsWith("\n")) {
                     rawText.append("\n")
                 }
-                rawText.append(lineWithIndentation.substring(1).trimEnd())
-                rawText.append("\n")
+                rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
                 continue
             }
             if (line.isEmpty()) {
@@ -148,31 +163,35 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
     private class Paragraph(val text: String) {
         var separate = true
         fun isDocTag() = text.startsWith("@")
-        fun isPreformatted() = text.startsWith("    ")
+        var preformatted = text.startsWith("    ")
         var hangingIndent = if (isDocTag()) "    " else ""
+        override fun toString(): String = text
     }
 
     private class ParagraphList(val paragraphs: List<Paragraph>) : Iterable<Paragraph> {
         init {
-            computeSeparators()
-        }
-
-        fun isSingleParagraph() = paragraphs.size == 1
-
-        fun computeSeparators() {
             var prev: Paragraph? = null
+            var inPreformat = false
             for (paragraph in paragraphs) {
+                paragraph.preformatted = inPreformat || paragraph.preformatted
                 paragraph.separate = when {
                     prev == null -> false
                     // Don't separate kdoc tags, except for the first one
                     paragraph.isDocTag() -> !prev.isDocTag()
-                    paragraph.isPreformatted() -> !prev.isPreformatted()
+                    paragraph.preformatted -> !prev.preformatted
                     else -> true
+                }
+                if (paragraph.text.startsWith("```")) {
+                    if (!inPreformat) {
+                        paragraph.preformatted = true
+                    }
+                    inPreformat = !inPreformat
                 }
                 prev = paragraph
             }
         }
 
+        fun isSingleParagraph() = paragraphs.size == 1
         override fun iterator(): Iterator<Paragraph> = paragraphs.iterator()
     }
 }

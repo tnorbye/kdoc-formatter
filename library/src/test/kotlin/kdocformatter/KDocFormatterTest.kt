@@ -320,7 +320,7 @@ class KDocFormatterTest {
              *
              * This is not preformatted and can be combined into multiple sentences again.
              */
-             """.trimIndent()
+            """.trimIndent()
         checkFormatter(
             source, KDocFormattingOptions(40),
             """
@@ -329,6 +329,39 @@ class KDocFormatterTest {
              *
              *     val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
+             *
+             * This is not preformatted and can
+             * be combined into multiple
+             * sentences again.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreformattedText2() {
+        val source =
+            """
+            /**
+             * Code sample:
+             * ```kotlin
+             * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             * println(s);
+             * ```
+             *
+             * This is not preformatted and can be combined into multiple sentences again.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * Code sample:
+             *
+             * ```kotlin
+             * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             * println(s);
+             * ```
              *
              * This is not preformatted and can
              * be combined into multiple
