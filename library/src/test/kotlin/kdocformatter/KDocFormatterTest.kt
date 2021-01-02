@@ -1,6 +1,7 @@
 package kdocformatter
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 
 class KDocFormatterTest {
@@ -52,21 +53,27 @@ class KDocFormatterTest {
     }
 
     @Test
-    fun test2() {
-        checkFormatter(
-            """
+    fun testWithOffset() {
+        val source = """
             /** Returns whether lint should check all warnings,
              * including those off by default */
-            """.trimIndent(),
-            KDocFormattingOptions(72),
-            """
+        """.trimIndent()
+        val reformatted = """
             /**
              * Returns whether lint should check all warnings, including those
              * off by default
              */
-            """.trimIndent(),
+        """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            reformatted,
             indent = "    "
         )
+        val initialOffset = source.indexOf("default")
+        val newOffset = KDocFormatter.findSamePosition(source, initialOffset, reformatted)
+        assertNotEquals(initialOffset, newOffset)
+        assertEquals("default", reformatted.substring(newOffset, newOffset + "default".length))
     }
 
     @Test
@@ -296,8 +303,10 @@ class KDocFormatterTest {
              /** This could all fit on one line */
             """.trimIndent()
         )
+        val options = KDocFormattingOptions(72)
+        options.collapseSingleLine = false
         checkFormatter(
-            source, KDocFormattingOptions(72, collapseSingleLine = false),
+            source, options,
             """
              /**
               * This could all fit on one line
@@ -360,6 +369,38 @@ class KDocFormatterTest {
              * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
              * println(s);
              * ```
+             *
+             * This is not preformatted and can
+             * be combined into multiple
+             * sentences again.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreformattedText3() {
+        val source =
+            """
+            /**
+             * Code sample:
+             * <PRE>
+             *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
+             *     println(s);
+             * </pre>
+             * This is not preformatted and can be combined into multiple sentences again.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * Code sample:
+             *
+             * <PRE>
+             *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
+             *     println(s);
+             * </pre>
              *
              * This is not preformatted and can
              * be combined into multiple

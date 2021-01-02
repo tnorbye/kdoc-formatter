@@ -3,15 +3,21 @@ package kdocformatter.cli
 import kdocformatter.KDocFormattingOptions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.io.File
 
 // The formatter is mostly tested by KDocFormatterTest. This tests the part
 // where we (1) find the comments and format them, and (2) process the code
 // outside the comments and stitch it all together with the right indentation
 // etc.
 class KDocFileFormatterTest {
-    private fun reformatFile(source: String, options: KDocFormattingOptions,): String {
-        return KDocFileFormatter(options).reformatFile(null, source.trim())
+    private fun reformatFile(source: String, options: KDocFormattingOptions): String {
+        val fileOptions = KDocFileFormattingOptions()
+        fileOptions.formattingOptions = options
+        return KDocFileFormatter(fileOptions).reformatFile(null, source.trim())
     }
+
+    // TODO: Test reading filenames from @-file
+    // TODO: Test git-changes
 
     @Test
     fun test() {
@@ -33,6 +39,12 @@ class KDocFileFormatterTest {
                 /** Returns whether lint should check all warnings,
                  * including those off by default */  // additional
                 private var ignoreAll: Boolean? = null
+
+                private val string = ""\"
+                /** This is NOT
+                     a comment to reformat, it's
+                   in a string   */
+                ""\"
             }
             """.trimIndent()
 
@@ -57,6 +69,12 @@ class KDocFileFormatterTest {
                  * off by default
                  */  // additional
                 private var ignoreAll: Boolean? = null
+
+                private val string = ""\"
+                /** This is NOT
+                     a comment to reformat, it's
+                   in a string   */
+                ""\"
             }
             """.trimIndent(),
             reformatted
@@ -84,6 +102,83 @@ class KDocFileFormatterTest {
              * And this should
              * not!!!!!!!!!
              */
+            """.trimIndent(),
+            reformatted
+        )
+    }
+
+    @Test
+    fun testGitRanges() {
+        val source =
+            """
+            class Test {
+                /**
+                * Returns whether lint should check all warnings,
+                 * including those off by default, or null if
+                 *not configured in this configuration. This is a really really really long sentence which needs to be broken up.
+                 * And ThisIsALongSentenceWhichCannotBeBrokenUpAndMustBeIncludedAsAWholeWithoutNewlinesInTheMiddle.
+                 *
+                 * This is a separate section
+                 * which should be flowed together with the first one.
+             * *bold* should not be removed even at beginning.
+                 */
+                private var checkAllWarnings: Boolean? = null
+            
+                /** Returns whether lint should check all warnings,
+                 * including those off by default */  // additional
+                private var ignoreAll: Boolean? = null
+            }
+            """.trimIndent()
+
+        val diff = """
+            diff --git a/README.md b/README.md
+            index c26815b..30a8dbb 100644
+            --- a/README.md
+            +++ b/README.md
+            @@ -31,25 +31,29 @@ ${'$'} kdoc-formatter
+             Usage: kdoc-formatter [options] file(s)
+             diff --git Test.kt Test.kt
+            index d66825c..7a324fb 100644
+            --- Test.kt
+            +++ Test.kt
+            @@ -15 +15 @@ class Test {
+            -     * including those off by default */  // additional
+            +     * modified including those off by default */  // additional            
+            diff --git a/README.md b/README.md
+            index c26815b..30a8dbb 100644
+            --- a/README.md
+            +++ b/README.md
+            @@ -31,25 +31,29 @@ ${'$'} kdoc-formatter
+             Usage: kdoc-formatter [options] file(s)
+        """.trimIndent()
+
+        val fileOptions = KDocFileFormattingOptions()
+        val file = File("Test.kt")
+        fileOptions.filter = GitRangeFilter.create(null, diff)
+        val reformatted = KDocFileFormatter(fileOptions).reformatFile(file, source.trim())
+
+        // Only the second comment should be formatted:
+        assertEquals(
+            """
+            class Test {
+                /**
+                * Returns whether lint should check all warnings,
+                 * including those off by default, or null if
+                 *not configured in this configuration. This is a really really really long sentence which needs to be broken up.
+                 * And ThisIsALongSentenceWhichCannotBeBrokenUpAndMustBeIncludedAsAWholeWithoutNewlinesInTheMiddle.
+                 *
+                 * This is a separate section
+                 * which should be flowed together with the first one.
+             * *bold* should not be removed even at beginning.
+                 */
+                private var checkAllWarnings: Boolean? = null
+            
+                /**
+                 * Returns whether lint should check all warnings, including those
+                 * off by default
+                 */  // additional
+                private var ignoreAll: Boolean? = null
+            }
             """.trimIndent(),
             reformatted
         )

@@ -1,12 +1,12 @@
 package kdocformatter
 
 import java.util.regex.Pattern
+import kotlin.math.max
 
 /** Formatter which can reformat KDoc comments */
 class KDocFormatter(private val options: KDocFormattingOptions) {
     /**
-     * Reformats the [comment], which follows the given [indent]
-     * string
+     * Reformats the [comment], which follows the given [indent] string
      */
     fun reformatComment(comment: String, indent: String): String {
         val indentSize = getIndentSize(indent)
@@ -115,7 +115,14 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                     rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
                     continue
                 }
+            } else if (line.startsWith("<pre>", ignoreCase = true)) {
+                inPreformat = true
+            } else if (line.startsWith("</pre>", ignoreCase = true)) {
+                inPreformat = false
+                rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
+                continue
             }
+
             if (inPreformat) {
                 rawText.appendFirstNewline()
                 rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
@@ -216,6 +223,12 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                         paragraph.preformatted = true
                     }
                     inPreformat = !inPreformat
+                } else if (paragraph.text.startsWith("<pre>", ignoreCase = true)) {
+                    paragraph.preformatted = true
+                    inPreformat = true
+                } else if (paragraph.text.startsWith("</pre>", ignoreCase = true)) {
+                    paragraph.preformatted = true
+                    inPreformat = false
                 }
                 prev = paragraph
             }
@@ -249,6 +262,35 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 prev = this[i]
             }
             return sb.toString()
+        }
+
+        /**
+         * Attempt to preserve the caret position across reformatting.
+         * Returns the delta in the new comment.
+         */
+        fun findSamePosition(comment: String, delta: Int, reformattedComment: String): Int {
+            fun nextSignificantChar(s: String, from: Int): Int {
+                var curr = from
+                while (curr < s.length) {
+                    val c = s[curr]
+                    if (c.isWhitespace() || c == '*') {
+                        curr++
+                    } else {
+                        break
+                    }
+                }
+                return curr
+            }
+
+            var offset = 0
+            var reformattedOffset = 0
+            while (offset < delta && reformattedOffset < reformattedComment.length) {
+                offset = nextSignificantChar(comment, offset)
+                reformattedOffset = nextSignificantChar(reformattedComment, reformattedOffset)
+                offset++
+                reformattedOffset++
+            }
+            return max(0, reformattedOffset - 1)
         }
     }
 }
