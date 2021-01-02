@@ -194,8 +194,7 @@ class KDocFormatterTest {
              * 89 123456789 123456789 123456789 123456789 123456789 123456789
              * 123456789 123456789
              *
-             * 10        20        30        40        50        60        70
-             * 80
+             * 0 20 30 40 50 60 70 80
              */
             """.trimIndent()
         )
@@ -209,8 +208,7 @@ class KDocFormatterTest {
              * 123456789 123456789 123456789
              * 123456789 123456789
              *
-             * 10        20        30        40
-             * 50        60        70        80
+             * 0 20 30 40 50 60 70 80
              */
             """.trimIndent()
         )
@@ -315,7 +313,7 @@ class KDocFormatterTest {
             /**
              * Code sample:
              *
-             *     val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
              *
              * This is not preformatted and can be combined into multiple sentences again.
@@ -327,7 +325,7 @@ class KDocFormatterTest {
             /**
              * Code sample:
              *
-             *     val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
              *
              * This is not preformatted and can
@@ -366,6 +364,48 @@ class KDocFormatterTest {
              * This is not preformatted and can
              * be combined into multiple
              * sentences again.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testFormattingList() {
+        val source =
+            """
+            /**
+             * 1. This is a numbered list.
+             * 2. This is another item. We should be wrapping extra text under the same item.
+             * 3. This is the third item.
+             *
+             * Unordered list:
+             * * First
+             * * Second
+             * * Third
+             *
+             * Other alternatives:
+             * - First
+             * - Second
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * 1. This is a numbered list.
+             * 2. This is another item. We
+             *    should be wrapping extra text
+             *    under the same item.
+             * 3. This is the third item.
+             *
+             * Unordered list:
+             * * First
+             * * Second
+             * * Third
+             *
+             * Other alternatives:
+             * - First
+             * - Second
              */
             """.trimIndent()
         )

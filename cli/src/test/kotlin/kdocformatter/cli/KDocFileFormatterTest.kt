@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 // etc.
 class KDocFileFormatterTest {
     private fun reformatFile(source: String, options: KDocFormattingOptions,): String {
-        return KDocFileFormatter(options).reformatFile(source.trim())
+        return KDocFileFormatter(options).reformatFile(null, source.trim())
     }
 
     @Test

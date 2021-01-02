@@ -18,6 +18,8 @@ fun main(args: Array<String>) {
     var singleLine = true
     var quiet = false
     var dryRun = false
+    var gitChangesOnly = false
+    var gitPath = ""
     val files = mutableListOf<File>()
     while (i < args.size) {
         val arg = args[i]
@@ -29,6 +31,8 @@ fun main(args: Array<String>) {
             "--no-single-line-comments" -> singleLine = false
             "--dry-run", "-n" -> dryRun = true
             "--quiet", "-q" -> quiet = true
+            "--git-changes", "--git-changed" -> gitChangesOnly = true
+            "--git-path" -> gitPath = args[i++]
             else -> {
                 val paths =
                     if (arg.startsWith("@")) {
@@ -59,9 +63,17 @@ fun main(args: Array<String>) {
     }
 
     val options = KDocFormattingOptions(lineWidth, singleLine)
+    val changes: GitModifiedRange? = if (gitChangesOnly) {
+        val range = GitModifiedRange()
+        range.compute(gitPath, files.first())
+        range
+    } else {
+        null
+    }
+
     var count = 0
     for (file in files) {
-        count += formatFile(file, options, dryRun)
+        count += formatFile(file, options, dryRun, changes)
     }
 
     if (!quiet) {
@@ -71,7 +83,7 @@ fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-private fun formatFile(file: File, options: KDocFormattingOptions, dryRun: Boolean): Int {
+private fun formatFile(file: File, options: KDocFormattingOptions, dryRun: Boolean, changes: GitModifiedRange?): Int {
     if (file.isDirectory) {
         val name = file.name
         if (name.startsWith(".") && name != "." && name != "../") {
@@ -81,14 +93,14 @@ private fun formatFile(file: File, options: KDocFormattingOptions, dryRun: Boole
         val files = file.listFiles() ?: return 0
         var count = 0
         for (f in files) {
-            count += formatFile(f, options, dryRun)
+            count += formatFile(f, options, dryRun, changes)
         }
         return count
     }
 
     return if (file.path.endsWith(".kt")) {
         val original = file.readText()
-        val reformatted = KDocFileFormatter(options).reformatFile(original)
+        val reformatted = KDocFileFormatter(options, changes).reformatFile(file, original)
         if (reformatted != original) {
             if (dryRun) {
                 println(file.path)
@@ -122,8 +134,13 @@ fun usage(): String {
             Turns multi-line comments into a single lint if it fits.
           --single-line-comments
             Always creates multi-line comments, even for comments that would fit on a single line.
+          --git-changes
+            If git is on the path, and the command is invoked in a git repository, kdoc-formatter
+            will invoke git to find the changes in the HEAD commit and will format only the KDoc
+            comments that overlap the changes.
           --dry-run, -n
-            Prints the paths of the files whose contents would change if the formatter were run normally.
+            Prints the paths of the files whose contents would change if the formatter were run 
+            normally.
           --help, -help, -h
             Print this usage statement.
           @<filename>
