@@ -1,6 +1,6 @@
 <idea-plugin>
   <id>org.norbye.tor.kdocformatter</id>
-  <name>KDoc Formatter</name>
+  <name>Kotlin KDoc Formatter</name>
   <version>1.0</version>
   <vendor email="tor.norbye@gmail.com" url="https://github.com/tnorbye/kdoc-formatter">Tor Norbye</vendor>
 
@@ -16,6 +16,7 @@
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
   <depends>com.intellij.modules.platform</depends>
+  <depends>org.jetbrains.kotlin</depends>
 
   <extensions defaultExtensionNs="com.intellij">
   </extensions>
