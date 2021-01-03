@@ -22,6 +22,7 @@ Features
   also be passed specific line ranges to limit formatting to.
 * Multiline comments that would fit on a single line are converted
   to a single line comment (configurable via options)
+* Adds hanging indents for ordered and unordered indents.
 * Cleans up for the double spaces  left by the IntelliJ Convert to
   Kotlin action right before  the closing comment token.
 * Removes trailing spaces.

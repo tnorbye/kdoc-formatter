@@ -42,8 +42,8 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
         }
 
         /**
-         * Creates range from the given diff contents. Extracted to be
-         * separate from the git invocation above for unit test
+         * Creates range from the given diff contents. Extracted to
+         * be separate from the git invocation above for unit test
          * purposes.
          */
         fun create(root: File?, diff: String): GitRangeFilter {

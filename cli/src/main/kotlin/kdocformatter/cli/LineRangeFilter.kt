@@ -1,5 +1,6 @@
 package kdocformatter.cli
 
+import kdocformatter.getLineNumber
 import java.io.File
 
 open class LineRangeFilter protected constructor(private val rangeMap: RangeMap) : RangeFilter() {

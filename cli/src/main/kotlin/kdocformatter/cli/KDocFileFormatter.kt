@@ -4,8 +4,8 @@ import kdocformatter.KDocFormatter
 import java.io.File
 
 /**
- * This class attempts to iterate over an entire Kotlin source file and
- * reformat all the KDocs it finds within. This is based on some
+ * This class attempts to iterate over an entire Kotlin source file
+ * and reformat all the KDocs it finds within. This is based on some
  * light-weight lexical analysis to identify comments.
  */
 class KDocFileFormatter(private val options: KDocFileFormattingOptions) {

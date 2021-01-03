@@ -9,16 +9,28 @@ class KDocFormatterTest {
         source: String,
         options: KDocFormattingOptions,
         expected: String,
-        indent: String = "    "
+        indent: String = "    ",
+        verify: Boolean = false
     ) {
-        val reformatted = reformatComment(source, options, indent)
+        val reformatted = reformatComment(source, options, indent, verify)
         // Because .trimIndent() will remove it:
         val indentedExpected = expected.split("\n").joinToString("\n") { indent + it }
         assertEquals(indentedExpected, reformatted)
     }
 
-    private fun reformatComment(source: String, options: KDocFormattingOptions, indent: String = "    "): String {
-        return indent + KDocFormatter(options).reformatComment(source.trim(), indent)
+    private fun reformatComment(
+        source: String,
+        options: KDocFormattingOptions,
+        indent: String = "    ",
+        verify: Boolean = true
+    ): String {
+        val formatter = KDocFormatter(options)
+        val formatted = formatter.reformatComment(source.trim(), indent)
+        // Make sure that formatting is stable -- format again and make sure it's the same
+        if (verify) {
+            assertEquals(formatted, formatter.reformatComment(formatted.trim(), indent))
+        }
+        return indent + formatted
     }
 
     @Test
@@ -39,10 +51,10 @@ class KDocFormatterTest {
             KDocFormattingOptions(72),
             """
             /**
-             * Returns whether lint should check all warnings, including those
-             * off by default, or null if not configured in this configuration.
-             * This is a really really really long sentence which needs to be
-             * broken up. And
+             * Returns whether lint should check all warnings, including
+             * those off by default, or null if not configured in
+             * this configuration. This is a really really really
+             * long sentence which needs to be broken up. And
              * ThisIsALongSentenceWhichCannotBeBrokenUpAndMustBeIncludedAsAWholeWithoutNewlinesInTheMiddle.
              *
              * This is a separate section which should be flowed together with
@@ -201,7 +213,7 @@ class KDocFormatterTest {
              * 89 123456789 123456789 123456789 123456789 123456789 123456789
              * 123456789 123456789
              *
-             * 0 20 30 40 50 60 70 80
+             * 10 20 30 40 50 60 70 80
              */
             """.trimIndent()
         )
@@ -215,7 +227,7 @@ class KDocFormatterTest {
              * 123456789 123456789 123456789
              * 123456789 123456789
              *
-             * 0 20 30 40 50 60 70 80
+             * 10 20 30 40 50 60 70 80
              */
             """.trimIndent()
         )
@@ -272,8 +284,8 @@ class KDocFormatterTest {
              * specific set of files within it.
              *
              * @param client the client to
-             *     report errors to and to use
-             *     to read files
+             *     report errors to and to use to
+             *     read files
              * @param classFiles the specific
              *     set of class files to look
              *     for
@@ -284,6 +296,27 @@ class KDocFormatterTest {
              *     results
              * @return the list of class
              *     entries, never null.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testBlockTagsHangingIndents2() {
+        checkFormatter(
+            """
+            /**
+             * @param client the client to
+             *     report errors to and to use to
+             *     read files
+             */
+            """.trimIndent(),
+            KDocFormattingOptions(40),
+            """
+            /**
+             * @param client the client to
+             *     report errors to and to use to
+             *     read files
              */
             """.trimIndent()
         )
@@ -337,8 +370,8 @@ class KDocFormatterTest {
              *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
              *
-             * This is not preformatted and can
-             * be combined into multiple
+             * This is not preformatted and
+             * can be combined into multiple
              * sentences again.
              */
             """.trimIndent()
@@ -370,8 +403,8 @@ class KDocFormatterTest {
              * println(s);
              * ```
              *
-             * This is not preformatted and can
-             * be combined into multiple
+             * This is not preformatted and
+             * can be combined into multiple
              * sentences again.
              */
             """.trimIndent()
@@ -402,8 +435,8 @@ class KDocFormatterTest {
              *     println(s);
              * </pre>
              *
-             * This is not preformatted and can
-             * be combined into multiple
+             * This is not preformatted and
+             * can be combined into multiple
              * sentences again.
              */
             """.trimIndent()
@@ -449,6 +482,127 @@ class KDocFormatterTest {
              * - Second
              */
             """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testList1() {
+        val source =
+            """
+            /**
+             *  * pre.errorlines: General > Text > Default Text
+             *  * .prefix: XML > Namespace Prefix
+             *  * .attribute: XML > Attribute name
+             *  * .value: XML > Attribute value
+             *  * .tag: XML > Tag name
+             *  * .lineno: For color, General > Code > Line number, Foreground, and for background-color,
+             * Editor > Gutter background
+             *  * .error: General > Errors and Warnings > Error
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * * pre.errorlines: General > Text
+             *   > Default Text
+             * * .prefix: XML > Namespace Prefix
+             * * .attribute: XML > Attribute
+             *   name
+             * * .value: XML > Attribute value
+             * * .tag: XML > Tag name
+             * * .lineno: For color, General >
+             *   Code > Line number, Foreground,
+             *   and for background-color, Editor
+             *   > Gutter background
+             * * .error: General > Errors and
+             *   Warnings > Error
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testIndentedList() {
+        val source =
+            """
+            /**
+            * Basic usage:
+            *   1. Create a configuration via [UastEnvironment.Configuration.create] and mutate it as needed.
+            *   2. Create a project environment via [UastEnvironment.create].
+            *      You can create multiple environments in the same process (one for each "module").
+            *   3. Call [analyzeFiles] to initialize PSI machinery and precompute resolve information.
+            */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * Basic usage:
+             * 1. Create a configuration via
+             *    [UastEnvironment.Configuration.create]
+             *    and mutate it as needed.
+             * 2. Create a project environment
+             *    via [UastEnvironment.create]. You
+             *    can create multiple environments
+             *    in the same process (one for each
+             *    "module").
+             * 3. Call [analyzeFiles] to
+             *    initialize PSI machinery and
+             *    precompute resolve information.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testDocTags() {
+        val source =
+            """
+            /**
+             * @param configuration the configuration to look up which issues are
+             * enabled etc from
+             * @param platforms the platforms applying to this analysis
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * @param configuration the
+             *     configuration to look up which
+             *     issues are enabled etc from
+             * @param platforms the platforms
+             *     applying to this analysis
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testAtInMiddle() {
+        val source =
+            """
+            /**
+             * If non-null, this issue can **only** be suppressed with one of the
+             * given annotations: not with @Suppress, not with @SuppressLint, not
+             * with lint.xml, not with lintOptions{} and not with baselines.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(72),
+            """
+            /**
+             * If non-null, this issue can **only** be suppressed with
+             * one of the given annotations: not with @Suppress, not with
+             * @SuppressLint, not with lint.xml, not with lintOptions{} and not
+             * with baselines.
+             */
+            """.trimIndent(),
+            // After reflowing @SuppressLint ends up on at the beginning of a line
+            // which is then interpreted as a doc tag
+            verify = true
+
         )
     }
 }
