@@ -45,11 +45,12 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
 
             val lines = paragraph.reflow(options.lineWidth - indentSize - 3, options)
             var first = true
+            val hangingIndent = paragraph.hangingIndent
             for (line in lines) {
                 if (first) {
                     first = false
                 } else {
-                    sb.append(paragraph.hangingIndent)
+                    sb.append(hangingIndent)
                 }
                 sb.append(line)
                 sb.append(lineSeparator)

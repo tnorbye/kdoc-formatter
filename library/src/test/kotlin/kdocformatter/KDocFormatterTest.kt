@@ -284,8 +284,8 @@ class KDocFormatterTest {
              * specific set of files within it.
              *
              * @param client the client to
-             *     report errors to and to use to
-             *     read files
+             *     report errors to and
+             *     to use to read files
              * @param classFiles the specific
              *     set of class files to look
              *     for
@@ -315,8 +315,8 @@ class KDocFormatterTest {
             """
             /**
              * @param client the client to
-             *     report errors to and to use to
-             *     read files
+             *     report errors to and
+             *     to use to read files
              */
             """.trimIndent()
         )
@@ -468,8 +468,8 @@ class KDocFormatterTest {
             /**
              * 1. This is a numbered list.
              * 2. This is another item. We
-             *    should be wrapping extra text
-             *    under the same item.
+             *    should be wrapping extra
+             *    text under the same item.
              * 3. This is the third item.
              *
              * Unordered list:
@@ -513,8 +513,8 @@ class KDocFormatterTest {
              * * .tag: XML > Tag name
              * * .lineno: For color, General >
              *   Code > Line number, Foreground,
-             *   and for background-color, Editor
-             *   > Gutter background
+             *   and for background-color,
+             *   Editor > Gutter background
              * * .error: General > Errors and
              *   Warnings > Error
              */
@@ -543,13 +543,15 @@ class KDocFormatterTest {
              *    [UastEnvironment.Configuration.create]
              *    and mutate it as needed.
              * 2. Create a project environment
-             *    via [UastEnvironment.create]. You
-             *    can create multiple environments
-             *    in the same process (one for each
-             *    "module").
+             *    via [UastEnvironment.create].
+             *    You can create multiple
+             *    environments in the
+             *    same process (one
+             *    for each "module").
              * 3. Call [analyzeFiles] to
-             *    initialize PSI machinery and
-             *    precompute resolve information.
+             *    initialize PSI machinery
+             *    and precompute
+             *    resolve information.
              */
             """.trimIndent()
         )
@@ -570,8 +572,9 @@ class KDocFormatterTest {
             """
             /**
              * @param configuration the
-             *     configuration to look up which
-             *     issues are enabled etc from
+             *     configuration to
+             *     look up which issues
+             *     are enabled etc from
              * @param platforms the platforms
              *     applying to this analysis
              */
