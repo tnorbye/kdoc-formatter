@@ -1,6 +1,5 @@
 package kdocformatter
 
-import java.util.regex.Pattern
 import kotlin.math.max
 
 /** Formatter which can reformat KDoc comments */
@@ -9,7 +8,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
      * Reformats the [comment], which follows the given [indent] string
      */
     fun reformatComment(comment: String, indent: String): String {
-        val indentSize = getIndentSize(indent)
+        val indentSize = getIndentSize(indent, options)
         val paragraphs = findParagraphs(comment) // Make configurable?
         val lineSeparator = "\n$indent * "
 
@@ -44,46 +43,16 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 continue
             }
 
-            var offset = 0
-            val isBlockTag = paragraph.isDocTag()
-            val isListItem = paragraph.isListItem()
-            while (offset < text.length) {
-                val isBeginning = offset == 0
-                var width = options.lineWidth - indentSize - 3
-                if (options.hangingIndents && (isBlockTag || isListItem) && !isBeginning) {
-                    sb.append(paragraph.hangingIndent)
-                    width -= getIndentSize(paragraph.hangingIndent)
-                }
-                while (offset < text.length && text[offset].isWhitespace()) {
-                    offset++
-                }
-                var last = offset + width
-                if (last > text.length) {
-                    val remainder = text.substring(offset).trim()
-                    if (remainder.isNotEmpty()) {
-                        sb.append(remainder)
-                        sb.append(lineSeparator)
-                    }
-                    break
+            val lines = paragraph.reflow(options.lineWidth - indentSize - 3, options)
+            var first = true
+            for (line in lines) {
+                if (first) {
+                    first = false
                 } else {
-                    while (last >= offset && last < text.length && !text[last].isWhitespace()) {
-                        last--
-                    }
-                    if (last <= offset) {
-                        // Couldn't break; search forwards
-                        last = offset + width
-                        while (last < text.length) {
-                            if (text[last].isWhitespace()) {
-                                break
-                            }
-                            last++
-                        }
-                    }
-
-                    sb.append(text.substring(offset, last).trim())
-                    offset = last
-                    sb.append(lineSeparator)
+                    sb.append(paragraph.hangingIndent)
                 }
+                sb.append(line)
+                sb.append(lineSeparator)
             }
         }
         if (sb.endsWith("* ")) {
@@ -102,59 +71,99 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
     }
 
     private fun findParagraphs(comment: String): ParagraphList {
-        val lines = comment.split("\n")
+        val lines = comment.removePrefix("/**").removeSuffix("*/").trim().split("\n")
         val rawText = StringBuilder()
-        var inPreformat = false
-        for (l in lines) {
-            val trimmed = l.trim()
-            val lineWithIndentation = trimmed.removePrefix("/**").removePrefix(("*"))
-            val line = lineWithIndentation.trim()
-            if (line.startsWith("```")) {
-                inPreformat = !inPreformat
-                if (!inPreformat) {
-                    rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
-                    continue
+
+        fun lineContent(line: String): String {
+            val trimmed = line.trim()
+            return if (trimmed.startsWith("* ")) {
+                trimmed.substring(2)
+            } else if (trimmed.startsWith("*")) {
+                trimmed.substring(1)
+            } else {
+                line
+            }
+        }
+
+        fun addLines(
+            lines: List<String>,
+            i: Int,
+            includeEnd: Boolean,
+            preformatted: Boolean,
+            until: (Int, String, String) -> Boolean
+        ): Int {
+            val separator = if (preformatted) "\n" else " "
+            if (preformatted) {
+                rawText.appendFirstNewline()
+            }
+            var j = i
+            while (j < lines.size) {
+                val l = lines[j]
+                val lineWithIndentation = lineContent(l)
+                val lineWithoutIndentation = lineWithIndentation.trim()
+
+                if (!includeEnd) {
+                    if (j > i && until(j, lineWithoutIndentation, lineWithIndentation)) {
+                        return j
+                    }
                 }
-            } else if (line.startsWith("<pre>", ignoreCase = true)) {
-                inPreformat = true
-            } else if (line.startsWith("</pre>", ignoreCase = true)) {
-                inPreformat = false
-                rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
-                continue
+
+                if (preformatted) {
+                    rawText.append(lineWithIndentation).append(separator)
+                } else {
+                    rawText.append(lineWithoutIndentation.collapseSpaces()).append(separator)
+                }
+
+                if (includeEnd) {
+                    if (j > i && until(j, lineWithoutIndentation, lineWithIndentation)) {
+                        return j + 1
+                    }
+                }
+
+                j++
             }
 
-            if (inPreformat) {
+            return j
+        }
+
+        var i = 0
+        while (i < lines.size) {
+            val l = lines[i++]
+            val lineWithIndentation = lineContent(l)
+            val lineWithoutIndentation = lineWithIndentation.trim()
+            if (lineWithoutIndentation.startsWith("```")) {
+                i = addLines(lines, i - 1, includeEnd = true, preformatted = true) { _, _, s ->
+                    s.startsWith("```")
+                }
+                continue
+            } else if (lineWithoutIndentation.startsWith("<pre>", ignoreCase = true)) {
+                i = addLines(lines, i - 1, includeEnd = true, preformatted = true) { _, _, s ->
+                    s.startsWith("</pre>", ignoreCase = true)
+                }
+                continue
+            } else if (lineWithoutIndentation.isListItem() || lineWithoutIndentation.isKDocTag()) {
                 rawText.appendFirstNewline()
-                rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
-                continue
-            }
-
-            if (line.isListItem()) {
-                rawText.appendFirstNewline()
-                rawText.append(line).append(' ')
-                continue
-            }
-
-            if (trimmed.endsWith("*/")) {
-                rawText.append(line.removeSuffix("*/").removeSuffix("/").trim())
-                break
-            } else if (line.startsWith("@") && !rawText.endsWith("\n")) {
-                // KDoc block tag, must be on its own line.
+                i = addLines(lines, i - 1, includeEnd = false, preformatted = false) { _, w, s ->
+                    s.isBlank() || w.isListItem() || s.isKDocTag()
+                }
                 rawText.append('\n')
+                continue
             } else if (lineWithIndentation.startsWith("    ")) { // markdown preformatted text
-                rawText.appendFirstNewline()
-                rawText.append(lineWithIndentation.substring(1).trimEnd()).append("\n")
+                i = addLines(lines, i - 1, includeEnd = true, preformatted = true) { _, _, s ->
+                    !s.startsWith(" ")
+                }
+                rawText.append('\n')
                 continue
             }
-            if (line.isEmpty()) {
+            if (lineWithoutIndentation.isEmpty()) {
                 if (rawText.isNotEmpty()) {
                     rawText.append('\n')
                 }
             } else {
                 if (options.collapseSpaces) {
-                    rawText.append(line.collapseSpaces())
+                    rawText.append(lineWithoutIndentation.collapseSpaces())
                 } else {
-                    rawText.append(line)
+                    rawText.append(lineWithoutIndentation)
                 }
                 rawText.append(' ')
             }
@@ -172,98 +181,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         return ParagraphList(paragraphs)
     }
 
-    private fun getIndent(width: Int): String {
-        val sb = StringBuilder()
-        for (i in 0 until width) {
-            sb.append(' ')
-        }
-        return sb.toString()
-    }
-
-    private fun getIndentSize(indent: String): Int {
-        var size = 0
-        for (c in indent) {
-            if (c == '\t')
-                size += options.tabWidth
-            else
-                size++
-        }
-        return size
-    }
-
-    private class Paragraph(val text: String) {
-        fun isDocTag() = text.startsWith("@")
-        fun isListItem() = listItem
-        var separate = true
-        val listItem = text.isListItem()
-        var preformatted = text.startsWith("    ")
-        var hangingIndent = if (isDocTag()) "    " else ""
-        override fun toString(): String = text
-    }
-
-    private inner class ParagraphList(val paragraphs: List<Paragraph>) : Iterable<Paragraph> {
-        init {
-            var prev: Paragraph? = null
-            var inPreformat = false
-            for (paragraph in paragraphs) {
-                paragraph.preformatted = inPreformat || paragraph.preformatted
-                paragraph.separate = when {
-                    prev == null -> false
-                    // Don't separate kdoc tags, except for the first one
-                    paragraph.isDocTag() -> !prev.isDocTag()
-                    paragraph.preformatted -> !prev.preformatted
-                    paragraph.listItem -> false
-                    else -> true
-                }
-                if (paragraph.listItem) {
-                    paragraph.hangingIndent = getIndent(paragraph.text.indexOf(' ') + 1)
-                }
-                if (paragraph.text.startsWith("```")) {
-                    if (!inPreformat) {
-                        paragraph.preformatted = true
-                    }
-                    inPreformat = !inPreformat
-                } else if (paragraph.text.startsWith("<pre>", ignoreCase = true)) {
-                    paragraph.preformatted = true
-                    inPreformat = true
-                } else if (paragraph.text.startsWith("</pre>", ignoreCase = true)) {
-                    paragraph.preformatted = true
-                    inPreformat = false
-                }
-                prev = paragraph
-            }
-        }
-
-        fun isSingleParagraph() = paragraphs.size == 1
-        override fun iterator(): Iterator<Paragraph> = paragraphs.iterator()
-    }
-
     companion object {
-        private val numberPattern = Pattern.compile("^\\d+\\. ")
-
-        private fun String.isListItem(): Boolean {
-            return startsWith("- ") || startsWith("* ") || startsWith("+ ") ||
-                firstOrNull()?.isDigit() == true && numberPattern.matcher(this).find()
-        }
-
-        private fun String.collapseSpaces(): String {
-            if (indexOf("  ") == -1) {
-                return this
-            }
-            val sb = StringBuilder()
-            var prev: Char = this[0]
-            for (i in 1 until length) {
-                if (prev == ' ') {
-                    if (this[i] == ' ') {
-                        continue
-                    }
-                }
-                sb.append(this[i])
-                prev = this[i]
-            }
-            return sb.toString()
-        }
-
         /**
          * Attempt to preserve the caret position across reformatting.
          * Returns the delta in the new comment.

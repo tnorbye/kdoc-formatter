@@ -13,11 +13,14 @@ class KDocFileFormatterTest {
     private fun reformatFile(source: String, options: KDocFormattingOptions): String {
         val fileOptions = KDocFileFormattingOptions()
         fileOptions.formattingOptions = options
-        return KDocFileFormatter(fileOptions).reformatFile(null, source.trim())
+        val formatter = KDocFileFormatter(fileOptions)
+        val reformatted = formatter.reformatFile(null, source.trim())
+        // Make sure that formatting is stable -- format again and make sure it's the same
+        assertEquals(reformatted, formatter.reformatFile(null, reformatted.trim()))
+        return reformatted
     }
 
-    // TODO: Test reading filenames from @-file
-    // TODO: Test git-changes
+    // TODO: Test driver --reading filenames from @-file etc
 
     @Test
     fun test() {
@@ -53,17 +56,17 @@ class KDocFileFormatterTest {
             """
             class Test {
                 /**
-                 * Returns whether lint should check all warnings, including those
-                 * off by default, or null if not configured in this configuration.
-                 * This is a really really really long sentence which needs to be
-                 * broken up. And
+                 * Returns whether lint should check all warnings, including
+                 * those off by default, or null if not configured in
+                 * this configuration. This is a really really really
+                 * long sentence which needs to be broken up. And
                  * ThisIsALongSentenceWhichCannotBeBrokenUpAndMustBeIncludedAsAWholeWithoutNewlinesInTheMiddle.
                  *
                  * This is a separate section which should be flowed together with
                  * the first one. *bold* should not be removed even at beginning.
                  */
                 private var checkAllWarnings: Boolean? = null
-            
+
                 /**
                  * Returns whether lint should check all warnings, including those
                  * off by default
@@ -97,9 +100,9 @@ class KDocFileFormatterTest {
             """
             //3456789012345678901234567890 <- 30
             /**
-             * This should fit on a single
-             * And this should also fit!!
-             * And this should
+             * This should fit on a
+             * single And this should
+             * also fit!! And this should
              * not!!!!!!!!!
              */
             """.trimIndent(),
