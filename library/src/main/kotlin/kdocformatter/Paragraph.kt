@@ -12,7 +12,8 @@ class Paragraph(val text: String) {
     override fun toString(): String = text
 
     fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
-        if (text.length < maxLineWidth) {
+        val hangingIndentSize = getIndentSize(hangingIndent, options)
+        if (text.length < (maxLineWidth - hangingIndentSize)) {
             return listOf(text.collapseSpaces())
         }
         // See divide & conquer algorithm listed here: https://xxyxyz.org/line-breaking/
@@ -31,14 +32,47 @@ class Paragraph(val text: String) {
             // is short; it over-corrects and shortens everything else in order
             // to balance out the last line.
 
-            val longestLine = lines.maxOf { it.length }
+            val maxLine: (String) -> Int = {
+                // Ignore lines that are unbreakable
+                if (it.indexOf(' ') == -1) {
+                    0
+                } else {
+                    it.length
+                }
+            }
+            val longestLine = lines.maxOf(maxLine)
+            if (hangingIndentSize > 0 && words[0].length < maxLineWidth) {
+                // Fill first line greedily since it's wider then reflow the rest optimally
+                var i = 0
+                val firstLine = StringBuilder()
+                while (i < words.size) {
+                    val word = words[i]
+                    val newEnd = firstLine.length + word.length
+                    if (newEnd == maxLineWidth) {
+                        firstLine.append(word)
+                        i++
+                        break
+                    } else if (newEnd > maxLineWidth) {
+                        break
+                    }
+                    firstLine.append(word).append(' ')
+                    i++
+                }
+                if (i > 0) {
+                    val remainingWords = words.subList(i, words.size)
+                    val remainingLines = reflowDynamic(maxLineWidth - hangingIndentSize, remainingWords)
+                    return listOf(firstLine.toString().trim()) + remainingLines
+                }
+
+                return reflowDynamic(maxLineWidth - hangingIndentSize, words)
+            }
             var lastWord = words.size - 1
             while (true) {
                 // We can afford to do this because we're only repeating it for a single line's
                 // worth of words and because comments tend to be relatively short anyway
                 val newLines = reflowDynamic(maxLineWidth, words.subList(0, lastWord))
                 if (newLines.size < lines.size) {
-                    val newLongestLine = newLines.maxOf { it.length }
+                    val newLongestLine = newLines.maxOf(maxLine)
                     if (newLongestLine > longestLine) {
                         return newLines + words.subList(lastWord, words.size).joinToString(" ")
                     }

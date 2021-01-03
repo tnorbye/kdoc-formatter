@@ -1,30 +1,40 @@
 KDoc Formatter
 ==============
-Reformats Kotlin KDoc comments, reflowing text and other cleanup,
-both via IDE plugin and command line utility.
 
-This tool reflows comments in KDoc; either on a file or
-recursively over nested folders, as well as an IntelliJ
-IDE plugin where you can reflow the current comment around
-the cursor.
+Reformats Kotlin KDoc comments, reflowing text and other cleanup, both
+via IDE plugin and command line utility.
+
+This tool reflows comments in KDoc; either on a file or recursively
+over nested folders, as well as an IntelliJ IDE plugin where you can
+reflow the current comment around the cursor.
 
 Features
 --------
-* Command line script which can recursively format whole source folder
+
+* Command line script which can recursively format a whole source
+  folder
+
 * IDE plugin to format selected files or current comment. Preserves
   caret position in the current comment.
-* Block tags (like @param) are separated out from the main text,
-  and subsequent lines are indented. Blank spaces between doc tags
+
+* Block tags (like @param) are separated out from the main text, and
+  subsequent lines are indented. Blank spaces between doc tags
   are removed. Preformatted text (indented 4 spaces or more) is left
   alone.
-* Can run in a mode where it only reformats comments that were touched
-  by the current git HEAD commit, or the current staged files. Can
-  also be passed specific line ranges to limit formatting to.
-* Multiline comments that would fit on a single line are converted
-  to a single line comment (configurable via options)
+
+* Can be run in a mode where it only reformats comments that were
+  touched by the current git HEAD commit, or the currently staged
+  files. Can also be passed specific line ranges to limit formatting
+  to.
+
+* Multiline comments that would fit on a single line are converted to
+  a single line comment (configurable via options)
+
 * Adds hanging indents for ordered and unordered indents.
-* Cleans up for the double spaces  left by the IntelliJ Convert to
-  Kotlin action right before  the closing comment token.
+
+* Cleans up the double spaces left by the IntelliJ "Convert to Kotlin"
+  action right before the closing comment token.
+
 * Removes trailing spaces.
 
 Usage
@@ -72,7 +82,9 @@ as shown above to do this.)
 Building and testing
 --------------------
 To create an installation of the command line tool, run
+```
 ./gradlew install
+```
 The installation will be located in cli/build/install/kdocformatter.
 
 To create a zip, run
@@ -98,25 +110,22 @@ To reformat the source tree run
 Support Javadoc?
 ----------------
 KDoc is pretty similar to javadoc and there's a good chance that most
-of this functionality would work well. However, we already use
+of this functionality would work well. However, I already use
 [google-java-formatter](https://github.com/google/google-java-format)
 to format all Java source code, which does a great job reflowing
 javadoc comments already (along with formatting the rest of the file),
-so this is really not needed.
+so makign this tool support Java is not needed.
 
 Integrate into ktlint?
 ----------------------
-I use [ktlint](https://github.com/pinterest/ktlint) 
-to format and pretty-print my Kotlin source code.  However,
-it does not do comment reformatting, which means I spend time either
-manually reflowing myself when I edit comments, or worse, leave it
-unformatted.
+I use [ktlint](https://github.com/pinterest/ktlint) to format and
+pretty-print my Kotlin source code.  However, it does not do comment
+reformatting, which means I spend time either manually reflowing
+myself when I edit comments, or worse, leave it unformatted.
 
 Given that I use ktlint for formatting, the Right Thing would have
 been for me to figure out how it works, and implement the
 functionality there. However, I'm busy with a million other things,
-and this was just a quick Saturday morning project -- which
-unfortunately satisfies my immediate formatting needs -- so I no longer have
-the same motivation to get ktlint to support it. (Also, take a look at
-the code; it's pretty quick and dirty so would probably need a
-fair bit of work before getting it accepted into ktlint.)
+and this was just a quick weekend -- which unfortunately satisfies my
+immediate formatting needs -- so I no longer have the same motivation
+to get ktlint to support it.
