@@ -4,8 +4,8 @@ plugins {
     id 'com.android.lint'
 }
 
-group 'kdoc-formatter.library'
-version '1.0'
+group = "kdoc-formatter"
+version = "1.0"
 
 repositories {
     google()

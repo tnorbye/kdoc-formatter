@@ -18,7 +18,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.21'
 }
 
-group 'kdoc-formatter'
+group 'kdocformatter'
 version '1.0'
 
 repositories {
@@ -28,7 +28,7 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.4.21"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
@@ -53,7 +53,7 @@ task format(type: JavaExec, group: "verification") {
 }
 
 task lint {
-    dependsOn ':library:lint', ':cli:lint', ':plugin:lint'
+    dependsOn ':library:lint', ':cli:lint', ':ide-plugin:lint'
 }
 
 task install {
@@ -65,5 +65,9 @@ task zip {
 }
 
 task runIde {
-    dependsOn ':plugin:runIde'
+    dependsOn ':ide-plugin:runIde'
+}
+
+task plugin {
+    dependsOn ':ide-plugin:buildPlugin'
 }

@@ -9,6 +9,40 @@ import java.io.File
  * light-weight lexical analysis to identify comments.
  */
 class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
+    /** Formats the given file or directory recursively */
+    fun formatFile(file: File): Int {
+        if (file.isDirectory) {
+            val name = file.name
+            if (name.startsWith(".") && name != "." && name != "../") {
+                // Skip .git and friends
+                return 0
+            }
+            val files = file.listFiles() ?: return 0
+            var count = 0
+            for (f in files) {
+                count += formatFile(f)
+            }
+            return count
+        }
+
+        return if (file.path.endsWith(".kt")) {
+            val original = file.readText()
+            val reformatted = reformatFile(file, original)
+            if (reformatted != original) {
+                if (options.dryRun) {
+                    println(file.path)
+                } else {
+                    file.writeText(reformatted)
+                }
+                1
+            } else {
+                0
+            }
+        } else {
+            0
+        }
+    }
+
     fun reformatFile(file: File?, source: String): String {
         val sb = StringBuilder()
         val tokens = tokenizeKotlin(source)

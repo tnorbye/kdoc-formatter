@@ -113,7 +113,7 @@ class Paragraph(val text: String) {
         }
 
         fun search(pi0: Int, pj0: Int, pi1: Int, pj1: Int) {
-            val stack = ArrayDeque<Quadruple>()
+            val stack = java.util.ArrayDeque<Quadruple>()
             stack.add(Quadruple(pi0, pj0, pi1, pj1))
 
             while (stack.isNotEmpty()) {
