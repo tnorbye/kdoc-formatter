@@ -1,6 +1,7 @@
 package kdocformatter
 
 import kotlin.math.max
+import kotlin.math.min
 
 /** Formatter which can reformat KDoc comments */
 class KDocFormatter(private val options: KDocFormattingOptions) {
@@ -17,7 +18,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
             // Does the text fit on a single line?
             val trimmed = paragraphs.first().text.trim()
             // Subtract out space for "/** " and " */" and the indent:
-            val width = options.lineWidth - indentSize - 7
+            val width = min(options.maxLineWidth - indentSize - 7, options.maxCommentWidth)
             if (trimmed.length < width) {
                 return "/** $trimmed */"
             }
@@ -43,7 +44,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 continue
             }
 
-            val lines = paragraph.reflow(options.lineWidth - indentSize - 3, options)
+            val lines = paragraph.reflow(min(options.maxCommentWidth, options.maxLineWidth - indentSize - 3), options)
             var first = true
             val hangingIndent = paragraph.hangingIndent
             for (line in lines) {
@@ -77,12 +78,10 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
 
         fun lineContent(line: String): String {
             val trimmed = line.trim()
-            return if (trimmed.startsWith("* ")) {
-                trimmed.substring(2)
-            } else if (trimmed.startsWith("*")) {
-                trimmed.substring(1)
-            } else {
-                line
+            return when {
+                trimmed.startsWith("* ") -> trimmed.substring(2)
+                trimmed.startsWith("*") -> trimmed.substring(1)
+                else -> line
             }
         }
 

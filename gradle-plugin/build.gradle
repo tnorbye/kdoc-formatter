@@ -18,11 +18,10 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.21'
     id 'java-gradle-plugin'
     id 'maven-publish'
-//    id 'com.android.lint'
 }
 
 group = "kdoc-formatter"
-version = "1.0"
+version = "1.1"
 
 repositories {
     google()
@@ -67,7 +66,7 @@ publishing {
             groupId "kdoc-formatter"
             artifactId "kdoc-formatter"
             //version project.version
-            version "1.0"
+            version "1.1"
         }
     }
 }
@@ -79,4 +78,8 @@ publishing {
             url "../m2"
         }
     }
+}
+
+clean.doFirst {
+    delete "${rootDir}/../m2"
 }

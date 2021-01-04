@@ -120,9 +120,9 @@ class ReformatKDocAction : AnAction() {
     ): KDocFormattingOptions {
         var width = CodeStyle.getLanguageSettings(file, kdoc.language).RIGHT_MARGIN
         if (width <= 0) {
-            width = KDocFormattingOptions().lineWidth
+            width = KDocFormattingOptions().maxLineWidth
         }
-        val options = KDocFormattingOptions(lineWidth = width)
+        val options = KDocFormattingOptions(maxLineWidth = width)
         options.tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
         return options
     }

@@ -71,3 +71,8 @@ task runIde {
 task plugin {
     dependsOn ':ide-plugin:buildPlugin'
 }
+
+clean.doFirst {
+    delete "${rootDir}/../m2"
+    delete "${rootDir}/gradle-plugin/build"
+}

@@ -1,10 +1,17 @@
 package kdocformatter
 
 /** Options controlling how the [KDocFormatter] will behave */
-class KDocFormattingOptions(lineWidth: Int = 72) {
+class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integer.MAX_VALUE) {
     /** Right hand side margin to write lines at */
     @Suppress("CanBePrimaryConstructorProperty")
-    var lineWidth: Int = lineWidth
+    var maxLineWidth: Int = maxLineWidth
+
+    /**
+     * Limit comment to be at most [maxCommentWidth] characters even if
+     * more would fit on the line
+     */
+    @Suppress("CanBePrimaryConstructorProperty")
+    var maxCommentWidth: Int = maxCommentWidth
 
     /**
      * Whether to collapse multi-line comments that would fit on a

@@ -39,8 +39,8 @@ Features
 
 * Removes trailing spaces.
 
-Usage
------
+Command Usage
+-------------
 ```
 $ kdoc-formatter
 Usage: kdoc-formatter [options] file(s)
@@ -48,20 +48,28 @@ Usage: kdoc-formatter [options] file(s)
 Options:
   --max-line-width=<n>
     Sets the length of lines. Defaults to 72.
+  --max-comment-width=<n>
+    Sets the maximum width of comments. This is helpful in a codebase
+    with large line lengths, such as 140 in the IntelliJ codebase. Here,
+    you don't want to limit the formatter maximum line width since
+    indented code still needs to be properly formatted, but you also
+    don't want comments to span 100+ characters, since that's less
+    readable. By default this option is not set.
   --single-line-comments=<collapse | expand>
-    With `collapse`, turns multi-line comments into a single line if it fits, and with
-    `expand` it will always format commands with /** and */ on their own lines.
-    The default is `collapse`.
+    With `collapse`, turns multi-line comments into a single line if it
+    fits, and with `expand` it will always format commands with /** and
+    */ on their own lines. The default is `collapse`.
   --overlaps-git-changes=<HEAD | staged>
-    If git is on the path, and the command is invoked in a git repository, kdoc-formatter
-    will invoke git to find the changes either in the HEAD commit or in the staged files,
-    and will format only the KDoc comments that overlap these changes.
+    If git is on the path, and the command is invoked in a git
+    repository, kdoc-formatter will invoke git to find the changes either
+    in the HEAD commit or in the staged files, and will format only the
+    KDoc comments that overlap these changes.
   --lines <start:end>, --line <start>
-    Line range(s) to format, like 5:10 (1-based; default is all). Can be specified multiple
-    times.
+    Line range(s) to format, like 5:10 (1-based; default is all). Can be
+    specified multiple times.
   --dry-run, -n
-    Prints the paths of the files whose contents would change if the formatter were run
-    normally.
+    Prints the paths of the files whose contents would change if the
+    formatter were run normally.
   --quiet, -q
     Quiet mode
   --help, -help, -h
@@ -69,17 +77,44 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.0
+kdoc-formatter: Version 1.1
 https://github.com/tnorbye/kdoc-formatter
 ```
 
-IDE Usage
----------
+IntelliJ Plugin Usage
+---------------------
 Install the IDE plugin. Then move the caret to a KDoc comment and invoke
 Code > Reformat KDoc. You can configure a keyboard shortcut if you perform
 this action frequently. (Coming soon: ability to run this action on whole
 files and directories from within the IDE; currently use the command line
 as shown above to do this.)
+
+![Screenshot](screenshot.png)
+
+
+Gradle Plugin Usage
+-------------------
+The plugin is not yet distributed, so for now, download the zip file
+and install it somewhere, then add this to your build.gradle file:
+
+```
+buildscript {
+    repositories {
+        maven { url '/path/to/m2' }
+    }
+    dependencies {
+        classpath "kdocformatter:kdocformatter:1.1"
+    }
+}
+plugins {
+    id 'kdoc-formatter'
+}
+kdocformatter {
+    options = "--single-line-comments=collapse --max-line-width=100"
+}
+```
+Here, the [options] property lets you use any of the command line flags
+from the kdoc-formatter command.
 
 Building and testing
 --------------------
@@ -115,20 +150,8 @@ cd gradle-plugin
 ./gradlew publish
 ```
 This will create a Maven local repository in m2/ which you can then
-point to from your consuming projects with
-```
-buildscript {
-    repositories {
-        maven { url '/path/to/m2' }
-    }
-    dependencies {
-        classpath "kdocformatter:kdocformatter:1.0"
-    }
-}
-plugins {
-    id 'kdoc-formatter'
-}
-```
+point to from your consuming projects as shown in the Gradle Plugin
+Usage section above.
 
 Support Javadoc?
 ----------------
