@@ -1,4 +1,8 @@
-rootProject.name = 'kdocformatter'
-include 'plugin'
+rootProject.name = 'kdoc-formatter'
 include 'cli'
 include 'library'
+include 'ide-plugin'
+// Including this in the same project causes gradle sync
+// to repeated sources which makes the IDE experience poor.
+// Instead this is now a separate project.
+//include 'gradle-plugin'

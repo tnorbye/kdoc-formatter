@@ -5,7 +5,7 @@ plugins {
     id 'com.android.lint'
 }
 
-group = "kdoc-formatter.plugin"
+group = "kdoc-formatter"
 version = "1.0"
 
 repositories {
@@ -23,6 +23,7 @@ dependencies {
 // See https://github.com/JetBrains/gradle-intellij-plugin/
 intellij {
     version '2020.3'
+    pluginName = "kdoc-formatter-plugin"
 }
 
 patchPluginXml {

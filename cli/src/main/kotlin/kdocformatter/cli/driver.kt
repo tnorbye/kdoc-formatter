@@ -3,7 +3,6 @@
 package kdocformatter.cli
 
 import kdocformatter.cli.KDocFileFormattingOptions.Companion.usage
-import java.io.File
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -17,10 +16,11 @@ fun main(args: Array<String>) {
     if (files.isEmpty()) {
         error("no files were provided")
     }
+    val formatter = KDocFileFormatter(options)
 
     var count = 0
     for (file in files) {
-        count += formatFile(file, options)
+        count += formatter.formatFile(file)
     }
 
     if (!options.quiet) {
@@ -28,39 +28,6 @@ fun main(args: Array<String>) {
     }
 
     exitProcess(0)
-}
-
-private fun formatFile(file: File, options: KDocFileFormattingOptions): Int {
-    if (file.isDirectory) {
-        val name = file.name
-        if (name.startsWith(".") && name != "." && name != "../") {
-            // Skip .git and friends
-            return 0
-        }
-        val files = file.listFiles() ?: return 0
-        var count = 0
-        for (f in files) {
-            count += formatFile(f, options)
-        }
-        return count
-    }
-
-    return if (file.path.endsWith(".kt")) {
-        val original = file.readText()
-        val reformatted = KDocFileFormatter(options).reformatFile(file, original)
-        if (reformatted != original) {
-            if (options.dryRun) {
-                println(file.path)
-            } else {
-                file.writeText(reformatted)
-            }
-            1
-        } else {
-            0
-        }
-    } else {
-        0
-    }
 }
 
 fun error(message: String): Nothing {

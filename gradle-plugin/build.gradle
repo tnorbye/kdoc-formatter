@@ -1,0 +1,82 @@
+buildscript {
+    ext {
+        gradlePluginVersion = '7.0.0-alpha03'
+    }
+
+    repositories {
+        google()
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$gradlePluginVersion"
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+//    id 'com.android.lint'
+}
+
+group = "kdoc-formatter"
+version = "1.0"
+
+repositories {
+    google()
+    jcenter()
+    mavenCentral()
+}
+
+// Instead of depending on project(":cli") below, we inline the
+// sources in the plugin such that we don't have to publish
+// separate artifacts for the library and cli modules
+sourceSets {
+    main.java.srcDirs += '../cli/src/main/kotlin'
+    main.java.srcDirs += '../library/src/main/kotlin'
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation gradleApi()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+gradlePlugin {
+    plugins {
+        kdocformatter {
+            id = "kdoc-formatter"
+            implementationClass = "kdocformatter.gradle.KDocFormatterPlugin"
+        }
+    }
+}
+
+/*
+publishing {
+    publications {
+        pluginPublication (MavenPublication) {
+            from components.java
+            groupId "kdoc-formatter"
+            artifactId "kdoc-formatter"
+            //version project.version
+            version "1.0"
+        }
+    }
+}
+*/
+
+publishing {
+    repositories {
+        maven {
+            url "../m2"
+        }
+    }
+}

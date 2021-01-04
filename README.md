@@ -17,6 +17,8 @@ Features
 * IDE plugin to format selected files or current comment. Preserves
   caret position in the current comment.
 
+* Gradle plugin to format the source folders in the current project.
+
 * Block tags (like @param) are separated out from the main text, and
   subsequent lines are indented. Blank spaces between doc tags
   are removed. Preformatted text (indented 4 spaces or more) is left
@@ -105,6 +107,27 @@ To run/test the plugin in the IDE, run
 To reformat the source tree run
 ```
 ./gradlew format
+```
+
+To build the Gradle plugin locally:
+```
+cd gradle-plugin
+./gradlew publish
+```
+This will create a Maven local repository in m2/ which you can then
+point to from your consuming projects with
+```
+buildscript {
+    repositories {
+        maven { url '/path/to/m2' }
+    }
+    dependencies {
+        classpath "kdocformatter:kdocformatter:1.0"
+    }
+}
+plugins {
+    id 'kdoc-formatter'
+}
 ```
 
 Support Javadoc?
