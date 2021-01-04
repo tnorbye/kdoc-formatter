@@ -14,8 +14,10 @@ open class KDocFormatterTask : DefaultTask() {
         val dirs = convention?.sourceSets?.map { it.allSource }?.map { it.outputDir }?.toList()
             ?: listOf(File("."))
 
-        // TODO: Add extension to customize these options
-        val options = KDocFileFormattingOptions()
+        val extension = project.extensions.findByName("kdocformatter") as KDocFormatterExtension
+        val flags = extension.options
+        val args = flags.split(" ").toTypedArray()
+        val options = KDocFileFormattingOptions.parse(args)
         val formatter = KDocFileFormatter(options)
         var count = 0
         for (file in dirs) {

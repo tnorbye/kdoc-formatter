@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>org.norbye.tor.kdocformatter</id>
   <name>Kotlin KDoc Formatter</name>
-  <version>1.0</version>
+  <version>1.1</version>
   <vendor email="tor.norbye@gmail.com" url="https://github.com/tnorbye/kdoc-formatter">Tor Norbye</vendor>
 
   <description><![CDATA[
