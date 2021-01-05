@@ -23,7 +23,7 @@ plugins {
 
 // https://issues.sonatype.org/browse/OSSRH-63191
 group = "com.github.tnorbye.kdoc-formatter"
-version = "1.1"
+version = "1.1.1"
 
 repositories {
     google()
@@ -80,10 +80,10 @@ publishing {
     publications {
         pluginPublication (MavenPublication) {
             from components.java
-            groupId " "com.github.tnorbye.kdoc-formatter""
+            groupId "com.github.tnorbye.kdoc-formatter"
             artifactId "kdoc-formatter"
             //version project.version
-            version "1.1"
+            version "1.1.1"
         }
     }
 }

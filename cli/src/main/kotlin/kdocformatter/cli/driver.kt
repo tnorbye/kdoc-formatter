@@ -15,6 +15,15 @@ fun main(args: Array<String>) {
     val files = options.files
     if (files.isEmpty()) {
         error("no files were provided")
+    } else if (options.filter.isEmpty()) {
+        if (!options.quiet && (options.gitStaged || options.gitHead)) {
+            println(
+                "No changes to Kotlin files found in ${
+                if (options.gitStaged) "the staged files" else "HEAD"
+                }"
+            )
+        }
+        exitProcess(0)
     }
     val formatter = KDocFileFormatter(options)
 

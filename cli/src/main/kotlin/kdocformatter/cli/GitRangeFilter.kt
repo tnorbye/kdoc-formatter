@@ -52,7 +52,11 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
             for (line in diff.split("\n")) {
                 if (line.startsWith("+++ ")) {
                     val relative = line.substring(4)
-                    currentPath = if (root != null) File(root, relative) else File(relative)
+                    // Canonicalize files here to match the canonicalization we perform in
+                    // KDocFileFormattingOptions.parse (which is necessary such that we don't
+                    // accidentally handle relative paths like "./" etc as "foo/./bar" which
+                    // isn't treated as equal to "foo/bar").
+                    currentPath = (if (root != null) File(root, relative) else File(relative)).canonicalFile
                 } else if (line.startsWith("@@ ")) {
                     //noinspection FileComparisons
                     if (currentPath === root || currentPath == null || !currentPath.path.endsWith(".kt")) {
