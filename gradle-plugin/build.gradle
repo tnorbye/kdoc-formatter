@@ -18,9 +18,11 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.21'
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id 'com.gradle.plugin-publish' version '0.9.10'
 }
 
-group = "kdoc-formatter"
+// https://issues.sonatype.org/browse/OSSRH-63191
+group = "com.github.tnorbye.kdoc-formatter"
 version = "1.1"
 
 repositories {
@@ -53,7 +55,22 @@ gradlePlugin {
     plugins {
         kdocformatter {
             id = "kdoc-formatter"
+            displayName = 'KDoc Formatting'
             implementationClass = "kdocformatter.gradle.KDocFormatterPlugin"
+        }
+    }
+}
+
+pluginBundle {
+    website = 'https://github.com/tnorbye/kdoc-formatter'
+    vcsUrl = 'https://github.com/tnorbye/kdoc-formatter.git'
+    tags = ['kotlin', 'kdoc', 'formatter', 'formatting']
+
+    plugins {
+        kdocformatter {
+            id = "kdoc-formatter"
+            displayName = 'KDoc Formatting'
+            description = 'Plugin which can reformat Kotlin KDoc comments'
         }
     }
 }
@@ -63,7 +80,7 @@ publishing {
     publications {
         pluginPublication (MavenPublication) {
             from components.java
-            groupId "kdoc-formatter"
+            groupId " "com.github.tnorbye.kdoc-formatter""
             artifactId "kdoc-formatter"
             //version project.version
             version "1.1"
