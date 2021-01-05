@@ -5,7 +5,12 @@ import java.io.File
 
 open class LineRangeFilter protected constructor(private val rangeMap: RangeMap) : RangeFilter() {
     var valid: Boolean = false
-    val empty: Boolean get() = rangeMap.isEmpty()
+
+    override fun isEmpty(): Boolean = rangeMap.isEmpty()
+
+    override fun includes(file: File): Boolean {
+        return rangeMap.getRanges(file).isNotEmpty()
+    }
 
     override fun overlaps(file: File, source: String, startOffset: Int, endOffset: Int): Boolean {
         val startLine = getLineNumber(source, startOffset)
@@ -26,6 +31,10 @@ open class LineRangeFilter protected constructor(private val rangeMap: RangeMap)
     ) {
         fun overlaps(startLine: Int, endLine: Int): Boolean {
             return this.startLine <= endLine && this.endLine >= startLine
+        }
+
+        override fun toString(): String {
+            return "From $startLine to $endLine"
         }
     }
 

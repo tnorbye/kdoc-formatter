@@ -25,7 +25,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
             return count
         }
 
-        return if (file.path.endsWith(".kt")) {
+        return if (file.path.endsWith(".kt") && options.filter.includes(file)) {
             val original = file.readText()
             val reformatted = reformatFile(file, original)
             if (reformatted != original) {

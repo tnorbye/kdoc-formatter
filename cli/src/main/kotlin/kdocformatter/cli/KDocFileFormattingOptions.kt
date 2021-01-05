@@ -16,6 +16,8 @@ class KDocFileFormattingOptions {
     var filter = RangeFilter() // default accepts all
     var files = listOf<File>()
     var formattingOptions: KDocFormattingOptions = KDocFormattingOptions()
+    var gitStaged = false
+    var gitHead = false
 
     companion object {
         fun parse(args: Array<String>): KDocFileFormattingOptions {
@@ -24,8 +26,6 @@ class KDocFileFormattingOptions {
             val files = mutableListOf<File>()
             options.files = files
             val rangeLines = mutableListOf<String>()
-            var overlapsGitHead = false
-            var overlapsGitStaged = false
 
             fun parseInt(s: String): Int = s.toIntOrNull() ?: error("$s is not a number")
 
@@ -48,8 +48,8 @@ class KDocFileFormattingOptions {
                         options.formattingOptions.collapseSingleLine = false
                     arg.startsWith("--single-line-comments=") ->
                         error("Only `collapse` and `expand` are supported for --single-line-comments")
-                    arg == "--overlaps-git-changes=HEAD" -> overlapsGitHead = true
-                    arg == "--overlaps-git-changes=staged" -> overlapsGitStaged = true
+                    arg == "--overlaps-git-changes=HEAD" -> options.gitHead = true
+                    arg == "--overlaps-git-changes=staged" -> options.gitStaged = true
                     arg.startsWith("--overlaps-git-changes=") ->
                         error("Only `HEAD` and `staged` are supported for --overlaps-git-changes")
                     arg == "--lines" || arg == "--line" -> rangeLines.add(args[i++])
@@ -73,7 +73,7 @@ class KDocFileFormattingOptions {
                             if (path.isBlank()) {
                                 continue
                             }
-                            val file = File(arg.trim())
+                            val file = File(arg.trim()).canonicalFile
                             if (!file.exists()) {
                                 error("$file does not exist")
                             }
@@ -83,22 +83,15 @@ class KDocFileFormattingOptions {
                 }
             }
 
-            if ((overlapsGitHead || overlapsGitStaged) && files.isNotEmpty()) {
+            if ((options.gitHead || options.gitStaged) && files.isNotEmpty()) {
                 // Delayed initialization because the git path and the paths to the repository
                 // is typically specified after this flag
-                val filter = GitRangeFilter.create(options.gitPath, files.first(), overlapsGitStaged)
+                val filter = GitRangeFilter.create(options.gitPath, files.first(), options.gitStaged)
                 if (filter == null) {
                     error("Creating git range filter failed")
-                } else if (filter.empty) {
-                    if (!options.quiet) {
-                        println(
-                            "No changes to Kotlin files found in ${
-                            if (overlapsGitStaged) "the staged files" else "HEAD"
-                            }"
-                        )
-                    }
+                } else {
+                    options.filter = filter
                 }
-                options.filter = filter
             } else if (rangeLines.isNotEmpty()) {
                 if (files.size != 1 || !files[0].isFile) {
                     error("The --lines option can only be used with a single file")
@@ -146,7 +139,7 @@ class KDocFileFormattingOptions {
               @<filename>
                 Read filenames from file.
             
-            kdoc-formatter: Version 1.1
+            kdoc-formatter: Version 1.1.1
             https://github.com/tnorbye/kdoc-formatter        
             """.trimIndent()
         }
