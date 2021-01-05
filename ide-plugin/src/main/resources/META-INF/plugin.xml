@@ -5,13 +5,26 @@
   <vendor email="tor.norbye@gmail.com" url="https://github.com/tnorbye/kdoc-formatter">Tor Norbye</vendor>
 
   <description><![CDATA[
-      This plugin lets you reflow KDoc text -- meaning that it will reformat the
+      This plugin lets you reformat KDoc text -- meaning that it will reformat the
       text and flowing the text up to the line width, collapsing comments that
       fit on a single line, indenting text within a block tag, etc.
+
+      There are two usage modes. First, it can reformat the current comment
+      around the caret position. Open a Kotlin file, navigate to the KDoc
+      comment (e.g. <code>/** My Comment */</code>), and then invoke Code | Reformat KDoc.
+
+      The second mode lets you reformat all the comments in one or more Kotlin
+      source files. For this, navigate to the Projects view and select one or
+      more source files, and again invoke Code | Reformat KDoc.
+
+      More details about the features can be found at
+      <a href="https://github.com/tnorbye/kdoc-formatter#kdoc-formatter">
+      https://github.com/tnorbye/kdoc-formatter#kdoc-formatter
+      </a>
     ]]></description>
 
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-  <idea-version since-build="201.0"/>
+  <idea-version since-build="202.0"/>
 
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
@@ -26,6 +39,11 @@
             description="Reformats the text within a KDoc comment">
       <add-to-group group-id="CodeFormatGroup" anchor="first"/>
     </action>
+
+    <group>
+    <add-to-group group-id="ProjectViewPopupMenuModifyGroup" anchor="after" relative-to-action="ReformatCode" />
+      <reference ref="ReflowKDoc"/>
+    </group>
   </actions>
 
 </idea-plugin>
