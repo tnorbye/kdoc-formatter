@@ -2,6 +2,7 @@ package kdocformatter.cli
 
 import kdocformatter.KDocFormattingOptions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.io.File
 
@@ -136,8 +137,8 @@ class KDocFileFormatterTest {
         val diff = """
             diff --git a/README.md b/README.md
             index c26815b..30a8dbb 100644
-            --- a/README.md
-            +++ b/README.md
+            --- README.md
+            +++ README.md
             @@ -31,25 +31,29 @@ ${'$'} kdoc-formatter
              Usage: kdoc-formatter [options] file(s)
              diff --git Test.kt Test.kt
@@ -149,15 +150,17 @@ class KDocFileFormatterTest {
             +     * modified including those off by default */  // additional            
             diff --git a/README.md b/README.md
             index c26815b..30a8dbb 100644
-            --- a/README.md
-            +++ b/README.md
+            --- README.md
+            +++ README.md
             @@ -31,25 +31,29 @@ ${'$'} kdoc-formatter
              Usage: kdoc-formatter [options] file(s)
         """.trimIndent()
 
         val fileOptions = KDocFileFormattingOptions()
-        val file = File("Test.kt")
-        fileOptions.filter = GitRangeFilter.create(null, diff)
+        val root = File("").canonicalFile
+        val file = File(root,"Test.kt")
+        fileOptions.filter = GitRangeFilter.create(root, diff)
+        assertTrue(fileOptions.filter.includes(file))
         val reformatted = KDocFileFormatter(fileOptions).reformatFile(file, source.trim())
 
         // Only the second comment should be formatted:

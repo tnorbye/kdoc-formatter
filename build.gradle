@@ -57,11 +57,11 @@ task lint {
 }
 
 task install {
-    dependsOn ':cli:installDist'
+    dependsOn ':cli:installDist', 'test'
 }
 
 task zip {
-    dependsOn ':cli:distZip'
+    dependsOn ':cli:distZip', 'test'
 }
 
 task runIde {
