@@ -1,6 +1,7 @@
 package kdocformatter.cli
 
 import kdocformatter.KDocFormattingOptions
+import kdocformatter.Version
 import java.io.File
 
 /**
@@ -42,6 +43,10 @@ class KDocFileFormattingOptions {
                         options.formattingOptions.maxCommentWidth = parseInt(args[i++])
                     arg.startsWith("--max-comment-width=") ->
                         options.formattingOptions.maxCommentWidth = parseInt(arg.substring("--max-comment-width=".length))
+                    arg == "--hanging-indent" -> options.formattingOptions.hangingIndent = parseInt(args[i++])
+                    arg.startsWith("--hanging-indent=") ->
+                        options.formattingOptions.hangingIndent = parseInt(arg.substring("--hanging-indent=".length))
+                    arg == "--convert-markup" -> options.formattingOptions.convertMarkup = true
                     arg.startsWith("--single-line-comments=collapse") ->
                         options.formattingOptions.collapseSingleLine = true
                     arg.startsWith("--single-line-comments=expand") ->
@@ -86,11 +91,21 @@ class KDocFileFormattingOptions {
             if ((options.gitHead || options.gitStaged) && files.isNotEmpty()) {
                 // Delayed initialization because the git path and the paths to the repository
                 // is typically specified after this flag
-                val filter = GitRangeFilter.create(options.gitPath, files.first(), options.gitStaged)
-                if (filter == null) {
-                    error("Creating git range filter failed")
+                val filters = mutableListOf<RangeFilter>()
+                if (options.gitHead) {
+                    GitRangeFilter.create(options.gitPath, files.first(), false)?.let {
+                        filters.add(it)
+                    } ?: error("Could not create git range filter for the staged files")
+                }
+                if (options.gitStaged) {
+                    GitRangeFilter.create(options.gitPath, files.first(), true)?.let {
+                        filters.add(it)
+                    } ?: error("Could not create git range filter for the files in HEAD")
+                }
+                options.filter = if (filters.size == 2) {
+                    UnionFilter(filters)
                 } else {
-                    options.filter = filter
+                    filters.first()
                 }
             } else if (rangeLines.isNotEmpty()) {
                 if (files.size != 1 || !files[0].isFile) {
@@ -117,6 +132,11 @@ class KDocFileFormattingOptions {
                 indented code still needs to be properly formatted, but you also
                 don't want comments to span 100+ characters, since that's less
                 readable. By default this option is not set.
+              --hanging-indent=<n>
+                Sets the number of spaces to use for hanging indents, e.g. second
+                and subsequent lines in a bulleted list or kdoc blog tag.
+              --convert-markup
+                Convert unnecessary HTML tags like &lt; and &gt; into < and >
               --single-line-comments=<collapse | expand>
                 With `collapse`, turns multi-line comments into a single line if it
                 fits, and with `expand` it will always format commands with /** and
@@ -139,7 +159,7 @@ class KDocFileFormattingOptions {
               @<filename>
                 Read filenames from file.
             
-            kdoc-formatter: Version 1.1.1
+            kdoc-formatter: Version ${Version.versionString}
             https://github.com/tnorbye/kdoc-formatter        
             """.trimIndent()
         }

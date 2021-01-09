@@ -88,14 +88,15 @@ class KDocFileFormatterTest {
     @Test
     fun testLineWidth() {
         // Perform in KDocFileFormatter test too to make sure we properly account for indent!
-        val source = """
+        val source =
+            """
             //3456789012345678901234567890 <- 30
             /**
              * This should fit on a single
              * And this should also fit!! 
              * And this should not!!!!!!!!! 
              */
-        """.trimIndent()
+            """.trimIndent()
         val reformatted = reformatFile(source, KDocFormattingOptions(30))
         assertEquals(
             """
@@ -134,7 +135,8 @@ class KDocFileFormatterTest {
             }
             """.trimIndent()
 
-        val diff = """
+        val diff =
+            """
             diff --git a/README.md b/README.md
             index c26815b..30a8dbb 100644
             --- README.md
@@ -154,11 +156,11 @@ class KDocFileFormatterTest {
             +++ README.md
             @@ -31,25 +31,29 @@ ${'$'} kdoc-formatter
              Usage: kdoc-formatter [options] file(s)
-        """.trimIndent()
+            """.trimIndent()
 
         val fileOptions = KDocFileFormattingOptions()
         val root = File("").canonicalFile
-        val file = File(root,"Test.kt")
+        val file = File(root, "Test.kt")
         fileOptions.filter = GitRangeFilter.create(root, diff)
         assertTrue(fileOptions.filter.includes(file))
         val reformatted = KDocFileFormatter(fileOptions).reformatFile(file, source.trim())

@@ -55,6 +55,11 @@ Options:
     indented code still needs to be properly formatted, but you also
     don't want comments to span 100+ characters, since that's less
     readable. By default this option is not set.
+  --hanging-indent=<n>
+    Sets the number of spaces to use for hanging indents, e.g. second
+    and subsequent lines in a bulleted list or kdoc blog tag.
+  --convert-markup
+    Convert unnecessary HTML tags like &lt; and &gt; into < and >
   --single-line-comments=<collapse | expand>
     With `collapse`, turns multi-line comments into a single line if it
     fits, and with `expand` it will always format commands with /** and
@@ -77,7 +82,7 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.1.1
+kdoc-formatter: Version 1.1.2
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -85,12 +90,13 @@ IntelliJ Plugin Usage
 ---------------------
 Install the IDE plugin. Then move the caret to a KDoc comment and invoke
 Code > Reformat KDoc. You can configure a keyboard shortcut if you perform
-this action frequently. (Coming soon: ability to run this action on whole
-files and directories from within the IDE; currently use the command line
-as shown above to do this.)
+this action frequently. You can also select one or more files in the
+Project View and invoke the same action to format whole files.
 
 ![Screenshot](screenshot.png)
 
+The plugin is available from the JetBrains Marketplace at
+[https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter](https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter)
 
 Gradle Plugin Usage
 -------------------

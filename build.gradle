@@ -1,6 +1,8 @@
 buildscript {
+    apply from: "$rootDir/version.gradle"
+
     ext {
-        gradlePluginVersion = '7.0.0-alpha03'
+        gradlePluginVersion = '7.0.0-alpha04'
     }
 
     repositories {
@@ -72,7 +74,11 @@ task plugin {
     dependsOn ':ide-plugin:buildPlugin'
 }
 
+task all {
+    dependsOn 'clean', 'install', 'plugin', 'zip'
+}
+
 clean.doFirst {
-    delete "${rootDir}/../m2"
+    delete "${rootDir}/m2"
     delete "${rootDir}/gradle-plugin/build"
 }

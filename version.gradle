@@ -1,0 +1,19 @@
+Properties properties = new Properties()
+File versionRootDir = rootDir
+String relativeVersionPath = "library/src/main/resources/version.properties"
+File versionProperties = new File(versionRootDir, relativeVersionPath)
+
+project.ext['versionProperties'] = versionProperties
+
+while (!versionProperties.exists() && versionRootDir.parentFile != null &&
+        versionRootDir.parentFile.exists()) {
+    versionRootDir = versionRootDir.parentFile
+    versionProperties = new File(versionRootDir, relativeVersionPath)
+}
+
+versionProperties.withReader { properties.load(it) }
+
+for (name in properties.stringPropertyNames()) {
+    String version = properties.getProperty(name)
+    project.ext[name] = version
+}

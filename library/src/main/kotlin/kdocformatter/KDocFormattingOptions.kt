@@ -23,10 +23,16 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
     var collapseSpaces: Boolean = true
 
     /**
-     * Whether to have hanging indents in numbered lists and after block
-     * tags
+     * Whether to convert basic markup like **bold** into **bold**, <
+     * into <, etc.
      */
-    var hangingIndents: Boolean = true
+    var convertMarkup: Boolean = true
+
+    /**
+     * How many spaces to use for hanging indents in numbered lists and
+     * after block tags
+     */
+    var hangingIndent: Int = 4
 
     /**
      * Don't format with tabs! (See
@@ -35,4 +41,16 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
      * But if you do, this is the tab width.
      */
     var tabWidth: Int = 8
+
+    /** Creates a copy of this formatting object */
+    fun copy(): KDocFormattingOptions {
+        val copy = KDocFormattingOptions()
+        copy.maxLineWidth = maxLineWidth
+        copy.maxCommentWidth = maxCommentWidth
+        copy.collapseSingleLine = collapseSingleLine
+        copy.collapseSpaces = collapseSpaces
+        copy.hangingIndent = hangingIndent
+        copy.tabWidth = tabWidth
+        return copy
+    }
 }

@@ -66,16 +66,18 @@ class KDocFormatterTest {
 
     @Test
     fun testWithOffset() {
-        val source = """
+        val source =
+            """
             /** Returns whether lint should check all warnings,
              * including those off by default */
-        """.trimIndent()
-        val reformatted = """
+            """.trimIndent()
+        val reformatted =
+            """
             /**
              * Returns whether lint should check all warnings, including those
              * off by default
              */
-        """.trimIndent()
+            """.trimIndent()
         checkFormatter(
             source,
             KDocFormattingOptions(72),
@@ -198,13 +200,14 @@ class KDocFormatterTest {
     @Test
     fun testLineWidth1() {
         // Perform in KDocFileFormatter test too to make sure we properly account for indent!
-        val source = """
+        val source =
+            """
             /**
              * 89 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
              *
              *   10        20        30        40        50        60        70        80
              */
-        """.trimIndent()
+            """.trimIndent()
         checkFormatter(
             source,
             KDocFormattingOptions(72),
@@ -263,6 +266,8 @@ class KDocFormatterTest {
 
     @Test
     fun testBlockTagsHangingIndents() {
+        val options = KDocFormattingOptions(40)
+        options.hangingIndent = 6
         checkFormatter(
             """
             /**
@@ -276,7 +281,7 @@ class KDocFormatterTest {
              * @return the list of class entries, never null.
              */
             """.trimIndent(),
-            KDocFormattingOptions(40),
+            options,
             """
             /**
              * Creates a list of class entries
@@ -284,18 +289,19 @@ class KDocFormatterTest {
              * specific set of files within it.
              *
              * @param client the client to
-             *     report errors to and
-             *     to use to read files
+             *       report errors to and
+             *       to use to read files
              * @param classFiles the specific
-             *     set of class files to look
-             *     for
+             *       set of class files to look
+             *       for
              * @param classFolders the list of
-             *     class folders to look in (to
-             *     determine the package root)
+             *       class folders to look
+             *       in (to determine
+             *       the package root)
              * @param sort if true, sort the
-             *     results
+             *       results
              * @return the list of class
-             *     entries, never null.
+             *       entries, never null.
              */
             """.trimIndent()
         )

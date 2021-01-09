@@ -2,13 +2,13 @@ package kdocformatter
 
 import kotlin.math.min
 
-class Paragraph(val text: String) {
+class Paragraph(var text: String, options: KDocFormattingOptions) {
     fun isBlockTag() = text.isKDocTag()
     fun isListItem() = listItem
     var separate = true
     val listItem = text.isListItem()
     var preformatted = text.startsWith("    ")
-    var hangingIndent = if (isBlockTag()) "    " else ""
+    var hangingIndent = if (isBlockTag()) getIndent(options.hangingIndent) else ""
     override fun toString(): String = text
 
     fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
@@ -187,7 +187,7 @@ class Paragraph(val text: String) {
         while (offset < text.length) {
             val isBeginning = offset == 0
             var width = lineWidth
-            if (options.hangingIndents && (isBlockTag || isListItem) && !isBeginning) {
+            if (options.hangingIndent > 0 && (isBlockTag || isListItem) && !isBeginning) {
                 width -= getIndentSize(hangingIndent, options)
             }
             while (offset < text.length && text[offset].isWhitespace()) {

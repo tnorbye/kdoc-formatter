@@ -1,6 +1,9 @@
 package kdocformatter
 
-class ParagraphList(val paragraphs: List<Paragraph>) : Iterable<Paragraph> {
+class ParagraphList(
+    private val paragraphs: List<Paragraph>,
+    private val options: KDocFormattingOptions
+) : Iterable<Paragraph> {
     init {
         var prev: Paragraph? = null
         var inPreformat = false
@@ -29,6 +32,22 @@ class ParagraphList(val paragraphs: List<Paragraph>) : Iterable<Paragraph> {
                 paragraph.preformatted = true
                 inPreformat = false
             }
+
+            if (!inPreformat) {
+                var cleaned = paragraph.text
+                if (options.convertMarkup && (cleaned.contains("<") || cleaned.contains(">"))) {
+                    cleaned = cleaned.replace("<b>", "**").replace("</b>", "**")
+                        .replace("<i>", "*").replace("</i>", "*")
+                }
+                if (options.convertMarkup && cleaned.contains("&")) {
+                    cleaned = cleaned.replace("&lt;", "<").replace("&LT;", "<")
+                        // TODO: <b> and </b> ?
+                        .replace("&gt;", ">").replace("&GT;", ">")
+                }
+
+                paragraph.text = cleaned
+            }
+
             prev = paragraph
         }
     }

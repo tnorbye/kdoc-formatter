@@ -1,11 +1,13 @@
 package kdocformatter.plugin
 
 import com.intellij.application.options.CodeStyle
+import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.vfs.ReadonlyStatusHandler
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiDocumentManager
@@ -16,6 +18,7 @@ import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import com.intellij.util.DocumentUtil
 import com.intellij.util.ThrowableRunnable
+import kdocformatter.EditorConfigs
 import kdocformatter.KDocFormatter
 import kdocformatter.KDocFormatter.Companion.findSamePosition
 import kdocformatter.KDocFormattingOptions
@@ -118,19 +121,24 @@ class ReformatKDocAction : AnAction() {
         file: @Nullable PsiFile,
         kdoc: @Nullable PsiComment
     ): KDocFormattingOptions {
-        var width = CodeStyle.getLanguageSettings(file, kdoc.language).RIGHT_MARGIN
-        if (width <= 0) {
-            width = KDocFormattingOptions().maxLineWidth
+        if (EditorConfigs.root == null) {
+            var width = CodeStyle.getLanguageSettings(file, kdoc.language).RIGHT_MARGIN
+            if (width <= 0) {
+                width = KDocFormattingOptions().maxLineWidth
+            }
+            val options = KDocFormattingOptions(maxLineWidth = width)
+            options.tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
+            EditorConfigs.root = options
         }
-        val options = KDocFormattingOptions(maxLineWidth = width)
-        options.tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
-        return options
+        val virtualFile = file.virtualFile ?: return EditorConfigs.root!!
+        val ioFile = VfsUtilCore.virtualToIoFile(virtualFile)
+        return EditorConfigs.getOptions(ioFile)
     }
 
     override fun update(event: AnActionEvent) {
         val presentation = event.presentation
         val available = isActionAvailable(event)
-        if (event.isFromContextMenu) {
+        if (ActionPlaces.isPopupPlace(event.place)) {
             presentation.isEnabledAndVisible = available
         } else {
             presentation.isEnabled = available
