@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "kdoc-formatter"
-version = "1.1.1"
+version = rootProject.ext.buildVersion
 
 repositories {
     google()

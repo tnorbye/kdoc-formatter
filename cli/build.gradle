@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "kdoc-formatter"
-version = "1.1.1"
+version = rootProject.ext.buildVersion
 
 application {
     mainClass = 'kdocformatter.cli.Main'
@@ -22,6 +22,7 @@ repositories {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.6.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     implementation project(':library')
 }

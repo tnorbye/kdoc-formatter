@@ -141,13 +141,6 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                     s.startsWith("</pre>", ignoreCase = true)
                 }
                 continue
-            } else if (lineWithoutIndentation.isListItem() || lineWithoutIndentation.isKDocTag()) {
-                rawText.appendFirstNewline()
-                i = addLines(lines, i - 1, includeEnd = false, preformatted = false) { _, w, s ->
-                    s.isBlank() || w.isListItem() || s.isKDocTag()
-                }
-                rawText.append('\n')
-                continue
             } else if (lineWithIndentation.startsWith("    ")) { // markdown preformatted text
                 i = addLines(lines, i - 1, includeEnd = true, preformatted = true) { _, _, s ->
                     !s.startsWith(" ")
@@ -155,6 +148,16 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 rawText.append('\n')
                 continue
             }
+
+            if (lineWithoutIndentation.isListItem() || lineWithoutIndentation.isKDocTag()) {
+                rawText.appendFirstNewline()
+                i = addLines(lines, i - 1, includeEnd = false, preformatted = false) { _, w, s ->
+                    s.isBlank() || w.isListItem() || s.isKDocTag()
+                }
+                rawText.append('\n')
+                continue
+            }
+
             if (lineWithoutIndentation.isEmpty()) {
                 if (rawText.isNotEmpty()) {
                     rawText.append('\n')
@@ -174,11 +177,12 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
             if (line.isBlank()) {
                 continue
             }
-            val paragraph = Paragraph(line)
+
+            val paragraph = Paragraph(line, options)
             paragraphs.add(paragraph)
         }
 
-        return ParagraphList(paragraphs)
+        return ParagraphList(paragraphs, options)
     }
 
     companion object {

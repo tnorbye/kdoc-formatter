@@ -1,5 +1,6 @@
 package kdocformatter.cli
 
+import kdocformatter.EditorConfigs
 import kdocformatter.KDocFormatter
 import java.io.File
 
@@ -9,6 +10,10 @@ import java.io.File
  * light-weight lexical analysis to identify comments.
  */
 class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
+    init {
+        EditorConfigs.root = options.formattingOptions
+    }
+
     /** Formats the given file or directory recursively */
     fun formatFile(file: File): Int {
         if (file.isDirectory) {
@@ -46,7 +51,8 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     fun reformatFile(file: File?, source: String): String {
         val sb = StringBuilder()
         val tokens = tokenizeKotlin(source)
-        val formatter = KDocFormatter(options.formattingOptions)
+        val formattingOptions = file?.let { EditorConfigs.getOptions(it) } ?: options.formattingOptions
+        val formatter = KDocFormatter(formattingOptions)
         val filter = options.filter
         var nextIsComment = false
         var start = 0

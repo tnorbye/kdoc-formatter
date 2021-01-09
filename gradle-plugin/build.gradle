@@ -1,6 +1,8 @@
 buildscript {
+    apply from: "$rootDir/../version.gradle"
+
     ext {
-        gradlePluginVersion = '7.0.0-alpha03'
+        gradlePluginVersion = '7.0.0-alpha04'
     }
 
     repositories {
@@ -23,7 +25,7 @@ plugins {
 
 // https://issues.sonatype.org/browse/OSSRH-63191
 group = "com.github.tnorbye.kdoc-formatter"
-version = "1.1.1"
+version = rootProject.ext.buildVersion
 
 repositories {
     google()
@@ -83,7 +85,7 @@ publishing {
             groupId "com.github.tnorbye.kdoc-formatter"
             artifactId "kdoc-formatter"
             //version project.version
-            version "1.1.1"
+            version rootProject.ext.buildVersion
         }
     }
 }
@@ -99,4 +101,8 @@ publishing {
 
 clean.doFirst {
     delete "${rootDir}/../m2"
+}
+
+task all {
+    dependsOn 'clean', 'publish'
 }
