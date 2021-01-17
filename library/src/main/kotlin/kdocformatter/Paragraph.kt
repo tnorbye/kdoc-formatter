@@ -21,9 +21,8 @@ class Paragraph(var text: String, options: KDocFormattingOptions) {
         if (words.size == 1) {
             return listOf(words[0])
         }
-        val lines = reflowDynamic(maxLineWidth, words)
-
-        if (lines.size <= 2) {
+        val lines = reflowOptimal(maxLineWidth, words)
+        if (lines.size <= 2 || options.alternate) {
             // Just 2 lines? We prefer long+short instead of half+half:
             return reflowGreedy(maxLineWidth, options)
         } else {
@@ -60,17 +59,17 @@ class Paragraph(var text: String, options: KDocFormattingOptions) {
                 }
                 if (i > 0) {
                     val remainingWords = words.subList(i, words.size)
-                    val remainingLines = reflowDynamic(maxLineWidth - hangingIndentSize, remainingWords)
+                    val remainingLines = reflowOptimal(maxLineWidth - hangingIndentSize, remainingWords)
                     return listOf(firstLine.toString().trim()) + remainingLines
                 }
 
-                return reflowDynamic(maxLineWidth - hangingIndentSize, words)
+                return reflowOptimal(maxLineWidth - hangingIndentSize, words)
             }
             var lastWord = words.size - 1
             while (true) {
                 // We can afford to do this because we're only repeating it for a single line's
                 // worth of words and because comments tend to be relatively short anyway
-                val newLines = reflowDynamic(maxLineWidth, words.subList(0, lastWord))
+                val newLines = reflowOptimal(maxLineWidth, words.subList(0, lastWord))
                 if (newLines.size < lines.size) {
                     val newLongestLine = newLines.maxOf(maxLine)
                     if (newLongestLine > longestLine) {
@@ -87,7 +86,7 @@ class Paragraph(var text: String, options: KDocFormattingOptions) {
 
     private data class Quadruple(val i0: Int, val j0: Int, val i1: Int, val j1: Int)
 
-    fun reflowDynamic(maxLineWidth: Int, words: List<String>): List<String> {
+    private fun reflowOptimal(maxLineWidth: Int, words: List<String>): List<String> {
         val count = words.size
         val lines = ArrayList<String>()
 

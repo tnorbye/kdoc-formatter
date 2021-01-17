@@ -82,7 +82,7 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.1.2
+kdoc-formatter: Version 1.2
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -90,10 +90,31 @@ IntelliJ Plugin Usage
 ---------------------
 Install the IDE plugin. Then move the caret to a KDoc comment and invoke
 Code > Reformat KDoc. You can configure a keyboard shortcut if you perform
-this action frequently. You can also select one or more files in the
+this action frequently (go to Preferences, search for Keymap, and then
+in the Keymap search field look for "KDoc", and then double click and
+choose Add Keyboard Shortcut. 
+
+You can also select one or more files in the
 Project View and invoke the same action to format whole files.
 
 ![Screenshot](screenshot.png)
+
+Finally, you can configure various options in the Settings panel.
+The line length settings are inherited from the IDE code style or
+from the .editorconfig files, if any. However, you can turn on
+"alternate" mode where invoking the action repeatedly will toggle
+between normal formatting and alternate formatting each time you
+invoke it. For a short comment that means toggling between a
+multi-line and a single-line comment. But for a longer comment,
+it will toggle between optimal line breaking (the default) and
+greedy line breaking, which can look better for short paragraphs.
+
+You can also configure whether the formatter should do more than
+formatting and actually replace markup constructs like <b>bold</b>
+with markdown markup.
+
+![Screenshot](screenshot-settings.png)
+
 
 The plugin is available from the JetBrains Marketplace at
 [https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter](https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter)

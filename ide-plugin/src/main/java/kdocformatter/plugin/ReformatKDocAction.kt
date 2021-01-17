@@ -9,6 +9,7 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.vfs.ReadonlyStatusHandler
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiDocumentManager
 import com.intellij.psi.PsiFile
@@ -20,8 +21,8 @@ import com.intellij.util.DocumentUtil
 import com.intellij.util.ThrowableRunnable
 import kdocformatter.EditorConfigs
 import kdocformatter.KDocFormatter
-import kdocformatter.KDocFormatter.Companion.findSamePosition
 import kdocformatter.KDocFormattingOptions
+import kdocformatter.findSamePosition
 import org.jetbrains.annotations.Nullable
 
 class ReformatKDocAction : AnAction() {
@@ -43,9 +44,26 @@ class ReformatKDocAction : AnAction() {
                 return
             }
             val commentText = kdoc.text
-            val options = getOptions(file, kdoc)
             val startOffset = kdoc.startOffset
+
+            val newAnchor = getAnchor(file, startOffset)
+            if (KDocPluginOptions.instance.globalState.alternateActions) {
+                val prevAlternate = alternate
+                alternate = false
+                if (newAnchor == anchor) {
+                    alternate = !prevAlternate
+                    WindowManager.getInstance().getStatusBar(project).info =
+                        if (alternate) {
+                            "Alternate KDoc formatting"
+                        } else {
+                            "Standard KDoc formatting"
+                        }
+                }
+            }
+            anchor = newAnchor
+
             val indent = DocumentUtil.getIndent(document, startOffset)
+            val options = getOptions(file, kdoc)
             val updated = KDocFormatter(options).reformatComment(commentText, indent.toString())
             // Attempt to preserve the caret position
             val newDelta = findSamePosition(commentText, oldCaretOffset - startOffset, updated)
@@ -59,6 +77,7 @@ class ReformatKDocAction : AnAction() {
             if (newCaretOffset != oldCaretOffset) {
                 editor.caretModel.currentCaret.moveToOffset(newCaretOffset)
             }
+
             return
         }
 
@@ -107,6 +126,13 @@ class ReformatKDocAction : AnAction() {
         }
     }
 
+    private var anchor = 0
+    private var alternate = false
+
+    private fun getAnchor(file: PsiFile, startOffset: Int): Int {
+        return file.virtualFile.path.hashCode() + startOffset
+    }
+
     private fun VirtualFile.isKotlinFile(): Boolean {
         return name.endsWith(".kt")
     }
@@ -132,7 +158,16 @@ class ReformatKDocAction : AnAction() {
         }
         val virtualFile = file.virtualFile ?: return EditorConfigs.root!!
         val ioFile = VfsUtilCore.virtualToIoFile(virtualFile)
-        return EditorConfigs.getOptions(ioFile)
+        val configOptions = EditorConfigs.getOptions(ioFile)
+        val state = KDocPluginOptions.instance.globalState
+        if (state.collapseSingleLines) {
+            // Not unconditionally assigning such that .editorconfig turning
+            // it on also works (editorconfig always works)
+            configOptions.collapseSpaces = true
+        }
+        configOptions.convertMarkup = state.convertMarkup
+        configOptions.alternate = alternate
+        return configOptions
     }
 
     override fun update(event: AnActionEvent) {
