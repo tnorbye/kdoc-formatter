@@ -85,7 +85,7 @@ class KDocFormatterTest {
             indent = "    "
         )
         val initialOffset = source.indexOf("default")
-        val newOffset = KDocFormatter.findSamePosition(source, initialOffset, reformatted)
+        val newOffset = findSamePosition(source, initialOffset, reformatted)
         assertNotEquals(initialOffset, newOffset)
         assertEquals("default", reformatted.substring(newOffset, newOffset + "default".length))
     }

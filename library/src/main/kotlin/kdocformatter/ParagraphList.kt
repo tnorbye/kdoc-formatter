@@ -41,7 +41,6 @@ class ParagraphList(
                 }
                 if (options.convertMarkup && cleaned.contains("&")) {
                     cleaned = cleaned.replace("&lt;", "<").replace("&LT;", "<")
-                        // TODO: <b> and </b> ?
                         .replace("&gt;", ">").replace("&GT;", ">")
                 }
 

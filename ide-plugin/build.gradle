@@ -29,11 +29,21 @@ intellij {
 
 patchPluginXml {
     changeNotes """
-1.2: Basic support for <code>.editorconfig</code> files.
-<p/>
+<p>
+1.2.0: IDE settings panel and ability to alternate formatting
+    between greddy and optimal line breaking when invoked repeatedly
+    (and for short comments, alternating between single line and
+    multiple lines.)
+</p>
+<p>
+1.1.2: Basic support for <code>.editorconfig</code> files.
+</p>
+<p>
 1.1: Support for setting maximum comment width (capped by the maximum line width).
-<p/>
+</p>
+<p>
 1.0: Initial version
+</p>
 """
 }
 
@@ -44,6 +54,12 @@ test {
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
 }
 
 tasks.getByName("buildSearchableOptions").enabled = false

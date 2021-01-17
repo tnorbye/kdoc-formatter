@@ -42,6 +42,16 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
      */
     var tabWidth: Int = 8
 
+    /**
+     * If true, perform "alternative" formatting. This is only relevant
+     * in the IDE. You can invoke the action repeatedly and it will
+     * jump between normal formatting an alternative formatting.
+     * For single-line comments it will alternate between single
+     * and multiple lines. For longer comments it will alternate
+     * between optimal line breaking and greedy line breaking.
+     */
+    var alternate: Boolean = false
+
     /** Creates a copy of this formatting object */
     fun copy(): KDocFormattingOptions {
         val copy = KDocFormattingOptions()

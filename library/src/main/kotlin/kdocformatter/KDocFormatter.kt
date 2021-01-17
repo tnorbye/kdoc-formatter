@@ -1,6 +1,5 @@
 package kdocformatter
 
-import kotlin.math.max
 import kotlin.math.min
 
 /** Formatter which can reformat KDoc comments */
@@ -13,8 +12,10 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         val paragraphs = findParagraphs(comment) // Make configurable?
         val lineSeparator = "\n$indent * "
 
-        // Collapse single line?
-        if (options.collapseSingleLine && paragraphs.isSingleParagraph()) {
+        // Collapse single line? If alternate is turned on, use the opposite of the
+        // setting
+        val collapseLine = options.collapseSingleLine.let { if (options.alternate) !it else it }
+        if (paragraphs.isSingleParagraph() && collapseLine) {
             // Does the text fit on a single line?
             val trimmed = paragraphs.first().text.trim()
             // Subtract out space for "/** " and " */" and the indent:
@@ -183,36 +184,5 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         }
 
         return ParagraphList(paragraphs, options)
-    }
-
-    companion object {
-        /**
-         * Attempt to preserve the caret position across reformatting.
-         * Returns the delta in the new comment.
-         */
-        fun findSamePosition(comment: String, delta: Int, reformattedComment: String): Int {
-            fun nextSignificantChar(s: String, from: Int): Int {
-                var curr = from
-                while (curr < s.length) {
-                    val c = s[curr]
-                    if (c.isWhitespace() || c == '*') {
-                        curr++
-                    } else {
-                        break
-                    }
-                }
-                return curr
-            }
-
-            var offset = 0
-            var reformattedOffset = 0
-            while (offset < delta && reformattedOffset < reformattedComment.length) {
-                offset = nextSignificantChar(comment, offset)
-                reformattedOffset = nextSignificantChar(reformattedComment, reformattedOffset)
-                offset++
-                reformattedOffset++
-            }
-            return max(0, reformattedOffset - 1)
-        }
     }
 }

@@ -1,6 +1,7 @@
 package kdocformatter
 
 import java.util.regex.Pattern
+import kotlin.math.min
 
 fun getIndent(width: Int): String {
     val sb = StringBuilder()
@@ -82,6 +83,68 @@ fun String.isKDocTag(): Boolean {
         startsWith("@suppress") ||
         // Not an actual kdoc tag but might appear in converted docs
         startsWith("@deprecated")
+}
+
+/**
+ * Attempt to preserve the caret position across reformatting. Returns
+ * the delta in the new comment.
+ */
+fun findSamePosition(comment: String, delta: Int, reformattedComment: String): Int {
+    // First see if the two comments are identical up to the delta; if so, same
+    // new position
+    for (i in 0 until min(comment.length, reformattedComment.length)) {
+        if (i == delta) {
+            return delta
+        } else if (comment[i] != reformattedComment[i]) {
+            break
+        }
+    }
+
+    var i = comment.length - 1
+    var j = reformattedComment.length - 1
+    if (delta == i + 1) {
+        return j + 1
+    }
+    while (i >= 0 && j >= 0) {
+        if (i == delta) {
+            return j
+        }
+        if (comment[i] != reformattedComment[j]) {
+            break
+        }
+        i--
+        j--
+    }
+
+    fun isSignificantChar(c: Char): Boolean = c.isWhitespace() || c == '*'
+
+    // Finally it's somewhere in the middle; search by character skipping
+    // over insignificant characters (space, *, etc)
+    fun nextSignificantChar(s: String, from: Int): Int {
+        var curr = from
+        while (curr < s.length) {
+            val c = s[curr]
+            if (isSignificantChar(c)) {
+                curr++
+            } else {
+                break
+            }
+        }
+        return curr
+    }
+
+    var offset = 0
+    var reformattedOffset = 0
+    while (offset < delta && reformattedOffset < reformattedComment.length) {
+        offset = nextSignificantChar(comment, offset)
+        reformattedOffset = nextSignificantChar(reformattedComment, reformattedOffset)
+        if (offset == delta) {
+            return reformattedOffset
+        }
+        offset++
+        reformattedOffset++
+    }
+    return reformattedOffset
 }
 
 // Until stdlib version is no longer experimental
