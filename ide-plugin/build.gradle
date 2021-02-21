@@ -10,8 +10,8 @@ version = rootProject.ext.buildVersion
 
 repositories {
     google()
-    jcenter()
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
@@ -25,6 +25,10 @@ intellij {
     version '2020.3'
     pluginName = "kdoc-formatter-ide-plugin"
     updateSinceUntilBuild = false
+
+    runIde {
+        jvmArgs "-Didea.ProcessCanceledException=disabled"
+    }
 }
 
 patchPluginXml {

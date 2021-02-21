@@ -11,8 +11,12 @@ reflow the current comment around the cursor.
 Features
 --------
 
+* Reflow using optimal instead of greedy algorithm (though in the IDE
+  plugin you can turn on alternate formatting and invoking the action
+  repeatedly alternates between the two modes.)
+
 * Command line script which can recursively format a whole source
-  folder
+  folder.
 
 * IDE plugin to format selected files or current comment. Preserves
   caret position in the current comment.
@@ -38,6 +42,19 @@ Features
   action right before the closing comment token.
 
 * Removes trailing spaces.
+
+* Can optionally convert various remaining HTML tags in the comments
+  to the corresponding KDoc/markdown text. For example, <b>bold</b> is
+  converted into **bold**, <p> is converted to a blank line,
+  <h1>Heading</h1> is converted into # Heading, and so on.
+
+* Support for .editorconfig configuration files to automatically pick
+  up line widths. It will normally use the line width configured for
+  Kotlin files, but, if Markdown (.md) files are also configured, it
+  will use that width as the maximum comment width. This allows you to
+  have code line widths of for example 140 but limit comments to 70
+  characters (possibly indented). For code, avoiding line breaking is
+  helpful, but for text, shorter lines are better for reading.
 
 Command Usage
 -------------
@@ -82,7 +99,7 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.2
+kdoc-formatter: Version 1.3
 https://github.com/tnorbye/kdoc-formatter
 ```
 

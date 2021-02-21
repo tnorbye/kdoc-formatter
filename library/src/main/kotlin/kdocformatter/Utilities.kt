@@ -38,7 +38,8 @@ private val numberPattern = Pattern.compile("^\\d+\\. ")
 
 fun String.isListItem(): Boolean {
     return startsWith("- ") || startsWith("* ") || startsWith("+ ") ||
-        firstOrNull()?.isDigit() == true && numberPattern.matcher(this).find()
+        firstOrNull()?.isDigit() == true && numberPattern.matcher(this).find() ||
+        startsWith("<li>", ignoreCase = true)
 }
 
 fun String.collapseSpaces(): String {

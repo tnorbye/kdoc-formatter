@@ -8,14 +8,18 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
      * Reformats the [comment], which follows the given [indent] string
      */
     fun reformatComment(comment: String, indent: String): String {
+        val lineComment = comment.startsWith("//")
         val indentSize = getIndentSize(indent, options)
-        val paragraphs = findParagraphs(comment) // Make configurable?
-        val lineSeparator = "\n$indent * "
+        val paragraphs = ParagraphListBuilder(comment, options).scan()
+        val lineSeparator = if (lineComment)
+            "\n$indent// "
+        else
+            "\n$indent * "
 
         // Collapse single line? If alternate is turned on, use the opposite of the
         // setting
         val collapseLine = options.collapseSingleLine.let { if (options.alternate) !it else it }
-        if (paragraphs.isSingleParagraph() && collapseLine) {
+        if (paragraphs.isSingleParagraph() && collapseLine && !lineComment) {
             // Does the text fit on a single line?
             val trimmed = paragraphs.first().text.trim()
             // Subtract out space for "/** " and " */" and the indent:
@@ -26,16 +30,19 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         }
 
         val sb = StringBuilder()
-        sb.append("/**")
-        sb.append(lineSeparator)
+
+        if (!lineComment) {
+            sb.append("/**")
+            sb.append(lineSeparator)
+        } else {
+            sb.append("// ")
+        }
 
         for (paragraph in paragraphs) {
             if (paragraph.separate) {
                 // Remove trailing spaces which can happen when we
                 // have a paragraph separator
-                if (sb.endsWith("* ")) {
-                    sb.setLength(sb.length - 1)
-                }
+                stripTrailingSpaces(lineComment, sb)
                 sb.append(lineSeparator)
             }
             val text = paragraph.text
@@ -45,144 +52,55 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 continue
             }
 
-            val lines = paragraph.reflow(min(options.maxCommentWidth, options.maxLineWidth - indentSize - 3), options)
+            val maxLineWidth = min(
+                options.maxCommentWidth,
+                options.maxLineWidth - indentSize - 3 -
+                    if (paragraph.quoted) 2 else 0
+            )
+
+            val lines = paragraph.reflow(maxLineWidth, options)
             var first = true
             val hangingIndent = paragraph.hangingIndent
             for (line in lines) {
-                if (first) {
+                if (first && !paragraph.continuation) {
                     first = false
                 } else {
                     sb.append(hangingIndent)
                 }
-                sb.append(line)
+                if (paragraph.quoted) {
+                    sb.append("> ")
+                }
+                if (line.isEmpty()) {
+                    // Remove trailing spaces which can happen when we
+                    // have a paragraph separator
+                    stripTrailingSpaces(lineComment, sb)
+                } else {
+                    sb.append(line)
+                }
                 sb.append(lineSeparator)
             }
         }
-        if (sb.endsWith("* ")) {
-            sb.setLength(sb.length - 2)
+        if (!lineComment) {
+            if (sb.endsWith("* ")) {
+                sb.setLength(sb.length - 2)
+            }
+            sb.append("*/")
+        } else if (sb.endsWith(lineSeparator)) {
+            sb.removeSuffix(lineSeparator)
         }
-        sb.append("*/")
 
-        return sb.toString()
+        if (lineComment) {
+            return sb.trim().removeSuffix("//").trim().toString()
+        } else {
+            return sb.toString()
+        }
     }
 
-    private fun StringBuilder.appendFirstNewline(): StringBuilder {
-        if (length > 0 && !endsWith("\n")) {
-            append("\n")
+    private fun stripTrailingSpaces(lineComment: Boolean, sb: StringBuilder) {
+        if (!lineComment && sb.endsWith("* ")) {
+            sb.setLength(sb.length - 1)
+        } else if (lineComment && sb.endsWith("// ")) {
+            sb.setLength(sb.length - 1)
         }
-        return this
-    }
-
-    private fun findParagraphs(comment: String): ParagraphList {
-        val lines = comment.removePrefix("/**").removeSuffix("*/").trim().split("\n")
-        val rawText = StringBuilder()
-
-        fun lineContent(line: String): String {
-            val trimmed = line.trim()
-            return when {
-                trimmed.startsWith("* ") -> trimmed.substring(2)
-                trimmed.startsWith("*") -> trimmed.substring(1)
-                else -> line
-            }
-        }
-
-        fun addLines(
-            lines: List<String>,
-            i: Int,
-            includeEnd: Boolean,
-            preformatted: Boolean,
-            until: (Int, String, String) -> Boolean
-        ): Int {
-            val separator = if (preformatted) "\n" else " "
-            if (preformatted) {
-                rawText.appendFirstNewline()
-            }
-            var j = i
-            while (j < lines.size) {
-                val l = lines[j]
-                val lineWithIndentation = lineContent(l)
-                val lineWithoutIndentation = lineWithIndentation.trim()
-
-                if (!includeEnd) {
-                    if (j > i && until(j, lineWithoutIndentation, lineWithIndentation)) {
-                        return j
-                    }
-                }
-
-                if (preformatted) {
-                    rawText.append(lineWithIndentation).append(separator)
-                } else {
-                    rawText.append(lineWithoutIndentation.collapseSpaces()).append(separator)
-                }
-
-                if (includeEnd) {
-                    if (j > i && until(j, lineWithoutIndentation, lineWithIndentation)) {
-                        return j + 1
-                    }
-                }
-
-                j++
-            }
-
-            return j
-        }
-
-        var i = 0
-        while (i < lines.size) {
-            val l = lines[i++]
-            val lineWithIndentation = lineContent(l)
-            val lineWithoutIndentation = lineWithIndentation.trim()
-            if (lineWithoutIndentation.startsWith("```")) {
-                i = addLines(lines, i - 1, includeEnd = true, preformatted = true) { _, _, s ->
-                    s.startsWith("```")
-                }
-                continue
-            } else if (lineWithoutIndentation.startsWith("<pre>", ignoreCase = true)) {
-                i = addLines(lines, i - 1, includeEnd = true, preformatted = true) { _, _, s ->
-                    s.startsWith("</pre>", ignoreCase = true)
-                }
-                continue
-            } else if (lineWithIndentation.startsWith("    ")) { // markdown preformatted text
-                i = addLines(lines, i - 1, includeEnd = true, preformatted = true) { _, _, s ->
-                    !s.startsWith(" ")
-                }
-                rawText.append('\n')
-                continue
-            }
-
-            if (lineWithoutIndentation.isListItem() || lineWithoutIndentation.isKDocTag()) {
-                rawText.appendFirstNewline()
-                i = addLines(lines, i - 1, includeEnd = false, preformatted = false) { _, w, s ->
-                    s.isBlank() || w.isListItem() || s.isKDocTag()
-                }
-                rawText.append('\n')
-                continue
-            }
-
-            if (lineWithoutIndentation.isEmpty()) {
-                if (rawText.isNotEmpty()) {
-                    rawText.append('\n')
-                }
-            } else {
-                if (options.collapseSpaces) {
-                    rawText.append(lineWithoutIndentation.collapseSpaces())
-                } else {
-                    rawText.append(lineWithoutIndentation)
-                }
-                rawText.append(' ')
-            }
-        }
-
-        val paragraphs = mutableListOf<Paragraph>()
-        for (line in rawText.toString().split("\n")) {
-            if (line.isBlank()) {
-                continue
-            }
-
-            val paragraph = Paragraph(line, options)
-            paragraphs.add(paragraph)
-        }
-
-        return ParagraphList(paragraphs, options)
     }
 }

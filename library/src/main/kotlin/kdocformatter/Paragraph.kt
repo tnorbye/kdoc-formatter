@@ -2,17 +2,84 @@ package kdocformatter
 
 import kotlin.math.min
 
-class Paragraph(var text: String, options: KDocFormattingOptions) {
-    fun isBlockTag() = text.isKDocTag()
-    fun isListItem() = listItem
-    var separate = true
-    val listItem = text.isListItem()
-    var preformatted = text.startsWith("    ")
-    var hangingIndent = if (isBlockTag()) getIndent(options.hangingIndent) else ""
-    override fun toString(): String = text
+class Paragraph(private val options: KDocFormattingOptions) {
+    var content = StringBuilder()
+    val text get() = content.toString()
+    var prev: Paragraph? = null
+    var next: Paragraph? = null
+
+    /** If true, this paragraph should be preceded by a blank line. */
+    var separate = false
+
+    /**
+     * If true, this paragraph is a continuation of the previous
+     * paragraph (so should be indented with the hanging indent,
+     * including line 1)
+     */
+    var continuation = false
+
+    /**
+     * Whether this paragraph is allowed to be empty. Paragraphs are
+     * normally merged if this is not set. This allows the line breaker
+     * to call [ParagraphListBuilder.newParagraph] repeatedly without
+     * introducing more than one new paragraph.
+     */
+    var allowEmpty = false
+
+    /** Is this paragraph preformatted? */
+    var preformatted = false
+
+    /**
+     * Is this paragraph a block paragraph? If so, it must start on its
+     * own line
+     */
+    var block = false
+
+    /** Is this paragraph specifying a kdoc tag like @param ? */
+    var doc = false
+
+    /**
+     * Is this line quoted? (In the future make this an int such that
+     * we can support additional levels.)
+     */
+    var quoted = false
+
+    /**
+     * Should this paragraph use a hanging indent? (Implies [block] as
+     * well).
+     */
+    var hanging = false
+        set(value) {
+            block = true
+            field = value
+        }
+
+    // The indent to use for all lines in the paragraph if [hanging] is true,
+    // or the second and subsequent lines if [hanging] is false
+    var hangingIndent = ""
+
+    fun isEmpty(): Boolean {
+        return content.isEmpty()
+    }
+
+    fun cleanup() {
+        if (preformatted || !options.convertMarkup) return
+        var cleaned = text
+        if (cleaned.contains("<") || cleaned.contains(">")) {
+            cleaned = cleaned.replace("<b>", "**").replace("</b>", "**")
+                .replace("<i>", "*").replace("</i>", "*")
+        }
+        if (cleaned.contains("&")) {
+            cleaned = cleaned.replace("&lt;", "<").replace("&LT;", "<")
+                .replace("&gt;", ">").replace("&GT;", ">")
+        }
+
+        content.clear()
+        content.append(cleaned)
+    }
 
     fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
-        val hangingIndentSize = getIndentSize(hangingIndent, options)
+        val hangingIndentSize = getIndentSize(hangingIndent, options) - if (quoted) 2 else 0 // "> "
         if (text.length < (maxLineWidth - hangingIndentSize)) {
             return listOf(text.collapseSpaces())
         }
@@ -180,13 +247,11 @@ class Paragraph(var text: String, options: KDocFormattingOptions) {
     private fun reflowGreedy(lineWidth: Int, options: KDocFormattingOptions): List<String> {
         // Greedy implementation
         val lines = mutableListOf<String>()
-        val isBlockTag = isBlockTag()
-        val isListItem = isListItem()
         var offset = 0
         while (offset < text.length) {
             val isBeginning = offset == 0
             var width = lineWidth
-            if (options.hangingIndent > 0 && (isBlockTag || isListItem) && !isBeginning) {
+            if (options.hangingIndent > 0 && hanging && (!isBeginning || continuation)) {
                 width -= getIndentSize(hangingIndent, options)
             }
             while (offset < text.length && text[offset].isWhitespace()) {
@@ -220,5 +285,9 @@ class Paragraph(var text: String, options: KDocFormattingOptions) {
         }
 
         return lines
+    }
+
+    override fun toString(): String {
+        return "$content, separate=$separate, block=$block, hanging=$hanging, preformatted=$preformatted, quoted=$quoted, continuation=$continuation"
     }
 }

@@ -9,8 +9,8 @@ version = rootProject.ext.buildVersion
 
 repositories {
     google()
-    jcenter()
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
