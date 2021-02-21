@@ -2,13 +2,13 @@ buildscript {
     apply from: "$rootDir/version.gradle"
 
     ext {
-        gradlePluginVersion = '7.0.0-alpha04'
+        gradlePluginVersion = '7.0.0-alpha06'
     }
 
     repositories {
         google()
-        jcenter()
         mavenCentral()
+        gradlePluginPortal()
     }
     dependencies {
         classpath "com.android.tools.build:gradle:$gradlePluginVersion"
@@ -17,7 +17,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.30'
 }
 
 group 'kdocformatter'
@@ -25,8 +25,8 @@ version '1.0'
 
 repositories {
     google()
-    jcenter()
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {
