@@ -12,8 +12,10 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.psi.PsiComment
 import com.intellij.psi.PsiDocumentManager
+import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
+import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
@@ -39,12 +41,24 @@ class ReformatKDocAction : AnAction() {
             val currentCaret = editor.caretModel.currentCaret
             val oldCaretOffset = currentCaret.offset
             val element = file.findElementAt(oldCaretOffset) ?: return
-            val kdoc = PsiTreeUtil.getParentOfType(element, PsiComment::class.java) ?: return
-            if (!isKDoc(kdoc)) {
+            val kdoc = PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false) ?: return
+            var commentText = kdoc.text
+            val startOffset: Int
+            val endOffset: Int
+            if (isKDoc(kdoc)) {
+                // pass
+                startOffset = kdoc.startOffset
+                endOffset = kdoc.endOffset
+            } else if (KDocPluginOptions.instance.globalState.lineComments && isLineComment(kdoc)) {
+                // We need to collect all contiguous line comments and
+                // replace the whole region.
+                val comments = getCommentBlock(kdoc)
+                startOffset = comments.first().startOffset
+                endOffset = comments.last().endOffset
+                commentText = getComment(comments)
+            } else {
                 return
             }
-            val commentText = kdoc.text
-            val startOffset = kdoc.startOffset
 
             val newAnchor = getAnchor(file, startOffset)
             if (KDocPluginOptions.instance.globalState.alternateActions) {
@@ -69,7 +83,7 @@ class ReformatKDocAction : AnAction() {
             val newDelta = findSamePosition(commentText, oldCaretOffset - startOffset, updated)
             WriteCommandAction.writeCommandAction(project, file).withName("Format KDoc").run(
                 ThrowableRunnable {
-                    document.replaceString(startOffset, kdoc.endOffset, updated)
+                    document.replaceString(startOffset, endOffset, updated)
                     documentManager.commitAllDocuments()
                 }
             )
@@ -126,6 +140,76 @@ class ReformatKDocAction : AnAction() {
         }
     }
 
+    private fun getComment(comments: List<PsiComment>): String {
+        val sb = StringBuilder()
+        for (comment in comments) {
+            sb.append(comment.text)
+            sb.append('\n')
+        }
+        return sb.toString()
+    }
+
+    private fun getCommentBlock(middle: PsiComment): List<PsiComment> {
+        val start = findEnd(middle, forward = false)
+        val end = findEnd(middle, forward = true)
+        if (start === end) {
+            return listOf(middle)
+        }
+        val comments = mutableListOf<PsiComment>()
+        var curr: PsiElement? = start
+        while (curr != null && curr !== end) {
+            if (curr is PsiComment) {
+                comments.add(curr)
+            }
+            curr = curr.nextSibling
+        }
+        comments.add(end)
+        return comments
+    }
+
+    private fun findEnd(middle: PsiComment, forward: Boolean): PsiComment {
+        var end = middle
+        var curr: PsiElement? = middle
+        while (curr != null) {
+            if (curr is PsiComment) {
+                val text = curr.text
+                if (!text.startsWith("//")) {
+                    break
+                }
+                end = curr
+            } else if (curr is PsiWhiteSpace) {
+                // Two newlines means there's an empty string in between; we shouldn't
+                // let line comments jump across blank lines
+                val text = curr.text
+                val newline = text.indexOf('\n')
+                if (newline != -1) {
+                    if (text.indexOf('\n', newline + 1) != -1) {
+                        break
+                    }
+                }
+            } else {
+                break
+            }
+            if (forward) {
+                var c = curr
+                while (c != null) {
+                    val next = c.nextSibling
+                    if (next != null) {
+                        curr = next
+                        break
+                    }
+                    c = c.parent
+                    if (c == null) {
+                        curr = null
+                    }
+                }
+            } else {
+                curr = curr.prevSibling
+            }
+        }
+        return end
+    }
+
     private var anchor = 0
     private var alternate = false
 
@@ -141,6 +225,12 @@ class ReformatKDocAction : AnAction() {
         // TODO: Depend on Kotlin plugin such that I can directly check for
         // org.jetbrains.kotlin.kdoc.psi.api.KDoc
         return kdoc.javaClass.name.contains("KDoc")
+    }
+
+    private fun isLineComment(comment: PsiComment): Boolean {
+        // TODO: Depend on Kotlin plugin such that I can directly check for
+        // tokenType is KtToken.EOL_COMMENT
+        return comment.text.startsWith("//")
     }
 
     private fun getOptions(
@@ -172,37 +262,58 @@ class ReformatKDocAction : AnAction() {
 
     override fun update(event: AnActionEvent) {
         val presentation = event.presentation
-        val available = isActionAvailable(event)
+        val type = getApplicableCommentType(event)
+        val available = type != CommentType.NONE
         if (ActionPlaces.isPopupPlace(event.place)) {
             presentation.isEnabledAndVisible = available
         } else {
             presentation.isEnabled = available
         }
+        presentation.text = when (type) {
+            CommentType.NONE -> return
+            CommentType.LINE_COMMENT -> "Reformat Line Comment"
+            CommentType.KDOC -> "Reformat KDoc"
+            CommentType.FILE -> "Reformat KDoc Files"
+        }
     }
 
-    private fun isActionAvailable(event: AnActionEvent): Boolean {
+    private enum class CommentType {
+        NONE,
+        LINE_COMMENT,
+        KDOC,
+        FILE
+    }
+
+    private fun getApplicableCommentType(event: AnActionEvent): CommentType {
         val dataContext = event.dataContext
-        val project = CommonDataKeys.PROJECT.getData(dataContext) ?: return false
+        val project = CommonDataKeys.PROJECT.getData(dataContext) ?: return CommentType.NONE
 
         val editor = CommonDataKeys.EDITOR.getData(dataContext)
         if (editor != null) {
-            val file = PsiDocumentManager.getInstance(project).getPsiFile(editor.document) ?: return false
-            file.virtualFile ?: return false
+            val file =
+                PsiDocumentManager.getInstance(project).getPsiFile(editor.document) ?: return CommentType.NONE
+            file.virtualFile ?: return CommentType.NONE
             val currentCaret = editor.caretModel.currentCaret
-            val element = file.findElementAt(currentCaret.offset) ?: return false
-            PsiTreeUtil.getParentOfType(element, PsiComment::class.java) ?: return false
-            return true
+            val element = file.findElementAt(currentCaret.offset) ?: return CommentType.NONE
+            val comment =
+                PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false) ?: return CommentType.NONE
+            if (isKDoc(comment)) {
+                return CommentType.KDOC
+            } else if (KDocPluginOptions.instance.globalState.lineComments && isLineComment(comment)) {
+                return CommentType.LINE_COMMENT
+            }
+            return CommentType.NONE
         }
 
-        val files = CommonDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext) ?: return false
+        val files = CommonDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext) ?: return CommentType.NONE
         if (files.isEmpty()) {
-            return false
+            return CommentType.NONE
         }
         if (files.all { !it.isDirectory } && files.any { it.isKotlinFile() }) {
-            return true
+            return CommentType.FILE
         } else if (files.size == 1 && files[0].isDirectory && files[0].children.any { it.isKotlinFile() }) {
-            return true
+            return CommentType.FILE
         }
-        return false
+        return CommentType.NONE
     }
 }

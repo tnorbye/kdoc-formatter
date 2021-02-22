@@ -2,13 +2,13 @@ buildscript {
     apply from: "$rootDir/../version.gradle"
 
     ext {
-        gradlePluginVersion = '7.0.0-alpha04'
+        gradlePluginVersion = '7.0.0-alpha07'
     }
 
     repositories {
         google()
-        jcenter()
         mavenCentral()
+        gradlePluginPortal()
     }
     dependencies {
         classpath "com.android.tools.build:gradle:$gradlePluginVersion"
@@ -17,7 +17,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.4.30'
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'com.gradle.plugin-publish' version '0.9.10'
@@ -29,8 +29,8 @@ version = rootProject.ext.buildVersion
 
 repositories {
     google()
-    jcenter()
     mavenCentral()
+    gradlePluginPortal()
 }
 
 // Instead of depending on project(":cli") below, we inline the
