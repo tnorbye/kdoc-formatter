@@ -1077,6 +1077,36 @@ class KDocFormatterTest {
         )
     }
 
+    @Test
+    fun testAccidentalHeader() {
+        val source =
+            """
+             /**
+             * Constructs a simplified version of the internal JVM description of the given method. This is
+             * in the same format as {@link #getMethodDescription} above, the difference being we don't have
+             * the actual PSI for the method type, we just construct the signature from the [method] name,
+             * the list of [argumentTypes] and optionally include the [returnType].
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            // Note how this places the "#" in column 0 which will then
+            // be re-interpreted as a header next time we format it!
+            // Idea: @{link #} should become {@link#} or with a nbsp;
+            """
+            /**
+             * Constructs a simplified version of the internal JVM
+             * description of the given method. This is in the same format as
+             * {@link #getMethodDescription} above, the difference being we
+             * don't have the actual PSI for the method type, we just construct
+             * the signature from the [method] name, the list of [argumentTypes]
+             * and optionally include the [returnType].
+             */
+            """.trimIndent()
+        )
+    }
+
     // --------------------------------------------------------------------
     // A few failing test cases here for corner cases that aren't handled
     // right yet.
