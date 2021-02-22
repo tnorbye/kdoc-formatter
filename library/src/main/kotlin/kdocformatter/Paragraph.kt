@@ -83,8 +83,10 @@ class Paragraph(private val options: KDocFormattingOptions) {
         if (text.length < (maxLineWidth - hangingIndentSize)) {
             return listOf(text.collapseSpaces())
         }
+        // Split text into words
+        val words = computeWords()
+
         // See divide & conquer algorithm listed here: https://xxyxyz.org/line-breaking/
-        val words = text.split(Regex("\\s+")).filter { it.isNotBlank() }.map { it.trim() }
         if (words.size == 1) {
             return listOf(words[0])
         }
@@ -149,6 +151,30 @@ class Paragraph(private val options: KDocFormattingOptions) {
 
             return lines
         }
+    }
+
+    private fun computeWords(): List<String> {
+        val words = text.split(Regex("\\s+")).filter { it.isNotBlank() }.map { it.trim() }
+        // See if any of the words should never be broken up. We do that for list separators
+        // and a few others.
+        // We never want to put "1." at the beginning of a line as an overflow
+        val combined = ArrayList<String>(words.size)
+        combined.add(words[0])
+        for (i in 1 until words.size) {
+            val word = words[i]
+            // Can we start a new line with this without interpreting it
+            // in a special way?
+            if (word.startsWith("#") || word.isListItem() && !word.equals("<li>", true)) {
+                // Combine with previous word with a single space; the line breaking algorithm
+                // won't know that it's more than one word.
+                val joined = "${words[i - 1]} $word"
+                combined.removeAt(combined.size - 1)
+                combined.add(joined)
+            } else {
+                combined.add(word)
+            }
+        }
+        return combined
     }
 
     private data class Quadruple(val i0: Int, val j0: Int, val i1: Int, val j1: Int)
