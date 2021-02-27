@@ -44,6 +44,7 @@ class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentSt
         var collapseSingleLines = true
         var convertMarkup = false
         var lineComments = false
+        var addPunctuation = false
     }
 
     companion object {

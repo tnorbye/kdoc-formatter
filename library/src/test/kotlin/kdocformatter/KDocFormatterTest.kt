@@ -11,7 +11,7 @@ class KDocFormatterTest {
         options: KDocFormattingOptions,
         expected: String,
         indent: String = "    ",
-        verify: Boolean = false
+        verify: Boolean = true
     ) {
         val reformatted = reformatComment(source, options, indent, verify)
         // Because .trimIndent() will remove it:
@@ -77,6 +77,35 @@ class KDocFormatterTest {
             /**
              * Returns whether lint should check all warnings, including those
              * off by default
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            reformatted,
+            indent = "    "
+        )
+        val initialOffset = source.indexOf("default")
+        val newOffset = findSamePosition(source, initialOffset, reformatted)
+        assertNotEquals(initialOffset, newOffset)
+        assertEquals("default", reformatted.substring(newOffset, newOffset + "default".length))
+    }
+
+    @Test
+    fun testWordBreaking() {
+        // Without special handling, the "-" in the below would
+        // be placed at the beginning of line 2, which then
+        // implies a list item.
+        val source =
+            """
+            /** Returns whether lint should check all warnings,
+             * including aaaaaa - off by default */
+            """.trimIndent()
+        val reformatted =
+            """
+            /**
+             * Returns whether lint should check all warnings, including
+             * aaaaaa - off by default
              */
             """.trimIndent()
         checkFormatter(
@@ -293,8 +322,7 @@ class KDocFormatterTest {
              *       report errors to and
              *       to use to read files
              * @param classFiles the specific
-             *       set of class files to look
-             *       for
+             *       set of class files to look for
              * @param classFolders the list of
              *       class folders to look
              *       in (to determine
@@ -331,6 +359,7 @@ class KDocFormatterTest {
 
     @Test
     fun testSingleLine() {
+        // Also tests punctuation feature.
         val source =
             """
              /**
@@ -345,11 +374,12 @@ class KDocFormatterTest {
         )
         val options = KDocFormattingOptions(72)
         options.collapseSingleLine = false
+        options.addPunctuation = true
         checkFormatter(
             source, options,
             """
              /**
-              * This could all fit on one line
+              * This could all fit on one line.
               */
             """.trimIndent()
         )
@@ -440,7 +470,6 @@ class KDocFormatterTest {
              *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
              * </pre>
-             *
              * This is not preformatted and
              * can be combined into multiple
              * sentences again.
@@ -693,8 +722,8 @@ class KDocFormatterTest {
              * > be treated as a block quote.
              * > This whole paragraph should
              * > be treated as a block quote.
-             * > This whole paragraph should be
-             * > treated as a block quote.
+             * > This whole paragraph should
+             * > be treated as a block quote.
              */
             """.trimIndent()
         )
@@ -1107,61 +1136,63 @@ class KDocFormatterTest {
         )
     }
 
-    // --------------------------------------------------------------------
-    // A few failing test cases here for corner cases that aren't handled
-    // right yet.
-    // --------------------------------------------------------------------
-
-    @Disabled("Lists within quoted blocks not yet supported")
     @Test
-    fun testNestedWithinQuoted() {
+    fun testTODO() {
         val source =
             """
-            /*
-             * Lists within a block quote:
-             * > Here's my quoted text.
-             * > 1. First item
-             * > 2. Second item
-             * > 3. Third item
+            /**
+             * Adds the given dependency graph (the output of the Gradle dependency task)
+             * to be constructed when mocking a Gradle model for this project.
+             * <p>
+             * To generate this, run for example
+             * <pre>
+             *     ./gradlew :app:dependencies
+             * </pre>
+             * and then look at the debugCompileClasspath (or other graph that you want
+             * to model).
+             * TODO: Adds the given dependency graph (the output of the Gradle dependency task)
+             * to be constructed when mocking a Gradle model for this project.
+             * TODO: More stuff to do here
+             * @param dependencyGraph the graph description
+             * @return this for constructor chaining
+             * TODO: Consider looking at the localization="suggested" attribute in
+             * the platform attrs.xml to catch future recommended attributes.
+             * TODO: Also adds the given dependency graph (the output of the Gradle dependency task)
+             * to be constructed when mocking a Gradle model for this project.
              */
             """.trimIndent()
         checkFormatter(
             source,
-            KDocFormattingOptions(40),
-            """
-            /*
-             * Lists within a block quote:
-             * > Here's my quoted text.
-             * > 1. First item
-             * > 2. Second item
-             * > 3. Third item
-             */
-            """.trimIndent()
-        )
-    }
-
-    @Disabled("Tables are not properly fullsupported")
-    @Test
-    fun testTables() {
-        // Leave formatting within table cells alone
-        val source =
+            KDocFormattingOptions(72),
+            // Note how this places the "#" in column 0 which will then
+            // be re-interpreted as a header next time we format it!
+            // Idea: @{link #} should become {@link#} or with a nbsp;
             """
             /**
-             * ### Tables
-             * column 1 | column 2
-             * ---------|---------
-             * value 1  | value 2
-             */
-            """.trimIndent()
-        checkFormatter(
-            source,
-            KDocFormattingOptions(40),
-            """
-            /**
-             * ### Tables
-             * column 1 | column 2
-             * ---------|---------
-             * value 1  | value 2
+             * Adds the given dependency graph (the output of the Gradle
+             * dependency task) to be constructed when mocking a Gradle model
+             * for this project.
+             *
+             * To generate this, run for example
+             * <pre>
+             *     ./gradlew :app:dependencies
+             * </pre>
+             * and then look at the debugCompileClasspath (or other graph that
+             * you want to model).
+             *
+             * TODO: Adds the given dependency graph (the output of the Gradle
+             *     dependency task) to be constructed when
+             *     mocking a Gradle model for this project.
+             * TODO: More stuff to do here
+             *
+             * @param dependencyGraph the graph description
+             * @return this for constructor chaining
+             *
+             * TODO: Consider looking at the localization="suggested" attribute
+             *     in the platform attrs.xml to catch future recommended attributes.
+             * TODO: Also adds the given dependency graph (the output of the
+             *     Gradle dependency task) to be constructed
+             *     when mocking a Gradle model for this project.
              */
             """.trimIndent()
         )
@@ -1434,12 +1465,12 @@ class KDocFormatterTest {
              *
              * There are several different common patterns for detecting issues:
              * <ul>
-             * <li> Checking calls to a given method. For this see {@link #getApplicableMethodNames()} and {@link
-             *     #visitMethodCall(JavaContext, UCallExpression, PsiMethod)}</li>
-             * <li> Instantiating a given class. For this, see {@link #getApplicableConstructorTypes()} and {@link
-             *     #visitConstructor(JavaContext, UCallExpression, PsiMethod)}</li>
-             * <li> Referencing a given constant. For this, see {@link #getApplicableReferenceNames()} and {@link
-             *     #visitReference(JavaContext, UReferenceExpression, PsiElement)}</li>
+             * <li> Checking calls to a given method. For this see {@link #getApplicableMethodNames()} and
+             *     {@link #visitMethodCall(JavaContext, UCallExpression, PsiMethod)}</li>
+             * <li> Instantiating a given class. For this, see {@link #getApplicableConstructorTypes()} and
+             *     {@link #visitConstructor(JavaContext, UCallExpression, PsiMethod)}</li>
+             * <li> Referencing a given constant. For this, see {@link #getApplicableReferenceNames()} and
+             *     {@link #visitReference(JavaContext, UReferenceExpression, PsiElement)}</li>
              * <li> Extending a given class or implementing a given interface. For this, see {@link #applicableSuperClasses()}
              *     and {@link #visitClass(JavaContext, UClass)}</li>
              * <li> More complicated scenarios: perform a general AST traversal with a visitor. In this case, first tell lint
@@ -1461,7 +1492,6 @@ class KDocFormatterTest {
              * want to check calls to a method named {@code foo}, the call site node is a UAST node (in this case, {@link
              * UCallExpression}, but the called method itself is a {@link PsiMethod}, since that method might be anywhere
              * (including in a library that we don't have source for, so UAST doesn't make sense.)
-             *
              *
              * ## Migrating JavaPsiScanner to SourceCodeScanner
              * As described above, PSI is still used, so a lot of code will remain the same. For example, all resolve methods,
@@ -1548,7 +1578,6 @@ class KDocFormatterTest {
              *     UastContext context = UastUtils.getUastContext(element);
              *     UExpression body = context.getMethodBody(method);
              * </pre>
-             *
              * Similarly if you have a {@link PsiField} and you want to look up its field initializer, use this:
              * <pre>
              *     UastContext context = UastUtils.getUastContext(element);
@@ -1582,7 +1611,6 @@ class KDocFormatterTest {
              * ---
              * &gt;    List<UExpression> args = call.getValueArguments();
              * </pre>
-             *
              * Typically you also need to go through your code and replace array access, arg\[i], with list access, {@code
              * arg.get(i)}. Or in Kotlin, just arg\[i]...
              *
@@ -1652,6 +1680,67 @@ class KDocFormatterTest {
              * First read the javadoc on how to convert from the older {@linkplain JavaScanner} interface over to {@linkplain
              * JavaPsiScanner}. While {@linkplain JavaPsiScanner} is itself deprecated, it's a lot closer to {@link
              * SourceCodeScanner} so a lot of the same concepts apply; then follow the above section.
+             */
+            """.trimIndent(),
+            verify = false // Not quite working yet
+        )
+    }
+
+    // --------------------------------------------------------------------
+    // A few failing test cases here for corner cases that aren't handled
+    // right yet.
+    // --------------------------------------------------------------------
+
+    @Disabled("Lists within quoted blocks not yet supported")
+    @Test
+    fun testNestedWithinQuoted() {
+        val source =
+            """
+            /*
+             * Lists within a block quote:
+             * > Here's my quoted text.
+             * > 1. First item
+             * > 2. Second item
+             * > 3. Third item
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /*
+             * Lists within a block quote:
+             * > Here's my quoted text.
+             * > 1. First item
+             * > 2. Second item
+             * > 3. Third item
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Disabled("Tables are not properly fullsupported")
+    @Test
+    fun testTables() {
+        // Leave formatting within table cells alone
+        val source =
+            """
+            /**
+             * ### Tables
+             * column 1 | column 2
+             * ---------|---------
+             * value 1  | value 2
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /**
+             * ### Tables
+             * column 1 | column 2
+             * ---------|---------
+             * value 1  | value 2
              */
             """.trimIndent()
         )

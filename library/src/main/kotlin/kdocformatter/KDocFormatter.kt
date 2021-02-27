@@ -54,9 +54,8 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
 
             val maxLineWidth = min(
                 options.maxCommentWidth,
-                options.maxLineWidth - indentSize - 3 -
-                    if (paragraph.quoted) 2 else 0
-            )
+                options.maxLineWidth - indentSize - 3
+            ) - if (paragraph.quoted) 2 else 0
 
             val lines = paragraph.reflow(maxLineWidth, options)
             var first = true
@@ -102,5 +101,25 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         } else if (lineComment && sb.endsWith("// ")) {
             sb.setLength(sb.length - 1)
         }
+    }
+
+    /** Reformats a markdown document */
+    fun reformatMarkdown(md: String): String {
+        // Just leverage the comment machinery here -- convert the markdown into a
+        // kdoc comment, reformat that, and then uncomment it
+        val comment = "/**\n" + md.split("\n").joinToString(separator = "\n") { " * $it" } + "\n*/"
+        val reformattedComment = " " + reformatComment(comment, "")
+            .trim().removePrefix("/**").removeSuffix("*/").trim()
+        val reformatted = reformattedComment.split("\n").joinToString(separator = "\n") {
+            if (it.startsWith(" * "))
+                it.substring(3)
+            else if (it.startsWith(" *"))
+                ""
+            else if (it.startsWith("* "))
+                it.substring(2)
+            else
+                it
+        }
+        return reformatted
     }
 }

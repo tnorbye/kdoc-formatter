@@ -29,6 +29,14 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
     var convertMarkup: Boolean = true
 
     /**
+     * Whether to add punctuation where missing, such as ending
+     * sentences with a period. (TODO: Make sure the FIRST sentence
+     * ends with one too! Especially if the subsequent sentence is
+     * separated.)
+     */
+    var addPunctuation: Boolean = false
+
+    /**
      * How many spaces to use for hanging indents in numbered lists and
      * after block tags
      */
@@ -41,6 +49,9 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
      * But if you do, this is the tab width.
      */
     var tabWidth: Int = 8
+
+    /** Whether to perform optimal line breaking instead of greeding */
+    var optimal: Boolean = true
 
     /**
      * If true, perform "alternative" formatting. This is only relevant

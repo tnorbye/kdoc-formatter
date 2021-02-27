@@ -10,8 +10,8 @@ import java.nio.file.Files
  * these.
  *
  * TODO: Allow specifying an arbitrary range of git sha's. This requires
- * some work to figure out the correct line numbers in the current
- * version from older patches.
+ *     some work to figure out the correct line numbers
+ *     in the current version from older patches.
  */
 class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(rangeMap) {
     companion object {

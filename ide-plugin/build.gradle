@@ -34,6 +34,20 @@ intellij {
 patchPluginXml {
     changeNotes """
 <p>
+1.3.1: This version contains the following improvements:
+<ul>
+<li>Fix a few bugs around markup conversion not producing the right number
+of blank lines for a &lt;p>, as well as add a few more prefixes as
+non-breakable (e.g. if you have an em dash in your sentence -- like
+this -- we don't want the "--" to be placed at the beginning of a
+line.)
+<li>Also adds an --add-punctuation command line flag and IDE setting to
+optionally add closing periods on capitalized paragraphs at the end of
+the comment.
+<li>Special cases TODO: comments (placing them in a block by themselves
+and using hanging indents).
+</ul>
+<p>
 1.3.0: This version contains the following improvements:
 <ul>
 <li> Many improves to the markdown handling, such as quoted

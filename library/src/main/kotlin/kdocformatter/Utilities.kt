@@ -60,6 +60,10 @@ fun String.collapseSpaces(): String {
     return sb.trimEnd().toString()
 }
 
+fun String.isTodo(): Boolean {
+    return startsWith("TODO:")
+}
+
 fun String.isKDocTag(): Boolean {
     if (!startsWith("@")) {
         return false
