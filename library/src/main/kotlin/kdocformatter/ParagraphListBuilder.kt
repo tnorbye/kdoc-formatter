@@ -27,7 +27,9 @@ class ParagraphListBuilder(
         when {
             text.isKDocTag() -> {
                 paragraph.doc = true
-                paragraph.block = true
+                paragraph.hanging = true
+            }
+            text.isTodo() -> {
                 paragraph.hanging = true
             }
             text.isListItem() -> paragraph.hanging = true
@@ -193,7 +195,7 @@ class ParagraphListBuilder(
                 paragraph.block = false
                 i = addLines(
                     i - 1,
-                    until = { _, w, s -> s.isBlank() || w.isListItem() || s.isKDocTag() },
+                    until = { _, w, s -> s.isBlank() || w.isListItem() || s.isKDocTag() || s.isTodo() },
                     customize = { _, p -> p.quoted = true }
                 )
                 newParagraph()
@@ -217,7 +219,7 @@ class ParagraphListBuilder(
                     }
                 )
                 newParagraph()
-            } else if (lineWithoutIndentation.isListItem() || lineWithoutIndentation.isKDocTag()) {
+            } else if (lineWithoutIndentation.isListItem() || lineWithoutIndentation.isKDocTag() || lineWithoutIndentation.isTodo()) {
                 newParagraph().hanging = true
                 val start = i
                 i = addLines(
@@ -229,7 +231,7 @@ class ParagraphListBuilder(
                         ) {
                             false
                         } else {
-                            s.isBlank() || w.isListItem() || s.isKDocTag()
+                            s.isBlank() || w.isListItem() || s.isKDocTag() || s.isTodo()
                         }
                     },
                     shouldBreak = { w, _ ->
@@ -245,6 +247,9 @@ class ParagraphListBuilder(
                 newParagraph()
             } else if (lineWithoutIndentation.isEmpty()) {
                 newParagraph().separate = true
+            } else if (lineWithoutIndentation.isTodo()) {
+                newParagraph().hanging = true
+                appendText(lineWithoutIndentation).appendText(" ")
             } else {
                 // Some common HTML block tags
                 if (lineWithoutIndentation.startsWith("<p>", true) ||
@@ -265,21 +270,22 @@ class ParagraphListBuilder(
                         if (options.convertMarkup) {
                             // Replace <p> with a blank line
                             if (!prevEmpty) {
-                                val p = newParagraph()
-                                p.block = true
-                                p.allowEmpty = true
+                                paragraph.separate = true
                             }
                         } else {
                             appendText(lineWithIndentation)
+                            newParagraph().block = true
                         }
-                        newParagraph().block = true
                         continue
                     } else if (lineWithoutIndentation.endsWith("</h1>", true) ||
                         lineWithoutIndentation.endsWith("</h2>", true) ||
                         lineWithoutIndentation.endsWith("</h3>", true) ||
                         lineWithoutIndentation.endsWith("</h4>", true)
                     ) {
-                        if (lineWithoutIndentation.startsWith("<h", true) && options.convertMarkup) {
+                        if (lineWithoutIndentation.startsWith("<h", true) && options.convertMarkup &&
+                            paragraph.isEmpty()
+                        ) {
+                            paragraph.separate = true
                             val count = lineWithoutIndentation[lineWithoutIndentation.length - 2] - '0'
                             for (j in 0 until count.coerceAtLeast(0).coerceAtMost(8)) {
                                 appendText("#")
@@ -306,6 +312,9 @@ class ParagraphListBuilder(
 
         closeParagraph()
         arrange()
+        if (!lineComment) {
+            punctuate()
+        }
 
         return ParagraphList(paragraphs)
     }
@@ -321,10 +330,14 @@ class ParagraphListBuilder(
             val text = paragraph.text
             paragraph.separate = when {
                 prev == null -> false
+                paragraph.separate -> true
                 // Don't separate kdoc tags, except for the first one
                 paragraph.doc -> !prev.doc
+                text.isTodo() && !prev.text.isTodo() -> true
+                text.startsWith("#") -> true // header
                 // Set preformatted paragraphs off (but not <pre> tags where it's implicit)
                 paragraph.preformatted -> !prev.preformatted && !text.startsWith("<pre", true)
+                !paragraph.preformatted && prev.preformatted && prev.text.startsWith("</pre>", true) -> false
                 paragraph.continuation -> true
                 paragraph.hanging -> false
                 paragraph.quoted -> false
@@ -333,7 +346,7 @@ class ParagraphListBuilder(
             }
 
             if (paragraph.hanging) {
-                if (paragraph.doc || text.startsWith("<li>", true)) {
+                if (paragraph.doc || text.startsWith("<li>", true) || text.isTodo()) {
                     paragraph.hangingIndent = getIndent(options.hangingIndent)
                 } else if (paragraph.continuation && paragraph.prev != null) {
                     paragraph.hangingIndent = paragraph.prev!!.hangingIndent
@@ -355,8 +368,31 @@ class ParagraphListBuilder(
                 if (i > 0) {
                     paragraphs[i - 1].next = null
                 }
+            } else {
                 break
             }
+        }
+    }
+
+    private fun punctuate() {
+        if (!options.addPunctuation) {
+            return
+        }
+        val last = paragraphs.last()
+        if (last.preformatted || last.doc || last.hanging && !last.continuation || last.isEmpty()) {
+            return
+        }
+        val text = last.content
+        for (i in text.length - 1 downTo 0) {
+            val c = text[i]
+            if (c.isWhitespace()) {
+                continue
+            }
+            if (c.isLetterOrDigit() && text[0].isLetter() && text[0].isUpperCase()) {
+                text.setLength(i + 1)
+                text.append('.')
+            }
+            break
         }
     }
 }

@@ -19,6 +19,7 @@ class KDocFileFormattingOptions {
     var formattingOptions: KDocFormattingOptions = KDocFormattingOptions()
     var gitStaged = false
     var gitHead = false
+    var includeMd: Boolean = false
 
     companion object {
         fun parse(args: Array<String>): KDocFileFormattingOptions {
@@ -47,6 +48,7 @@ class KDocFileFormattingOptions {
                     arg.startsWith("--hanging-indent=") ->
                         options.formattingOptions.hangingIndent = parseInt(arg.substring("--hanging-indent=".length))
                     arg == "--convert-markup" -> options.formattingOptions.convertMarkup = true
+                    arg == "--add-punctuation" -> options.formattingOptions.addPunctuation = true
                     arg.startsWith("--single-line-comments=collapse") ->
                         options.formattingOptions.collapseSingleLine = true
                     arg.startsWith("--single-line-comments=expand") ->
@@ -63,6 +65,8 @@ class KDocFileFormattingOptions {
                     arg == "--quiet" || arg == "-q" -> options.quiet = true
                     arg == "--git-path" -> options.gitPath = args[i++]
                     arg.startsWith("--git-path=") -> options.gitPath = arg.substring("--git-path=".length)
+                    arg == "--include-md-files" -> options.includeMd = true
+                    arg == "--greedy" -> options.formattingOptions.optimal = false
                     else -> {
                         val paths =
                             if (arg.startsWith("@")) {
@@ -137,6 +141,9 @@ class KDocFileFormattingOptions {
                 and subsequent lines in a bulleted list or kdoc blog tag.
               --convert-markup
                 Convert unnecessary HTML tags like &lt; and &gt; into < and >
+              --add-punctuation
+                Add missing punctuation, such as a period at the end of a capitalized
+                paragraph.
               --single-line-comments=<collapse | expand>
                 With `collapse`, turns multi-line comments into a single line if it
                 fits, and with `expand` it will always format commands with /** and
@@ -149,6 +156,11 @@ class KDocFileFormattingOptions {
               --lines <start:end>, --line <start>
                 Line range(s) to format, like 5:10 (1-based; default is all). Can be
                 specified multiple times.
+              --include-md-files
+                Format markdown (*.md) files
+              --greedy
+                Instead of the optimal line breaking normally used by kdoc-formatter,
+                do greedy line breaking instead
               --dry-run, -n
                 Prints the paths of the files whose contents would change if the
                 formatter were run normally.

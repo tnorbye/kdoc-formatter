@@ -15,6 +15,7 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     private val alternateCheckBox = JBCheckBox("Alternate line breaking algorithms when invoked repeatedly")
     private val collapseLinesCheckBox = JBCheckBox("Collapse short comments that fit on a single line")
     private val convertMarkupCheckBox = JBCheckBox("Convert markup like <b>bold</b> into **bold**")
+    private val addPunctuationCheckBox = JBCheckBox("Add missing punctuation")
     private val lineCommentsCheckBox = JBCheckBox("Allow formatting line comments interactively")
 
     private val state = KDocPluginOptions.instance.globalState
@@ -23,6 +24,7 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
         row { alternateCheckBox() }
         row { collapseLinesCheckBox() }
         row { convertMarkupCheckBox() }
+        row { addPunctuationCheckBox() }
         row { lineCommentsCheckBox() }
     }
 
@@ -30,7 +32,8 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
         alternateCheckBox.isSelected != state.alternateActions ||
             collapseLinesCheckBox.isSelected != state.collapseSingleLines ||
             convertMarkupCheckBox.isSelected != state.convertMarkup ||
-            lineCommentsCheckBox.isSelected != state.lineComments
+            lineCommentsCheckBox.isSelected != state.lineComments ||
+            addPunctuationCheckBox.isSelected != state.addPunctuation
 
     @Throws(ConfigurationException::class)
     override fun apply() {
@@ -38,6 +41,7 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
         state.collapseSingleLines = collapseLinesCheckBox.isSelected
         state.convertMarkup = convertMarkupCheckBox.isSelected
         state.lineComments = lineCommentsCheckBox.isSelected
+        state.addPunctuation = addPunctuationCheckBox.isSelected
     }
 
     override fun reset() {
@@ -45,5 +49,6 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
         collapseLinesCheckBox.isSelected = state.collapseSingleLines
         convertMarkupCheckBox.isSelected = state.convertMarkup
         lineCommentsCheckBox.isSelected = state.lineComments
+        addPunctuationCheckBox.isSelected = state.addPunctuation
     }
 }

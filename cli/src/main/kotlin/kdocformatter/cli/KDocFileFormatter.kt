@@ -30,7 +30,9 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
             return count
         }
 
-        return if (file.path.endsWith(".kt") && options.filter.includes(file)) {
+        return if (file.path.endsWith(".kt") && options.filter.includes(file) ||
+            options.includeMd && file.path.endsWith(".md") && options.filter.includes(file)
+        ) {
             val original = file.readText()
             val reformatted = reformatFile(file, original)
             if (reformatted != original) {
@@ -49,6 +51,12 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     }
 
     fun reformatFile(file: File?, source: String): String {
+        if (file != null && file.path.endsWith(".md")) {
+            val formattingOptions = file.let { EditorConfigs.getOptions(it) }
+            val formatter = KDocFormatter(formattingOptions)
+            return formatter.reformatMarkdown(source)
+        }
+
         val sb = StringBuilder()
         val tokens = tokenizeKotlin(source)
         val formattingOptions = file?.let { EditorConfigs.getOptions(it) } ?: options.formattingOptions

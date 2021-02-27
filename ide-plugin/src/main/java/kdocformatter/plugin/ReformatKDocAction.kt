@@ -257,6 +257,7 @@ class ReformatKDocAction : AnAction() {
         }
         configOptions.convertMarkup = state.convertMarkup
         configOptions.alternate = alternate
+        configOptions.addPunctuation = state.addPunctuation
         return configOptions
     }
 

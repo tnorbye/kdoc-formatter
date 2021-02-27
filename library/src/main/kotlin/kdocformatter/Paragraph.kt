@@ -22,7 +22,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
      * Whether this paragraph is allowed to be empty. Paragraphs are
      * normally merged if this is not set. This allows the line breaker
      * to call [ParagraphListBuilder.newParagraph] repeatedly without
-     * introducing more than one new paragraph.
+     * introducing more than one new paragraph. But for preformatted
+     * text we do want to be able to express repeated blank lines.
      */
     var allowEmpty = false
 
@@ -39,8 +40,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
     var doc = false
 
     /**
-     * Is this line quoted? (In the future make this an int such that
-     * we can support additional levels.)
+     * Is this line quoted? (In the future make this an int such that we
+     * can support additional levels.)
      */
     var quoted = false
 
@@ -68,6 +69,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
         if (cleaned.contains("<") || cleaned.contains(">")) {
             cleaned = cleaned.replace("<b>", "**").replace("</b>", "**")
                 .replace("<i>", "*").replace("</i>", "*")
+                .replace("<em>", "_").replace("</em>", "_")
         }
         if (cleaned.contains("&")) {
             cleaned = cleaned.replace("&lt;", "<").replace("&LT;", "<")
@@ -91,9 +93,9 @@ class Paragraph(private val options: KDocFormattingOptions) {
             return listOf(words[0])
         }
         val lines = reflowOptimal(maxLineWidth, words)
-        if (lines.size <= 2 || options.alternate) {
+        if (lines.size <= 2 || options.alternate || !options.optimal) {
             // Just 2 lines? We prefer long+short instead of half+half:
-            return reflowGreedy(maxLineWidth, options)
+            return reflowGreedy(maxLineWidth, options, words)
         } else {
             // We could just return [lines] here, but the straightforward algorithm
             // doesn't do a great job with short paragraphs where the the last line
@@ -164,7 +166,11 @@ class Paragraph(private val options: KDocFormattingOptions) {
             val word = words[i]
             // Can we start a new line with this without interpreting it
             // in a special way?
-            if (word.startsWith("#") || word.isListItem() && !word.equals("<li>", true)) {
+            if (word.startsWith("#") ||
+                word.startsWith("-") ||
+                word == "```" ||
+                word.isListItem() && !word.equals("<li>", true)
+            ) {
                 // Combine with previous word with a single space; the line breaking algorithm
                 // won't know that it's more than one word.
                 val joined = "${words[i - 1]} $word"
@@ -270,50 +276,46 @@ class Paragraph(private val options: KDocFormattingOptions) {
         return lines
     }
 
-    private fun reflowGreedy(lineWidth: Int, options: KDocFormattingOptions): List<String> {
+    private fun reflowGreedy(lineWidth: Int, options: KDocFormattingOptions, words: List<String>): List<String> {
         // Greedy implementation
-        val lines = mutableListOf<String>()
-        var offset = 0
-        while (offset < text.length) {
-            val isBeginning = offset == 0
-            var width = lineWidth
-            if (options.hangingIndent > 0 && hanging && (!isBeginning || continuation)) {
-                width -= getIndentSize(hangingIndent, options)
-            }
-            while (offset < text.length && text[offset].isWhitespace()) {
-                offset++
-            }
-            var last = offset + width
-            if (last > text.length) {
-                val remainder = text.substring(offset).trim()
-                if (remainder.isNotEmpty()) {
-                    lines.add(remainder)
-                }
-                break
-            } else {
-                while (last >= offset && last < text.length && !text[last].isWhitespace()) {
-                    last--
-                }
-                if (last <= offset) {
-                    // Couldn't break; search forwards
-                    last = offset + width
-                    while (last < text.length) {
-                        if (text[last].isWhitespace()) {
-                            break
-                        }
-                        last++
-                    }
-                }
 
-                lines.add(text.substring(offset, last).trim())
-                offset = last
-            }
+        var width = lineWidth
+        if (options.hangingIndent > 0 && hanging && continuation) {
+            width -= getIndentSize(hangingIndent, options)
         }
 
+        val lines = mutableListOf<String>()
+        var column = 0
+        val sb = StringBuilder()
+        for (word in words) {
+            when {
+                sb.isEmpty() -> {
+                    sb.append(word)
+                    column += word.length
+                }
+                column + word.length + 1 <= width -> {
+                    sb.append(' ').append(word)
+                    column += word.length + 1
+                }
+                else -> {
+                    width = lineWidth
+                    if (options.hangingIndent > 0 && hanging && (lines.isNotEmpty() || continuation)) {
+                        width -= getIndentSize(hangingIndent, options)
+                    }
+                    lines.add(sb.toString())
+                    column = 0
+                    sb.setLength(0)
+                    sb.append(word)
+                }
+            }
+        }
+        if (sb.isNotEmpty()) {
+            lines.add(sb.toString())
+        }
         return lines
     }
 
     override fun toString(): String {
-        return "$content, separate=$separate, block=$block, hanging=$hanging, preformatted=$preformatted, quoted=$quoted, continuation=$continuation"
+        return "$content, separate=$separate, block=$block, hanging=$hanging, preformatted=$preformatted, quoted=$quoted, continuation=$continuation, allowempty=$allowEmpty"
     }
 }
