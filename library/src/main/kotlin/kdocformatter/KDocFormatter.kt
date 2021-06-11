@@ -48,6 +48,9 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
             val text = paragraph.text
             if (paragraph.preformatted) {
                 sb.append(text)
+                // Remove trailing spaces which can happen when we
+                // have an empty line in a preformatted paragraph.
+                stripTrailingSpaces(lineComment, sb)
                 sb.append(lineSeparator)
                 continue
             }
