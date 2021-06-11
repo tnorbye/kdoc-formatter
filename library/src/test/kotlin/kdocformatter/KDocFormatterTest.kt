@@ -479,6 +479,64 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testPreformattedTextWithBlankLines() {
+        val source =
+            """
+            /**
+             * Code sample:
+             * ```kotlin
+             * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             *
+             * println(s);
+             * ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * Code sample:
+             *
+             * ```kotlin
+             * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             *
+             * println(s);
+             * ```
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreformattedTextWithBlankLinesAndTrailingSpaces() {
+        val source =
+            """
+            /**
+             * Code sample:
+             * ```kotlin
+             * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             * 
+             * println(s);
+             * ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source, KDocFormattingOptions(40),
+            """
+            /**
+             * Code sample:
+             *
+             * ```kotlin
+             * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
+             *
+             * println(s);
+             * ```
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun testFormattingList() {
         val source =
             """
