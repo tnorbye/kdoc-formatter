@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
     id 'application'
     id 'com.android.lint'
+    id 'com.ncorti.ktfmt.gradle'
 }
 
 group = "kdoc-formatter"
