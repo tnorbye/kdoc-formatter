@@ -1744,6 +1744,26 @@ class KDocFormatterTest {
         )
     }
 
+    @Test
+    fun testWordJoining() {
+        val source =
+            """
+            /**
+             * which you can render with something like this:
+             * `dot -Tpng -o/tmp/graph.png toString.dot`
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(65),
+            """
+            /**
+             * which you can render with something like this:
+             * `dot -Tpng -o/tmp/graph.png toString.dot`
+             */
+            """.trimIndent())
+    }
+
     // --------------------------------------------------------------------
     // A few failing test cases here for corner cases that aren't handled
     // right yet.

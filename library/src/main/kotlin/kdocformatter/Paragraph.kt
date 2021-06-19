@@ -162,6 +162,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
         // We never want to put "1." at the beginning of a line as an overflow
         val combined = ArrayList<String>(words.size)
         combined.add(words[0])
+        var prev = ""
         for (i in 1 until words.size) {
             val word = words[i]
             // Can we start a new line with this without interpreting it
@@ -173,11 +174,13 @@ class Paragraph(private val options: KDocFormattingOptions) {
             ) {
                 // Combine with previous word with a single space; the line breaking algorithm
                 // won't know that it's more than one word.
-                val joined = "${words[i - 1]} $word"
-                combined.removeAt(combined.size - 1)
+                val joined = "$prev $word"
+                combined.removeLast()
                 combined.add(joined)
+                prev = joined
             } else {
                 combined.add(word)
+                prev = word
             }
         }
         return combined
