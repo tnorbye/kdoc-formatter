@@ -34,6 +34,9 @@ intellij {
 patchPluginXml {
     changeNotes """
 <p>
+1.3.2: Bugfixes and update deprecated API usage for 2021.2
+compatibility
+<p>
 1.3.1: This version contains the following improvements:
 <ul>
 <li>Fix a few bugs around markup conversion not producing the right number

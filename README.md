@@ -8,6 +8,17 @@ This tool reflows comments in KDoc; either on a file or recursively
 over nested folders, as well as an IntelliJ IDE plugin where you can
 reflow the current comment around the cursor.
 
+Here's an example of the plugin in use, showing editing a comment and
+then applying the formatting action to clean it up:
+
+![Screenshot](cleanup.gif)
+
+In addition to general cleanup, this is also handy when you're editing
+a comment and you need to reflow the paragraph because the current line
+is too long or too short:
+
+![Screenshot](modify-line.gif)
+
 Features
 --------
 * Reflow using optimal instead of greedy algorithm (though in the IDE
@@ -91,7 +102,7 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.3.1
+kdoc-formatter: Version 1.3.2
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -138,9 +149,9 @@ buildscript {
         maven { url '/path/to/m2' }
     }
     dependencies {
-        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.1.1"
+        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.3.2"
         // (Sorry about the vanity URL --
-        // I tried to get kdoc-formatter:kdoc-formatter:1.1.1 but that
+        // I tried to get kdoc-formatter:kdoc-formatter:1.3.2 but that
         // didn't meet the naming requirements for publishing:
         // https://issues.sonatype.org/browse/OSSRH-63191)
     }

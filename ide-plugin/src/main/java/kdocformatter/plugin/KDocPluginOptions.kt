@@ -15,8 +15,8 @@
  */
 package kdocformatter.plugin
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 
@@ -49,6 +49,6 @@ class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentSt
 
     companion object {
         val instance: KDocPluginOptions
-            get() = ServiceManager.getService(KDocPluginOptions::class.java)
+            get() = ApplicationManager.getApplication().getService(KDocPluginOptions::class.java)
     }
 }

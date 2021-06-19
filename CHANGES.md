@@ -1,3 +1,11 @@
+Version 1.3.2
+=============
+
+Two bug fixes:
+* A fix for kdoc-formatter issue #23, "Empty lines in preformatted
+  paragraphs", contributed by Vittorio Massaro
+* A fix for a bug where in some corner cases a word could get dropped.
+
 Version 1.3.1
 =============
 
