@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/version.gradle"
 
     ext {
-        gradlePluginVersion = '7.0.0-alpha04'
+        gradlePluginVersion = '7.1.0-alpha02'
     }
 
     repositories {
@@ -18,6 +18,10 @@ buildscript {
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.4.30'
+    // Tasks added: ktfmtFormat and ktfmtCheck
+    // Not yet enabled because attempting to format
+    // results in "[ktfmt] e: Generic error during file processing"
+    id 'com.ncorti.ktfmt.gradle' version '0.6.0'
 }
 
 group 'kdocformatter'
@@ -44,7 +48,7 @@ configurations {
 }
 
 dependencies {
-    ktlint "com.pinterest:ktlint:0.40.0"
+    ktlint "com.pinterest:ktlint:0.41.0"
 }
 
 task format(type: JavaExec, group: "verification") {

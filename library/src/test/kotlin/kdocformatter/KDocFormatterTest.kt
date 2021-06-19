@@ -1761,7 +1761,8 @@ class KDocFormatterTest {
              * which you can render with something like this:
              * `dot -Tpng -o/tmp/graph.png toString.dot`
              */
-            """.trimIndent())
+            """.trimIndent()
+        )
     }
 
     // --------------------------------------------------------------------
