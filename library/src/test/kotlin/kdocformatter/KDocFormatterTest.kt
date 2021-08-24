@@ -386,6 +386,23 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testPunctuationWithLabelLink() {
+        val source =
+            """
+             /** Default implementation of [MyInterface] */
+            """.trimIndent()
+
+        val options = KDocFormattingOptions(72)
+        options.addPunctuation = true
+        checkFormatter(
+            source, options,
+            """
+             /** Default implementation of [MyInterface]. */
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun testPreformattedText() {
         val source =
             """

@@ -382,13 +382,18 @@ class ParagraphListBuilder(
         if (last.preformatted || last.doc || last.hanging && !last.continuation || last.isEmpty()) {
             return
         }
+
         val text = last.content
+        if (!text.startsWithUpperCaseLetter()) {
+            return
+        }
+
         for (i in text.length - 1 downTo 0) {
             val c = text[i]
             if (c.isWhitespace()) {
                 continue
             }
-            if (c.isLetterOrDigit() && text[0].isLetter() && text[0].isUpperCase()) {
+            if (c.isLetterOrDigit() || c.isCloseSquareBracket()) {
                 text.setLength(i + 1)
                 text.append('.')
             }
@@ -405,3 +410,8 @@ fun String.containsOnly(vararg s: Char): Boolean {
     }
     return true
 }
+
+fun StringBuilder.startsWithUpperCaseLetter() =
+    this.isNotEmpty() && this[0].isUpperCase() && this[0].isLetter()
+
+fun Char.isCloseSquareBracket() = this == ']'
