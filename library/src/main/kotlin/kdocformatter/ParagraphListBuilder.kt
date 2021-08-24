@@ -388,7 +388,7 @@ class ParagraphListBuilder(
             if (c.isWhitespace()) {
                 continue
             }
-            if (c.isLetterOrDigit() && text[0].isLetter() && text[0].isUpperCase()) {
+            if ((c.isLetterOrDigit() || c.isCloseSquareBracket()) && text[0].isUpperCaseLetter()) {
                 text.setLength(i + 1)
                 text.append('.')
             }
@@ -405,3 +405,7 @@ fun String.containsOnly(vararg s: Char): Boolean {
     }
     return true
 }
+
+fun Char.isUpperCaseLetter() = isLetter() && isUpperCase()
+
+fun Char.isCloseSquareBracket() = this == ']'
