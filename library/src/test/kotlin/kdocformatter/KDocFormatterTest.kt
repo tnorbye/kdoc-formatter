@@ -418,8 +418,8 @@ class KDocFormatterTest {
             """
             /**
              * Sometimes the text of a link can have spaces, like
-             * [this link's text](https://example.com). The following text should
-             * wrap like usual.
+             * [this link's text](https://example.com). The following text
+             * should wrap like usual.
              */
              """.trimIndent()
         )
