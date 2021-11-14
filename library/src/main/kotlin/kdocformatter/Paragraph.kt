@@ -163,14 +163,20 @@ class Paragraph(private val options: KDocFormattingOptions) {
         val combined = ArrayList<String>(words.size)
         combined.add(words[0])
         var prev = ""
+        var insideSquareBrackets = false
         for (i in 1 until words.size) {
             val word = words[i]
+
+            if(prev.startsWith("[")) insideSquareBrackets = true
+            if(prev.contains("]")) insideSquareBrackets = false
+
             // Can we start a new line with this without interpreting it
             // in a special way?
             if (word.startsWith("#") ||
                 word.startsWith("-") ||
                 word == "```" ||
-                word.isListItem() && !word.equals("<li>", true)
+                word.isListItem() && !word.equals("<li>", true) ||
+                insideSquareBrackets
             ) {
                 // Combine with previous word with a single space; the line breaking algorithm
                 // won't know that it's more than one word.
