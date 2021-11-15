@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.vfs.ReadonlyStatusHandler
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -27,7 +28,7 @@ import kdocformatter.KDocFormattingOptions
 import kdocformatter.findSamePosition
 import org.jetbrains.annotations.Nullable
 
-class ReformatKDocAction : AnAction() {
+class ReformatKDocAction : AnAction(), DumbAware {
     override fun actionPerformed(event: AnActionEvent) {
         val dataContext = event.dataContext
         val project = CommonDataKeys.PROJECT.getData(dataContext) ?: return

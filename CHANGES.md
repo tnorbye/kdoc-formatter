@@ -1,3 +1,9 @@
+Version 1.3.3
+=============
+Bug fixes:
+* Avoid line wrapping for text inside square brackets,
+  contributed by Daniel Sturm
+
 Version 1.3.2
 =============
 
