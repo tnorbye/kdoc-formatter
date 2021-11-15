@@ -34,6 +34,10 @@ intellij {
 patchPluginXml {
     changeNotes """
 <p>
+1.3.3: Don't break lines inside link text which will
+include the comment asterisk, and allow formatting during
+indexing
+<p>
 1.3.2: Bugfixes and update deprecated API usage for 2021.2
 compatibility
 <p>

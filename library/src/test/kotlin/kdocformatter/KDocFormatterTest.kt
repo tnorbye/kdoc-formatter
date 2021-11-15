@@ -421,7 +421,7 @@ class KDocFormatterTest {
              * [this link's text](https://example.com). The following text
              * should wrap like usual.
              */
-             """.trimIndent()
+            """.trimIndent()
         )
     }
 
@@ -1801,7 +1801,8 @@ class KDocFormatterTest {
              * which you can render with something like this:
              * `dot -Tpng -o/tmp/graph.png toString.dot`
              */
-            """.trimIndent())
+            """.trimIndent()
+        )
     }
 
     // --------------------------------------------------------------------

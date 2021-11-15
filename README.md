@@ -102,7 +102,7 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.3.2
+kdoc-formatter: Version 1.3.3
 https://github.com/tnorbye/kdoc-formatter
 ```
 

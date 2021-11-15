@@ -167,8 +167,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
         for (i in 1 until words.size) {
             val word = words[i]
 
-            if(prev.startsWith("[")) insideSquareBrackets = true
-            if(prev.contains("]")) insideSquareBrackets = false
+            if (prev.startsWith("[")) insideSquareBrackets = true
+            if (prev.contains("]")) insideSquareBrackets = false
 
             // Can we start a new line with this without interpreting it
             // in a special way?
