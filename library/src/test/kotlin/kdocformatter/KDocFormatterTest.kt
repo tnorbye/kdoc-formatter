@@ -403,6 +403,29 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testWrapingOfLinkText() {
+        val source =
+            """
+             /**
+              * Sometimes the text of a link can have spaces, like [this link's text](https://example.com).
+              * The following text should wrap like usual.
+              */
+            """.trimIndent()
+
+        val options = KDocFormattingOptions(72)
+        checkFormatter(
+            source, options,
+            """
+            /**
+             * Sometimes the text of a link can have spaces, like
+             * [this link's text](https://example.com). The following text
+             * should wrap like usual.
+             */
+             """.trimIndent()
+        )
+    }
+
+    @Test
     fun testPreformattedText() {
         val source =
             """
