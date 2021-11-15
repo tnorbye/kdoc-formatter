@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/version.gradle"
 
     ext {
-        gradlePluginVersion = '7.0.0-alpha04'
+        gradlePluginVersion = '7.2.0-alpha04'
     }
 
     repositories {
@@ -44,7 +44,7 @@ configurations {
 }
 
 dependencies {
-    ktlint "com.pinterest:ktlint:0.40.0"
+    ktlint "com.pinterest:ktlint:0.43.0"
 }
 
 task format(type: JavaExec, group: "verification") {
