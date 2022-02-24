@@ -65,19 +65,95 @@ class Paragraph(private val options: KDocFormattingOptions) {
 
     fun cleanup() {
         if (preformatted || !options.convertMarkup) return
-        var cleaned = text
-        if (cleaned.contains("<") || cleaned.contains(">")) {
-            cleaned = cleaned.replace("<b>", "**").replace("</b>", "**")
-                .replace("<i>", "*").replace("</i>", "*")
-                .replace("<em>", "_").replace("</em>", "_")
-        }
-        if (cleaned.contains("&")) {
-            cleaned = cleaned.replace("&lt;", "<").replace("&LT;", "<")
-                .replace("&gt;", ">").replace("&GT;", ">")
-        }
-
+        val cleaned = convertTags(text)
         content.clear()
         content.append(cleaned)
+    }
+
+    private fun convertTags(s: String): String {
+        if (s.none { it == '<' || it == '&' || it == '{' }) return s
+
+        val sb = StringBuilder(s.length)
+        var i = 0
+        val n = s.length
+        while (i < n) {
+            val c = s[i++]
+            if (c == '<') {
+                if (s.startsWith("b>", i, true) || s.startsWith("/b>", i, true)) {
+                    // "<b>" or </b> -> "**"
+                    sb.append('*').append('*')
+                    if (s[i] == '/') i++
+                    i += 2
+                    continue
+                }
+                if (s.startsWith("i>", i, true) || s.startsWith("/i>", i, true)) {
+                    // "<i>" or </i> -> "*"
+                    sb.append('*')
+                    if (s[i] == '/') i++
+                    i += 2
+                    continue
+                }
+                if (s.startsWith("em>", i, true) || s.startsWith("/em>", i, true)) {
+                    // "<em>" or </em> -> "_"
+                    sb.append('_')
+                    if (s[i] == '/') i++
+                    i += 3
+                    continue
+                }
+            } else if (c == '&') {
+                if (s.startsWith("lt;", i, true)) { // "&lt;" -> "<"
+                    sb.append('<')
+                    i += 3
+                    continue
+                }
+                if (s.startsWith("gt;", i, true)) { // "&gt;" -> ">"
+                    sb.append('>')
+                    i += 3
+                    continue
+                }
+            } else if (c == '{') {
+                if (s.startsWith("@link", i, true)) {
+                    // {@link} or {@linkplain}
+                    sb.append('[')
+                    var curr = i + 5
+                    while (curr < n) {
+                        val ch = s[curr++]
+                        if (ch.isWhitespace()) {
+                            break
+                        }
+                        if (ch == '}') {
+                            curr--
+                            break
+                        }
+                    }
+                    var skip = false
+                    while (curr < n) {
+                        val ch = s[curr]
+                        if (ch == '}') {
+                            sb.append(']')
+                            curr++
+                            break
+                        } else if (ch == '(') {
+                            skip = true
+                        } else if (!skip) {
+                            if (ch == '#') {
+                                if (!sb.endsWith('[')) {
+                                    sb.append('.')
+                                }
+                            } else {
+                                sb.append(ch)
+                            }
+                        }
+                        curr++
+                    }
+                    i = curr
+                    continue
+                }
+            }
+            sb.append(c)
+        }
+
+        return sb.toString()
     }
 
     fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
@@ -98,7 +174,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
             return reflowGreedy(maxLineWidth, options, words)
         } else {
             // We could just return [lines] here, but the straightforward algorithm
-            // doesn't do a great job with short paragraphs where the the last line
+            // doesn't do a great job with short paragraphs where the last line
             // is short; it over-corrects and shortens everything else in order
             // to balance out the last line.
 

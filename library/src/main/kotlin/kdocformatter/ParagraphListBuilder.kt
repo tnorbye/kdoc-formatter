@@ -231,7 +231,8 @@ class ParagraphListBuilder(
                         ) {
                             false
                         } else {
-                            s.isBlank() || w.isListItem() || s.isKDocTag() || s.isTodo()
+                            s.isBlank() || w.isListItem() || s.isKDocTag() || s.isTodo() || s.startsWith("```") ||
+                                w.startsWith("<pre>")
                         }
                     },
                     shouldBreak = { w, _ ->

@@ -208,6 +208,7 @@ object EditorConfigs {
                         }
                     } else {
                         val eq = line.indexOf('=')
+                        @Suppress("DEPRECATION") // This is deprecated but the replacement requires Experimental API :-(
                         val key = line.substring(0, eq).trim().toLowerCase(Locale.US)
                         if (key == "root") {
                             root = line.substring(eq + 1).trim().toBoolean()
