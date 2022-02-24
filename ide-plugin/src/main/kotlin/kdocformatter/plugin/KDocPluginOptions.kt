@@ -45,6 +45,7 @@ class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentSt
         var convertMarkup = false
         var lineComments = false
         var addPunctuation = false
+        var formatProcessor = true
     }
 
     companion object {

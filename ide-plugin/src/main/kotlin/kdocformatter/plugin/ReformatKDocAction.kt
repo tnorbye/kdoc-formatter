@@ -27,6 +27,8 @@ import kdocformatter.KDocFormatter
 import kdocformatter.KDocFormattingOptions
 import kdocformatter.findSamePosition
 import org.jetbrains.annotations.Nullable
+import org.jetbrains.kotlin.kdoc.psi.api.KDoc
+import org.jetbrains.kotlin.lexer.KtTokens
 
 class ReformatKDocAction : AnAction(), DumbAware {
     override fun actionPerformed(event: AnActionEvent) {
@@ -46,7 +48,7 @@ class ReformatKDocAction : AnAction(), DumbAware {
             var commentText = kdoc.text
             val startOffset: Int
             val endOffset: Int
-            if (isKDoc(kdoc)) {
+            if (kdoc is KDoc) {
                 // pass
                 startOffset = kdoc.startOffset
                 endOffset = kdoc.endOffset
@@ -78,7 +80,7 @@ class ReformatKDocAction : AnAction(), DumbAware {
             anchor = newAnchor
 
             val indent = DocumentUtil.getIndent(document, startOffset)
-            val options = getOptions(file, kdoc)
+            val options = getKDocFormattingOptions(file, kdoc, alternate)
             val updated = KDocFormatter(options).reformatComment(commentText, indent.toString())
             // Attempt to preserve the caret position
             val newDelta = findSamePosition(commentText, oldCaretOffset - startOffset, updated)
@@ -114,7 +116,7 @@ class ReformatKDocAction : AnAction(), DumbAware {
                     continue
                 }
                 val psiFile = PsiManager.getInstance(project).findFile(file) ?: continue
-                val comments = PsiTreeUtil.findChildrenOfType(psiFile, PsiComment::class.java).filter { isKDoc(it) }
+                val comments = PsiTreeUtil.findChildrenOfType(psiFile, PsiComment::class.java).filter { it is KDoc }
                     .sortedByDescending { it.startOffset }
                 if (comments.isEmpty()) {
                     continue
@@ -123,14 +125,14 @@ class ReformatKDocAction : AnAction(), DumbAware {
                 WriteCommandAction.writeCommandAction(project, psiFile).withName("Format KDoc").run(
                     ThrowableRunnable {
                         for (kdoc in comments) {
-                            if (!isKDoc(kdoc)) {
+                            if (!(kdoc is KDoc)) {
                                 continue
                             }
 
                             val commentText = kdoc.text
                             val startOffset = kdoc.startOffset
                             val indent = DocumentUtil.getIndent(document, startOffset)
-                            val options = getOptions(psiFile, kdoc)
+                            val options = getKDocFormattingOptions(psiFile, kdoc, alternate)
                             val updated = KDocFormatter(options).reformatComment(commentText, indent.toString())
                             document.replaceString(startOffset, kdoc.endOffset, updated)
                         }
@@ -222,44 +224,8 @@ class ReformatKDocAction : AnAction(), DumbAware {
         return name.endsWith(".kt")
     }
 
-    private fun isKDoc(kdoc: PsiComment): Boolean {
-        // TODO: Depend on Kotlin plugin such that I can directly check for
-        // org.jetbrains.kotlin.kdoc.psi.api.KDoc
-        return kdoc.javaClass.name.contains("KDoc")
-    }
-
     private fun isLineComment(comment: PsiComment): Boolean {
-        // TODO: Depend on Kotlin plugin such that I can directly check for
-        // tokenType is KtToken.EOL_COMMENT
-        return comment.text.startsWith("//")
-    }
-
-    private fun getOptions(
-        file: @Nullable PsiFile,
-        kdoc: @Nullable PsiComment
-    ): KDocFormattingOptions {
-        if (EditorConfigs.root == null) {
-            var width = CodeStyle.getLanguageSettings(file, kdoc.language).RIGHT_MARGIN
-            if (width <= 0) {
-                width = KDocFormattingOptions().maxLineWidth
-            }
-            val options = KDocFormattingOptions(maxLineWidth = width)
-            options.tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
-            EditorConfigs.root = options
-        }
-        val virtualFile = file.virtualFile ?: return EditorConfigs.root!!
-        val ioFile = VfsUtilCore.virtualToIoFile(virtualFile)
-        val configOptions = EditorConfigs.getOptions(ioFile)
-        val state = KDocPluginOptions.instance.globalState
-        if (state.collapseSingleLines) {
-            // Not unconditionally assigning such that .editorconfig turning
-            // it on also works (editorconfig always works)
-            configOptions.collapseSpaces = true
-        }
-        configOptions.convertMarkup = state.convertMarkup
-        configOptions.alternate = alternate
-        configOptions.addPunctuation = state.addPunctuation
-        return configOptions
+        return comment.tokenType == KtTokens.EOL_COMMENT
     }
 
     override fun update(event: AnActionEvent) {
@@ -299,7 +265,7 @@ class ReformatKDocAction : AnAction(), DumbAware {
             val element = file.findElementAt(currentCaret.offset) ?: return CommentType.NONE
             val comment =
                 PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false) ?: return CommentType.NONE
-            if (isKDoc(comment)) {
+            if (comment is KDoc) {
                 return CommentType.KDOC
             } else if (KDocPluginOptions.instance.globalState.lineComments && isLineComment(comment)) {
                 return CommentType.LINE_COMMENT
@@ -318,4 +284,33 @@ class ReformatKDocAction : AnAction(), DumbAware {
         }
         return CommentType.NONE
     }
+}
+
+fun getKDocFormattingOptions(
+    file: @Nullable PsiFile,
+    kdoc: @Nullable PsiComment,
+    alternate: Boolean
+): KDocFormattingOptions {
+    if (EditorConfigs.root == null) {
+        var width = CodeStyle.getLanguageSettings(file, kdoc.language).RIGHT_MARGIN
+        if (width <= 0) {
+            width = KDocFormattingOptions().maxLineWidth
+        }
+        val options = KDocFormattingOptions(maxLineWidth = width)
+        options.tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
+        EditorConfigs.root = options
+    }
+    val virtualFile = file.virtualFile ?: return EditorConfigs.root!!
+    val ioFile = VfsUtilCore.virtualToIoFile(virtualFile)
+    val configOptions = EditorConfigs.getOptions(ioFile)
+    val state = KDocPluginOptions.instance.globalState
+    if (state.collapseSingleLines) {
+        // Not unconditionally assigning such that .editorconfig turning
+        // it on also works (editorconfig always works)
+        configOptions.collapseSpaces = true
+    }
+    configOptions.convertMarkup = state.convertMarkup
+    configOptions.alternate = alternate
+    configOptions.addPunctuation = state.addPunctuation
+    return configOptions
 }

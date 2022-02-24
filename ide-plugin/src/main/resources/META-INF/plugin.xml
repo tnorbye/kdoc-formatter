@@ -3,38 +3,6 @@
   <name>Kotlin KDoc Formatter</name>
   <vendor email="tor.norbye@gmail.com" url="https://github.com/tnorbye/kdoc-formatter">Tor Norbye</vendor>
 
-  <description><![CDATA[
-      <p>
-      This plugin lets you reformat KDoc text -- meaning that it will reformat the
-      text and flow the text up to the line width, collapsing comments that
-      fit on a single line, indenting text within a block tag, etc.
-      <p/>
-      <p>
-      There are two usage modes. First, it can reformat the current comment
-      around the caret position. Open a Kotlin file, navigate to the KDoc
-      comment (e.g. <code>/** My Comment */</code>), and then invoke Code | Reformat KDoc.
-      <p/>
-      <p>
-      The second mode lets you reformat all the comments in one or more Kotlin
-      source files. For this, navigate to the Projects view and select one or
-      more source files, and again invoke Code | Reformat KDoc.
-      <p/>
-      <p>
-      More details about the features can be found at
-      <a href="https://github.com/tnorbye/kdoc-formatter#kdoc-formatter">
-      https://github.com/tnorbye/kdoc-formatter#kdoc-formatter
-      </a>
-      <p/>
-      <p>
-      You can create a shortcut and assign it to this action if you use it
-      frequently. On Mac for example, open the Preferences dialog, search for
-      Keymap, then in the Keymap search field search for "KDoc", and double click
-      on the action to choose "Add Shortcut", then choose the shortcut you want.
-      For me, formatting the whole file is assigned to Cmd-Opt-L, so I've assigned
-      Reformat KDoc to Cmd-Shift-L.
-      <p/>
-    ]]></description>
-
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
   <idea-version since-build="202.0"/>
 
@@ -47,6 +15,7 @@
     <applicationService serviceImplementation="kdocformatter.plugin.KDocPluginOptions"/>
     <applicationConfigurable groupId="editor" groupWeight="112" id="kdocformatter.options"
                              provider="kdocformatter.plugin.KDocOptionsConfigurableProvider"/>
+    <postFormatProcessor implementation="kdocformatter.plugin.KDocPostFormatProcessor"/>
   </extensions>
 
   <actions>
