@@ -208,7 +208,7 @@ object EditorConfigs {
                         }
                     } else {
                         val eq = line.indexOf('=')
-                        val key = line.substring(0, eq).trim().toLowerCase(Locale.US)
+                        val key = line.substring(0, eq).trim().lowercase(Locale.US)
                         if (key == "root") {
                             root = line.substring(eq + 1).trim().toBoolean()
                         } else when (key) {

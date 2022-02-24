@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 7.3.0-alpha03" type="baseline" client="gradle" dependencies="false" name="AGP (7.3.0-alpha03)" variant="all" version="7.3.0-alpha03">
+
+    <issue
+        id="JavaPluginLanguageLevel"
+        message="no Java language level directives"
+        errorLine1="    id(&quot;java&quot;)"
+        errorLine2="    ~~~~~~~~~~">
+        <location
+            file="build.gradle.kts"
+            line="7"
+            column="5"/>
+    </issue>
+
+</issues>

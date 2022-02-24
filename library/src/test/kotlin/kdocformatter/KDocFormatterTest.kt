@@ -1225,10 +1225,10 @@ class KDocFormatterTest {
             /**
              * Constructs a simplified version of the internal JVM
              * description of the given method. This is in the same format as
-             * {@link #getMethodDescription} above, the difference being we
-             * don't have the actual PSI for the method type, we just construct
-             * the signature from the [method] name, the list of [argumentTypes]
-             * and optionally include the [returnType].
+             * [getMethodDescription] above, the difference being we don't
+             * have the actual PSI for the method type, we just construct the
+             * signature from the [method] name, the list of [argumentTypes] and
+             * optionally include the [returnType].
              */
             """.trimIndent()
         )
@@ -1563,48 +1563,44 @@ class KDocFormatterTest {
              *
              * There are several different common patterns for detecting issues:
              * <ul>
-             * <li> Checking calls to a given method. For this see {@link #getApplicableMethodNames()} and
-             *     {@link #visitMethodCall(JavaContext, UCallExpression, PsiMethod)}</li>
-             * <li> Instantiating a given class. For this, see {@link #getApplicableConstructorTypes()} and
-             *     {@link #visitConstructor(JavaContext, UCallExpression, PsiMethod)}</li>
-             * <li> Referencing a given constant. For this, see {@link #getApplicableReferenceNames()} and
-             *     {@link #visitReference(JavaContext, UReferenceExpression, PsiElement)}</li>
-             * <li> Extending a given class or implementing a given interface. For this, see {@link #applicableSuperClasses()}
-             *     and {@link #visitClass(JavaContext, UClass)}</li>
+             * <li> Checking calls to a given method. For this see [getApplicableMethodNames] and [visitMethodCall]</li>
+             * <li> Instantiating a given class. For this, see [getApplicableConstructorTypes] and [visitConstructor]</li>
+             * <li> Referencing a given constant. For this, see [getApplicableReferenceNames] and [visitReference]</li>
+             * <li> Extending a given class or implementing a given interface. For this, see [applicableSuperClasses] and
+             *     [visitClass]</li>
              * <li> More complicated scenarios: perform a general AST traversal with a visitor. In this case, first tell lint
-             *     which AST node types you're interested in with the {@link #getApplicableUastTypes()} method, and then
-             *     provide a {@link UElementHandler} from the {@link #createUastHandler(JavaContext)} where you override the
-             *     various applicable handler methods. This is done rather than a general visitor from the root node to avoid
-             *     having to have every single lint detector (there are hundreds) do a full tree traversal on its own.</li>
+             *     which AST node types you're interested in with the [getApplicableUastTypes] method, and then
+             *     provide a [UElementHandler] from the [createUastHandler] where you override the various applicable
+             *     handler methods. This is done rather than a general visitor from the root node to avoid having to
+             *     have every single lint detector (there are hundreds) do a full tree traversal on its own.</li>
              * </ul>
-             * {@linkplain SourceCodeScanner} exposes the UAST API to lint checks. UAST is short for "Universal AST" and is an
-             * abstract syntax tree library which abstracts away details about Java versus Kotlin versus other similar languages
-             * and lets the client of the library access the AST in a unified way.
+             * [SourceCodeScanner] exposes the UAST API to lint checks. UAST is short for "Universal AST" and is an abstract
+             * syntax tree library which abstracts away details about Java versus Kotlin versus other similar languages and lets
+             * the client of the library access the AST in a unified way.
              *
              * UAST isn't actually a full replacement for PSI; it **augments** PSI. Essentially, UAST is used for the **inside**
              * of methods (e.g. method bodies), and things like field initializers. PSI continues to be used at the outer level:
              * for packages, classes, and methods (declarations and signatures). There are also wrappers around some of these
              * for convenience.
              *
-             * The {@linkplain SourceCodeScanner} interface reflects this fact. For example, when you indicate that you
-             * want to check calls to a method named {@code foo}, the call site node is a UAST node (in this case, {@link
-             * UCallExpression}, but the called method itself is a {@link PsiMethod}, since that method might be anywhere
-             * (including in a library that we don't have source for, so UAST doesn't make sense.)
+             * The [SourceCodeScanner] interface reflects this fact. For example, when you indicate that you want to check calls
+             * to a method named {@code foo}, the call site node is a UAST node (in this case, [UCallExpression], but the called
+             * method itself is a [PsiMethod], since that method might be anywhere (including in a library that we don't have
+             * source for, so UAST doesn't make sense.)
              *
              * ## Migrating JavaPsiScanner to SourceCodeScanner
              * As described above, PSI is still used, so a lot of code will remain the same. For example, all resolve methods,
              * including those in UAST, will continue to return PsiElement, not necessarily a UElement. For example, if you
-             * resolve a method call or field reference, you'll get a {@link PsiMethod} or {@link PsiField} back.
+             * resolve a method call or field reference, you'll get a [PsiMethod] or [PsiField] back.
              *
              * However, the visitor methods have all changed, generally to change to UAST types. For example, the signature
-             * {@link JavaPsiScanner#visitMethodCall(JavaContext, JavaElementVisitor, PsiMethodCallExpression, PsiMethod)}
-             * should be changed to {@link SourceCodeScanner#visitMethodCall(JavaContext, UCallExpression, PsiMethod)}.
+             * [JavaPsiScanner.visitMethodCall] should be changed to [SourceCodeScanner.visitMethodCall].
              *
-             * Similarly, replace {@link JavaPsiScanner#createPsiVisitor} with {@link SourceCodeScanner#createUastHandler},
-             * {@link JavaPsiScanner#getApplicablePsiTypes()} with {@link SourceCodeScanner#getApplicableUastTypes()}, etc.
+             * Similarly, replace [JavaPsiScanner.createPsiVisitor] with [SourceCodeScanner.createUastHandler],
+             * [JavaPsiScanner.getApplicablePsiTypes] with [SourceCodeScanner.getApplicableUastTypes], etc.
              *
-             * There are a bunch of new methods on classes like {@link JavaContext} which lets you pass in a {@link UElement} to
-             * match the existing {@link PsiElement} methods.
+             * There are a bunch of new methods on classes like [JavaContext] which lets you pass in a [UElement] to match the
+             * existing [PsiElement] methods.
              *
              * If you have code which does something specific with PSI classes, the following mapping table in alphabetical
              * order might be helpful, since it lists the corresponding UAST classes.
@@ -1662,21 +1658,20 @@ class KDocFormatterTest {
              * well. Particularly around calls.
              *
              * ### Parents
-             * In UAST, you get your parent {@linkplain UElement} by calling {@code getUastParent} instead of {@code getParent}.
-             * This is to avoid method name clashes on some elements which are both UAST elements and PSI elements at the same
-             * time - such as {@link UMethod}.
+             * In UAST, you get your parent [UElement] by calling {@code getUastParent} instead of {@code getParent}. This is to
+             * avoid method name clashes on some elements which are both UAST elements and PSI elements at the same time - such
+             * as [UMethod].
              *
              * ### Children
-             * When you're going in the opposite direction (e.g. you have a {@linkplain PsiMethod} and you want to look at its
-             * content, you should **not** use {@link PsiMethod#getBody()}. This will only give you the PSI child content,
-             * which won't work for example when dealing with Kotlin methods. Normally lint passes you the {@linkplain UMethod}
-             * which you should be procesing instead. But if for some reason you need to look up the UAST method body from a
-             * {@linkplain PsiMethod}, use this:
+             * When you're going in the opposite direction (e.g. you have a [PsiMethod] and you want to look at its content,
+             * you should **not** use [PsiMethod.getBody]. This will only give you the PSI child content, which won't work
+             * for example when dealing with Kotlin methods. Normally lint passes you the [UMethod] which you should be
+             * procesing instead. But if for some reason you need to look up the UAST method body from a [PsiMethod], use this:
              * <pre>
              *     UastContext context = UastUtils.getUastContext(element);
              *     UExpression body = context.getMethodBody(method);
              * </pre>
-             * Similarly if you have a {@link PsiField} and you want to look up its field initializer, use this:
+             * Similarly if you have a [PsiField] and you want to look up its field initializer, use this:
              * <pre>
              *     UastContext context = UastUtils.getUastContext(element);
              *     UExpression initializer = context.getInitializerBody(field);
@@ -1685,8 +1680,8 @@ class KDocFormatterTest {
              * ### Call names
              * In PSI, a call was represented by a PsiCallExpression, and to get to things like the method called or to the
              * operand/qualifier, you'd first need to get the "method expression". In UAST there is no method expression and
-             * this information is available directly on the {@linkplain UCallExpression} element. Therefore, here's how you'd
-             * change the code:
+             * this information is available directly on the [UCallExpression] element. Therefore, here's how you'd change the
+             * code:
              * <pre>
              * &lt;    call.getMethodExpression().getReferenceName();
              * ---
@@ -1713,16 +1708,16 @@ class KDocFormatterTest {
              * arg.get(i)}. Or in Kotlin, just arg\[i]...
              *
              * ### Instanceof
-             * You may have code which does something like "parent instanceof PsiAssignmentExpression" to see if something
-             * is an assignment. Instead, use one of the many utilities in {@link UastExpressionUtils} - such as {@link
-             * UastExpressionUtils#isAssignment(UElement)}. Take a look at all the methods there now - there are methods for
-             * checking whether a call is a constructor, whether an expression is an array initializer, etc etc.
+             * You may have code which does something like "parent instanceof PsiAssignmentExpression" to see if
+             * something is an assignment. Instead, use one of the many utilities in [UastExpressionUtils] - such as
+             * [UastExpressionUtils.isAssignment]. Take a look at all the methods there now - there are methods for checking
+             * whether a call is a constructor, whether an expression is an array initializer, etc etc.
              *
              * ### Android Resources
              * Don't do your own AST lookup to figure out if something is a reference to an Android resource (e.g. see if the
              * class refers to an inner class of a class named "R" etc.) There is now a new utility class which handles this:
-             * {@link ResourceReference}. Here's an example of code which has a {@link UExpression} and wants to know it's
-             * referencing a R.styleable resource:
+             * [ResourceReference]. Here's an example of code which has a [UExpression] and wants to know it's referencing a
+             * R.styleable resource:
              * <pre>
              *        ResourceReference reference = ResourceReference.get(expression);
              *        if (reference == null || reference.getType() != ResourceType.STYLEABLE) {
@@ -1732,13 +1727,13 @@ class KDocFormatterTest {
              * </pre>
              *
              * ### Binary Expressions
-             * If you had been using {@link PsiBinaryExpression} for things like checking comparator operators or arithmetic
-             * combination of operands, you can replace this with {@link UBinaryExpression}. **But you normally shouldn't;
-             * you should use {@link UPolyadicExpression} instead**. A polyadic expression is just like a binary expression,
-             * but possibly with more than two terms. With the old parser backend, an expression like "A + B + C" would
-             * be represented by nested binary expressions (first A + B, then a parent element which combined that binary
-             * expression with C). However, this will now be provided as a {@link UPolyadicExpression} instead. And the binary
-             * case is handled trivially without the need to special case it.
+             * If you had been using [PsiBinaryExpression] for things like checking comparator operators or arithmetic
+             * combination of operands, you can replace this with [UBinaryExpression]. **But you normally shouldn't; you should
+             * use [UPolyadicExpression] instead**. A polyadic expression is just like a binary expression, but possibly with
+             * more than two terms. With the old parser backend, an expression like "A + B + C" would be represented by nested
+             * binary expressions (first A + B, then a parent element which combined that binary expression with C). However,
+             * this will now be provided as a [UPolyadicExpression] instead. And the binary case is handled trivially without
+             * the need to special case it.
              *
              * ### Method name changes
              * The following table maps some common method names and what their corresponding names are in UAST.
@@ -1768,16 +1763,16 @@ class KDocFormatterTest {
              * If you are processing a method on your own, or even a full class, you should switch from
              * JavaRecursiveElementVisitor to AbstractUastVisitor. However, most lint checks don't do their own full AST
              * traversal; they instead participate in a shared traversal of the tree, registering element types they're
-             * interested with using {@link #getApplicableUastTypes()} and then providing a visitor where they implement the
+             * interested with using [getApplicableUastTypes] and then providing a visitor where they implement the
              * corresponding visit methods. However, from these visitors you should **not** be calling super.visitX. To remove
-             * this whole confusion, lint now provides a separate class, {@link UElementHandler}. For the shared traversal, just
+             * this whole confusion, lint now provides a separate class, [UElementHandler]. For the shared traversal, just
              * provide this handler instead and implement the appropriate visit methods. It will throw an error if you register
-             * element types in {@linkplain #getApplicableUastTypes()} that you don't override.
+             * element types in [getApplicableUastTypes] that you don't override.
              *
              * ### Migrating JavaScanner to SourceCodeScanner
-             * First read the javadoc on how to convert from the older {@linkplain JavaScanner} interface over to {@linkplain
-             * JavaPsiScanner}. While {@linkplain JavaPsiScanner} is itself deprecated, it's a lot closer to {@link
-             * SourceCodeScanner} so a lot of the same concepts apply; then follow the above section.
+             * First read the javadoc on how to convert from the older [JavaScanner] interface over to [JavaPsiScanner]. While
+             * [JavaPsiScanner] is itself deprecated, it's a lot closer to [SourceCodeScanner] so a lot of the same concepts
+             * apply; then follow the above section.
              */
             """.trimIndent(),
             verify = false // Not quite working yet
@@ -1838,7 +1833,7 @@ class KDocFormatterTest {
         )
     }
 
-    @Disabled("Tables are not properly fullsupported")
+    @Disabled("Tables are not properly supported")
     @Test
     fun testTables() {
         // Leave formatting within table cells alone
@@ -1860,6 +1855,92 @@ class KDocFormatterTest {
              * column 1 | column 2
              * ---------|---------
              * value 1  | value 2
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreformat() {
+        // Don't join preformatted text with previous TODO comment
+        val source =
+            """
+            /**
+             * TODO: Work.
+             * ```
+             * Preformatted.
+             *
+             * More preformatted.
+             * ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * TODO: Work.
+             *
+             * ```
+             * Preformatted.
+             *
+             * More preformatted.
+             * ```
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testConvertLinks() {
+        // Make sure we convert {@link} and {@linkplain} if convertMarkup is true.
+        val source =
+            """
+            /**
+             * {@linkplain SourceCodeScanner} exposes the UAST API to lint checks.
+             * The {@linkplain SourceCodeScanner} interface reflects this fact.
+             *
+             * It will throw an error if you register element types in
+             * {@linkplain #getApplicableUastTypes()} that you don't override.
+             *
+             * First read the javadoc on how to convert from the older {@linkplain
+             * JavaScanner} interface over to {@linkplain JavaPsiScanner}.
+             *
+             * 1. A file header, which is the exact contents of {@link FILE_HEADER} encoded
+             *     as ASCII characters.
+             *
+             * Given an error message produced by this lint detector for the
+             * given issue type, determines whether this corresponds to the
+             * warning (produced by {@link #reportBaselineIssues(LintDriver,
+             * Project)} above) that one or more issues have been
+             * fixed (present in baseline but not in project.)
+             *
+             * {@link #getQualifiedName(PsiClass)} method.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * [SourceCodeScanner] exposes the UAST API to lint checks. The
+             * [SourceCodeScanner] interface reflects this fact.
+             *
+             * It will throw an error if you register element types in
+             * [getApplicableUastTypes] that you don't override.
+             *
+             * First read the javadoc on how to convert from the older
+             * [JavaScanner] interface over to [JavaPsiScanner].
+             * 1. A file header, which is the exact contents of [FILE_HEADER]
+             *    encoded as ASCII characters.
+             *
+             * Given an error message produced by this lint detector for the
+             * given issue type, determines whether this corresponds to the
+             * warning (produced by [reportBaselineIssues] above) that one or
+             * more issues have been fixed (present in baseline but not in
+             * project.)
+             *
+             * [getQualifiedName] method.
              */
             """.trimIndent()
         )

@@ -27,7 +27,8 @@ Features
 * Command line script which can recursively format a whole source
   folder.
 * IDE plugin to format selected files or current comment. Preserves
-  caret position in the current comment.
+  caret position in the current comment. Also hooks into the IDE
+  formatting action.
 * Gradle plugin to format the source folders in the current project.
 * Block tags (like @param) are separated out from the main text, and
   subsequent lines are indented. Blank spaces
@@ -102,7 +103,7 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.3.3
+kdoc-formatter: Version 1.4.0
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -118,6 +119,11 @@ You can also select one or more files in the Project View and invoke
 the same action to format whole files.
 
 ![Screenshot](screenshot.png)
+
+The above formats only comments. You can also invoke the general
+formatting action in the IDE (Code > Reformat Code) and the KDoc formatter
+will participate in formatting, updating any comments that overlap
+with the formatted text region.
 
 Finally, you can configure various options in the Settings panel. The
 line length settings are inherited from the IDE code style or from

@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/version.gradle"
 
     ext {
-        gradlePluginVersion = '7.2.0-alpha04'
+        gradlePluginVersion = '7.3.0-alpha03'
     }
 
     repositories {
@@ -17,7 +17,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.4.30'
+    id 'org.jetbrains.kotlin.jvm' version '1.6.10'
 }
 
 group 'kdocformatter'
@@ -30,8 +30,8 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.4.21"
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
@@ -44,7 +44,7 @@ configurations {
 }
 
 dependencies {
-    ktlint "com.pinterest:ktlint:0.43.0"
+    ktlint "com.pinterest:ktlint:0.44.0"
 }
 
 task format(type: JavaExec, group: "verification") {
@@ -81,4 +81,9 @@ task all {
 clean.doFirst {
     delete "${rootDir}/m2"
     delete "${rootDir}/gradle-plugin/build"
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
