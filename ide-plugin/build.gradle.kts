@@ -58,8 +58,7 @@ tasks {
     patchPluginXml {
         version.set(pluginVersion)
         sinceBuild.set(properties("pluginSinceBuild"))
-        // No upper bound currently:
-        // untilBuild.set(properties("pluginUntilBuild"))
+        untilBuild.set(properties("pluginUntilBuild"))
 
         pluginDescription.set(
             projectDir.resolve("README.md").readText().lines().run {
