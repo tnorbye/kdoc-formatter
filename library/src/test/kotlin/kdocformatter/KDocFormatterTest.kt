@@ -29,7 +29,10 @@ class KDocFormatterTest {
         val formatted = formatter.reformatComment(source.trim(), indent)
         // Make sure that formatting is stable -- format again and make sure it's the same
         if (verify) {
-            assertEquals(formatted, formatter.reformatComment(formatted.trim(), indent))
+            assertEquals(
+                formatted, formatter.reformatComment(formatted.trim(), indent),
+                "Formatting is unstable: if formatted a second time, it changes"
+            )
         }
         return indent + formatted
     }
@@ -1941,6 +1944,58 @@ class KDocFormatterTest {
              * project.)
              *
              * [getQualifiedName] method.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testNestedBullets() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/36
+        val source =
+            """
+            /**
+             * Paragraph
+             * * Top Bullet
+             *    * Sub-Bullet 1
+             *    * Sub-Bullet 2
+             *       * Sub-Sub-Bullet 1
+             * 1. Top level
+             *    1. First item
+             *    2. Second item
+             */
+            """.trimIndent()
+
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * Paragraph
+             * * Top Bullet
+             *    * Sub-Bullet 1
+             *    * Sub-Bullet 2
+             *       * Sub-Sub-Bullet 1
+             * 1. Top level
+             *    1. First item
+             *    2. Second item
+             */
+            """.trimIndent()
+        )
+
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72).apply { nestedListIndent = 2 },
+            """
+            /**
+             * Paragraph
+             * * Top Bullet
+             *   * Sub-Bullet 1
+             *   * Sub-Bullet 2
+             *     * Sub-Sub-Bullet 1
+             * 1. Top level
+             *   1. First item
+             *   2. Second item
              */
             """.trimIndent()
         )

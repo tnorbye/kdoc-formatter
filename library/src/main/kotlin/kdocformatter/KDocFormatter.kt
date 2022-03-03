@@ -64,6 +64,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
             var first = true
             val hangingIndent = paragraph.hangingIndent
             for (line in lines) {
+                sb.append(paragraph.indent)
                 if (first && !paragraph.continuation) {
                     first = false
                 } else {

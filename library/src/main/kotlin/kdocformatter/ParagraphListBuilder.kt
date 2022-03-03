@@ -147,6 +147,12 @@ class ParagraphListBuilder(
             val lineWithIndentation = lineContent(l)
             val lineWithoutIndentation = lineWithIndentation.trim()
 
+            fun newParagraph(): Paragraph {
+                val paragraph = this.newParagraph()
+                paragraph.originalIndent = lineWithIndentation.length - lineWithoutIndentation.length
+                return paragraph
+            }
+
             // Look for special cases that indicates this line is a block element (which
             // begins a new paragraph)
             if (lineWithIndentation.startsWith("-") &&
@@ -187,7 +193,13 @@ class ParagraphListBuilder(
                 i = addPreformatted(i - 1) { it.startsWith("```") }
             } else if (lineWithoutIndentation.startsWith("<pre>", ignoreCase = true)) {
                 i = addPreformatted(i - 1) { it.startsWith("</pre>", ignoreCase = true) }
-            } else if (lineWithIndentation.startsWith("    ")) { // markdown preformatted text
+            } else if (lineWithIndentation.startsWith("    ") && // markdown preformatted text
+                // Make sure it's not just deeply indented inside a different block
+                (
+                    paragraph.prev == null ||
+                        lineWithIndentation.length - lineWithoutIndentation.length >= paragraph.prev!!.originalIndent + 4
+                    )
+            ) {
                 i = addPreformatted(i - 1) { !it.startsWith(" ") }
             } else if (lineWithIndentation.startsWith("> ")) {
                 val paragraph = newParagraph()
@@ -360,6 +372,42 @@ class ParagraphListBuilder(
                 }
             }
             prev = paragraph
+        }
+
+        // Handle nested lists
+        var inList = false
+        var startIndent = 0
+        var levels: MutableSet<Int>? = null
+        for (i in 1 until paragraphs.size) {
+            val paragraph = paragraphs[i]
+            if (!inList) {
+                if (paragraph.hanging) {
+                    inList = true
+                    startIndent = paragraph.originalIndent
+                }
+            } else {
+                if (!paragraph.hanging) {
+                    inList = false
+                } else {
+                    if (paragraph.originalIndent == startIndent) {
+                        paragraph.originalIndent = 0
+                    } else if (paragraph.originalIndent > 0) {
+                        (levels ?: mutableSetOf<Int>().also { levels = it }).add(paragraph.originalIndent)
+                    }
+                }
+            }
+        }
+        levels?.sorted()?.let { sorted ->
+            val assignments = mutableMapOf<Int, Int>()
+            for (i in sorted.indices) {
+                assignments[sorted[i]] = (i + 1) * options.nestedListIndent
+            }
+            for (paragraph in paragraphs) {
+                if (paragraph.originalIndent > 0) {
+                    paragraph.originalIndent = assignments[paragraph.originalIndent]!!
+                    paragraph.indent = getIndent(paragraph.originalIndent)
+                }
+            }
         }
 
         // Trim blank lines from the end

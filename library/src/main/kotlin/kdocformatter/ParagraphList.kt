@@ -10,4 +10,5 @@ class ParagraphList(
 ) : Iterable<Paragraph> {
     fun isSingleParagraph() = paragraphs.size == 1
     override fun iterator(): Iterator<Paragraph> = paragraphs.iterator()
+    override fun toString(): String = paragraphs.joinToString { it.content }
 }
