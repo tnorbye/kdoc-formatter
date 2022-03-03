@@ -2,6 +2,11 @@
 
 # KDoc Formatter Changelog
 
+## [1.4.1]
+
+- Fix formatting nested bulleted lists
+  (https://github.com/tnorbye/kdoc-formatter/issues/36)
+
 ## [1.4.0]
 
 - The IntelliJ plugin now applies KDoc formatting as part of

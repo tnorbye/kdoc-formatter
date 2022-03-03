@@ -36,7 +36,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
      */
     var block = false
 
-    /** Is this paragraph specifying a kdoc tag like @param ? */
+    /** Is this paragraph specifying a kdoc tag like @param? */
     var doc = false
 
     /**
@@ -54,6 +54,11 @@ class Paragraph(private val options: KDocFormattingOptions) {
             block = true
             field = value
         }
+
+    var originalIndent = 0
+
+    // The indent to use for all lines in the paragraph.
+    var indent = ""
 
     // The indent to use for all lines in the paragraph if [hanging] is true,
     // or the second and subsequent lines if [hanging] is false
@@ -157,6 +162,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
     }
 
     fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
+        val maxLineWidth = maxLineWidth - getIndentSize(indent, options)
         val hangingIndentSize = getIndentSize(hangingIndent, options) - if (quoted) 2 else 0 // "> "
         if (text.length < (maxLineWidth - hangingIndentSize)) {
             return listOf(text.collapseSpaces())

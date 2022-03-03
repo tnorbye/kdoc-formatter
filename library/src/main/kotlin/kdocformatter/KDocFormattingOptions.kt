@@ -43,6 +43,11 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
     var hangingIndent: Int = 4
 
     /**
+     * When there are nested lists etc, how many spaces to indent by.
+     */
+    var nestedListIndent: Int = 3
+
+    /**
      * Don't format with tabs! (See
      * https://kotlinlang.org/docs/reference/coding-conventions.html#formatting)
      *
