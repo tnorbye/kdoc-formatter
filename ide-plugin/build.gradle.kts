@@ -11,6 +11,7 @@ plugins {
     id("org.jetbrains.changelog") version "1.3.1"
     id("org.jetbrains.qodana") version "0.1.13"
     id("com.android.lint")
+    id("com.ncorti.ktfmt.gradle")
 }
 
 val pluginVersion: String = Properties().apply {
@@ -108,6 +109,10 @@ tasks {
 lint {
     textReport = true
     baseline = file("lint-baseline.xml")
+}
+
+ktfmt {
+    kotlinLangStyle()
 }
 
 dependencies {

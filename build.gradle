@@ -18,6 +18,7 @@ buildscript {
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.7.0'
+    id 'com.ncorti.ktfmt.gradle' version '0.8.0'
 }
 
 group 'kdocformatter'
@@ -52,6 +53,10 @@ task format(type: JavaExec, group: "verification") {
     classpath = configurations.ktlint
     main = "com.pinterest.ktlint.Main"
     args "-F", "--disabled_rules=import-ordering", "**/*.kt"
+}
+
+ktfmt {
+    kotlinLangStyle()
 }
 
 task lint {

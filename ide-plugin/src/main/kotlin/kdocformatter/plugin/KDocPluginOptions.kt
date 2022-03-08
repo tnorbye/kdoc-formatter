@@ -22,34 +22,34 @@ import com.intellij.openapi.components.Storage
 
 @State(name = "KDocFormatter", storages = [Storage("kdocFormatter.xml")])
 class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentState> {
-    var globalState = GlobalState()
-        private set
+  var globalState = GlobalState()
+    private set
 
-    override fun getState(): ComponentState {
-        val state = ComponentState()
-        state.state = globalState
-        return state
-    }
+  override fun getState(): ComponentState {
+    val state = ComponentState()
+    state.state = globalState
+    return state
+  }
 
-    override fun loadState(state: ComponentState) {
-        globalState = state.state
-    }
+  override fun loadState(state: ComponentState) {
+    globalState = state.state
+  }
 
-    class ComponentState {
-        var state = GlobalState()
-    }
+  class ComponentState {
+    var state = GlobalState()
+  }
 
-    class GlobalState {
-        var alternateActions = false
-        var collapseSingleLines = true
-        var convertMarkup = false
-        var lineComments = false
-        var addPunctuation = false
-        var formatProcessor = true
-    }
+  class GlobalState {
+    var alternateActions = false
+    var collapseSingleLines = true
+    var convertMarkup = false
+    var lineComments = false
+    var addPunctuation = false
+    var formatProcessor = true
+  }
 
-    companion object {
-        val instance: KDocPluginOptions
-            get() = ApplicationManager.getApplication().getService(KDocPluginOptions::class.java)
-    }
+  companion object {
+    val instance: KDocPluginOptions
+      get() = ApplicationManager.getApplication().getService(KDocPluginOptions::class.java)
+  }
 }

@@ -45,17 +45,19 @@ object EditorConfigs {
             return if (existing !== EditorConfig.NONE) existing else null
         }
 
-        val configFile = findEditorConfigFile(dir) ?: run {
-            dirToConfig[dir] = EditorConfig.NONE
+        val configFile =
+            findEditorConfigFile(dir)
+                ?: run {
+                    dirToConfig[dir] = EditorConfig.NONE
 
-            var curr = dir.parentFile
-            while (true) {
-                dirToConfig[curr] = EditorConfig.NONE
-                curr = curr.parentFile ?: break
-            }
+                    var curr = dir.parentFile
+                    while (true) {
+                        dirToConfig[curr] = EditorConfig.NONE
+                        curr = curr.parentFile ?: break
+                    }
 
-            return null
-        }
+                    return null
+                }
 
         val configFolder = configFile.parentFile
         val parentConfigFolder = configFolder?.parentFile
@@ -89,7 +91,8 @@ object EditorConfigs {
         }
     }
 
-    class EditorConfig private constructor(
+    class EditorConfig
+    private constructor(
         private val root: Boolean,
         private val file: File,
         private val parent: EditorConfig?,
@@ -121,9 +124,9 @@ object EditorConfigs {
         }
 
         private fun computeOptions(): KDocFormattingOptions {
-            val options = (if (!root) parent?.getOptions()?.copy() else null)
-                ?: EditorConfigs.root?.copy()
-                ?: KDocFormattingOptions()
+            val options =
+                (if (!root) parent?.getOptions()?.copy() else null)
+                    ?: EditorConfigs.root?.copy() ?: KDocFormattingOptions()
 
             getValue("max_line_length", "*.kt")?.let { stringValue ->
                 if (stringValue == "unset") {
@@ -199,12 +202,15 @@ object EditorConfigs {
                         continue
                     }
                     if (line.startsWith("[")) {
-                        val globs = line
-                            .removePrefix("[").removeSuffix("]")
-                            .removePrefix("{").removeSuffix("}")
-                            .split(",")
+                        val globs =
+                            line.removePrefix("[")
+                                .removeSuffix("]")
+                                .removePrefix("{")
+                                .removeSuffix("}")
+                                .split(",")
 
-                        if (globs.any { it == "*" || it == "*.kt" || it == "*.kts" || it == "*.md" }) {
+                        if (globs.any { it == "*" || it == "*.kt" || it == "*.kts" || it == "*.md" }
+                        ) {
                             map = HashMap()
                             section = SectionMap(line, map)
                             sections.add(section)
@@ -214,23 +220,26 @@ object EditorConfigs {
                     } else {
                         val eq = line.indexOf('=')
 
-                        @Suppress("DEPRECATION") // This is deprecated but the replacement requires Experimental API :-(
+                        @Suppress(
+                            "DEPRECATION"
+                        ) // This is deprecated but the replacement requires Experimental API :-(
                         val key = line.substring(0, eq).trim().toLowerCase(Locale.US)
                         if (key == "root") {
                             root = line.substring(eq + 1).trim().toBoolean()
-                        } else when (key) {
-                            "max_line_length",
-                            "indent_size",
-                            "tab_width",
-                            "kdoc_formatter_doc_do_not_wrap_if_one_line",
-                            "ij_continuation_indent_size",
-                            "ij_java_doc_do_not_wrap_if_one_line",
-                            "ij_kotlin_align_multiline_parameters" ->
-                                if (section != null) {
-                                    val value = line.substring(eq + 1).trim()
-                                    map[key] = value
-                                }
-                        }
+                        } else
+                            when (key) {
+                                "max_line_length",
+                                "indent_size",
+                                "tab_width",
+                                "kdoc_formatter_doc_do_not_wrap_if_one_line",
+                                "ij_continuation_indent_size",
+                                "ij_java_doc_do_not_wrap_if_one_line",
+                                "ij_kotlin_align_multiline_parameters" ->
+                                    if (section != null) {
+                                        val value = line.substring(eq + 1).trim()
+                                        map[key] = value
+                                    }
+                            }
                     }
                 }
 

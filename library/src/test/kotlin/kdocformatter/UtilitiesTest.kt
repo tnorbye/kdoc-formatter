@@ -16,8 +16,10 @@ class UtilitiesTest {
             val newCaretIndex = newWithCaret.indexOf('|')
             assertTrue(oldCaretIndex != -1)
             assertTrue(newCaretIndex != -1)
-            val old = oldWithCaret.substring(0, oldCaretIndex) + oldWithCaret.substring(oldCaretIndex + 1)
-            val new = newWithCaret.substring(0, newCaretIndex) + newWithCaret.substring(newCaretIndex + 1)
+            val old =
+                oldWithCaret.substring(0, oldCaretIndex) + oldWithCaret.substring(oldCaretIndex + 1)
+            val new =
+                newWithCaret.substring(0, newCaretIndex) + newWithCaret.substring(newCaretIndex + 1)
             val newPos = findSamePosition(old, oldCaretIndex, new)
 
             val actual = new.substring(0, newPos) + "|" + new.substring(newPos)
