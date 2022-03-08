@@ -1,11 +1,11 @@
 package kdocformatter.cli
 
+import java.io.File
 import kdocformatter.KDocFormatter
 import kdocformatter.KDocFormattingOptions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.io.File
 
 // The formatter is mostly tested by KDocFormatterTest. This tests the part
 // where we (1) find the comments and format them, and (2) process the code

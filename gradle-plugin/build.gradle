@@ -21,6 +21,7 @@ plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'com.gradle.plugin-publish' version '0.9.10'
+    //id 'com.ncorti.ktfmt.gradle'
 }
 
 // https://issues.sonatype.org/browse/OSSRH-63191
@@ -58,6 +59,10 @@ compileKotlin {
         jvmTarget = "11"
     }
 }
+
+//ktfmt {
+//    kotlinLangStyle()
+//}
 
 gradlePlugin {
     plugins {

@@ -11,11 +11,12 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         val lineComment = comment.startsWith("//")
         val indentSize = getIndentSize(indent, options)
         val paragraphs = ParagraphListBuilder(comment, options).scan()
-        val lineSeparator = if (lineComment) {
-            "\n$indent// "
-        } else {
-            "\n$indent * "
-        }
+        val lineSeparator =
+            if (lineComment) {
+                "\n$indent// "
+            } else {
+                "\n$indent * "
+            }
 
         // Collapse single line? If alternate is turned on, use the opposite of the
         // setting
@@ -56,10 +57,9 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 continue
             }
 
-            val maxLineWidth = min(
-                options.maxCommentWidth,
-                options.maxLineWidth - indentSize - 3
-            ) - if (paragraph.quoted) 2 else 0
+            val maxLineWidth =
+                min(options.maxCommentWidth, options.maxLineWidth - indentSize - 3) -
+                    if (paragraph.quoted) 2 else 0
 
             val lines = paragraph.reflow(maxLineWidth, options)
             var first = true
@@ -113,19 +113,20 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         // Just leverage the comment machinery here -- convert the markdown into a
         // kdoc comment, reformat that, and then uncomment it
         val comment = "/**\n" + md.split("\n").joinToString(separator = "\n") { " * $it" } + "\n*/"
-        val reformattedComment = " " + reformatComment(comment, "")
-            .trim().removePrefix("/**").removeSuffix("*/").trim()
-        val reformatted = reformattedComment.split("\n").joinToString(separator = "\n") {
-            if (it.startsWith(" * ")) {
-                it.substring(3)
-            } else if (it.startsWith(" *")) {
-                ""
-            } else if (it.startsWith("* ")) {
-                it.substring(2)
-            } else {
-                it
+        val reformattedComment =
+            " " + reformatComment(comment, "").trim().removePrefix("/**").removeSuffix("*/").trim()
+        val reformatted =
+            reformattedComment.split("\n").joinToString(separator = "\n") {
+                if (it.startsWith(" * ")) {
+                    it.substring(3)
+                } else if (it.startsWith(" *")) {
+                    ""
+                } else if (it.startsWith("* ")) {
+                    it.substring(2)
+                } else {
+                    it
+                }
             }
-        }
         return reformatted
     }
 }

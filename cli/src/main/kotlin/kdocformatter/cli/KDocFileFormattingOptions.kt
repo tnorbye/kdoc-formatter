@@ -1,8 +1,8 @@
 package kdocformatter.cli
 
+import java.io.File
 import kdocformatter.KDocFormattingOptions
 import kdocformatter.Version
-import java.io.File
 
 /**
  * Options for configuring whole files or directories. The
@@ -39,14 +39,18 @@ class KDocFileFormattingOptions {
                     arg == "--max-line-width" || arg == "--line-width" || arg == "--right-margin" ->
                         options.formattingOptions.maxLineWidth = parseInt(args[i++])
                     arg.startsWith("--max-line-width=") ->
-                        options.formattingOptions.maxLineWidth = parseInt(arg.substring("--max-line-width=".length))
+                        options.formattingOptions.maxLineWidth =
+                            parseInt(arg.substring("--max-line-width=".length))
                     arg == "--max-comment-width" ->
                         options.formattingOptions.maxCommentWidth = parseInt(args[i++])
                     arg.startsWith("--max-comment-width=") ->
-                        options.formattingOptions.maxCommentWidth = parseInt(arg.substring("--max-comment-width=".length))
-                    arg == "--hanging-indent" -> options.formattingOptions.hangingIndent = parseInt(args[i++])
+                        options.formattingOptions.maxCommentWidth =
+                            parseInt(arg.substring("--max-comment-width=".length))
+                    arg == "--hanging-indent" ->
+                        options.formattingOptions.hangingIndent = parseInt(args[i++])
                     arg.startsWith("--hanging-indent=") ->
-                        options.formattingOptions.hangingIndent = parseInt(arg.substring("--hanging-indent=".length))
+                        options.formattingOptions.hangingIndent =
+                            parseInt(arg.substring("--hanging-indent=".length))
                     arg == "--convert-markup" -> options.formattingOptions.convertMarkup = true
                     arg == "--add-punctuation" -> options.formattingOptions.addPunctuation = true
                     arg.startsWith("--single-line-comments=collapse") ->
@@ -54,7 +58,9 @@ class KDocFileFormattingOptions {
                     arg.startsWith("--single-line-comments=expand") ->
                         options.formattingOptions.collapseSingleLine = false
                     arg.startsWith("--single-line-comments=") ->
-                        error("Only `collapse` and `expand` are supported for --single-line-comments")
+                        error(
+                            "Only `collapse` and `expand` are supported for --single-line-comments"
+                        )
                     arg == "--overlaps-git-changes=HEAD" -> options.gitHead = true
                     arg == "--overlaps-git-changes=staged" -> options.gitStaged = true
                     arg.startsWith("--overlaps-git-changes=") ->
@@ -64,7 +70,8 @@ class KDocFileFormattingOptions {
                     arg == "--dry-run" || arg == "-n" -> options.dryRun = true
                     arg == "--quiet" || arg == "-q" -> options.quiet = true
                     arg == "--git-path" -> options.gitPath = args[i++]
-                    arg.startsWith("--git-path=") -> options.gitPath = arg.substring("--git-path=".length)
+                    arg.startsWith("--git-path=") ->
+                        options.gitPath = arg.substring("--git-path=".length)
                     arg == "--include-md-files" -> options.includeMd = true
                     arg == "--greedy" -> options.formattingOptions.optimal = false
                     else -> {
@@ -99,18 +106,21 @@ class KDocFileFormattingOptions {
                 if (options.gitHead) {
                     GitRangeFilter.create(options.gitPath, files.first(), false)?.let {
                         filters.add(it)
-                    } ?: error("Could not create git range filter for the staged files")
+                    }
+                        ?: error("Could not create git range filter for the staged files")
                 }
                 if (options.gitStaged) {
                     GitRangeFilter.create(options.gitPath, files.first(), true)?.let {
                         filters.add(it)
-                    } ?: error("Could not create git range filter for the files in HEAD")
+                    }
+                        ?: error("Could not create git range filter for the files in HEAD")
                 }
-                options.filter = if (filters.size == 2) {
-                    UnionFilter(filters)
-                } else {
-                    filters.first()
-                }
+                options.filter =
+                    if (filters.size == 2) {
+                        UnionFilter(filters)
+                    } else {
+                        filters.first()
+                    }
             } else if (rangeLines.isNotEmpty()) {
                 if (files.size != 1 || !files[0].isFile) {
                     error("The --lines option can only be used with a single file")

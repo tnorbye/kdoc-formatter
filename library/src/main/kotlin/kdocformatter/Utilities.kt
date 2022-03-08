@@ -38,7 +38,9 @@ fun getLineNumber(source: String, offset: Int, startLine: Int = 1, startOffset: 
 private val numberPattern = Pattern.compile("^\\d+\\. ")
 
 fun String.isListItem(): Boolean {
-    return startsWith("- ") || startsWith("* ") || startsWith("+ ") ||
+    return startsWith("- ") ||
+        startsWith("* ") ||
+        startsWith("+ ") ||
         firstOrNull()?.isDigit() == true && numberPattern.matcher(this).find() ||
         startsWith("<li>", ignoreCase = true)
 }

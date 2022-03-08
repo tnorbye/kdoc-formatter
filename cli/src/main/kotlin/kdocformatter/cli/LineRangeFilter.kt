@@ -1,7 +1,7 @@
 package kdocformatter.cli
 
-import kdocformatter.getLineNumber
 import java.io.File
+import kdocformatter.getLineNumber
 
 open class LineRangeFilter protected constructor(private val rangeMap: RangeMap) : RangeFilter() {
     var valid: Boolean = false
@@ -61,17 +61,17 @@ open class LineRangeFilter protected constructor(private val rangeMap: RangeMap)
                 for (s in rangeString.split(",")) {
                     val endSeparator = s.indexOf(':')
                     if (endSeparator == -1) {
-                        val line = s.toIntOrNull()
-                            ?: error("Line $s is not a number")
+                        val line = s.toIntOrNull() ?: error("Line $s is not a number")
                         rangeMap.addRange(file, line, line + 1)
                     } else {
                         val startString = s.substring(0, endSeparator)
                         val endString = s.substring(endSeparator + 1)
-                        val start = startString.toIntOrNull()
-                            ?: error("Line $startString is not a number")
-                        val end = endString.toIntOrNull()
-                            ?: error("Line $endString is not a number")
-                        // ranges operate with endLine is exclusive, but command line option is inclusive
+                        val start =
+                            startString.toIntOrNull() ?: error("Line $startString is not a number")
+                        val end =
+                            endString.toIntOrNull() ?: error("Line $endString is not a number")
+                        // ranges operate with endLine is exclusive, but command line option is
+                        // inclusive
                         rangeMap.addRange(file, start, end + 1)
                     }
                 }

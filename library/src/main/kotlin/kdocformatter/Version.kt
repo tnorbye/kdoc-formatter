@@ -8,9 +8,7 @@ object Version {
     init {
         val properties = Properties()
         val stream = Version::class.java.getResourceAsStream("/version.properties")
-        BufferedInputStream(stream).use { buffered ->
-            properties.load(buffered)
-        }
+        BufferedInputStream(stream).use { buffered -> properties.load(buffered) }
         versionString = properties.getProperty("buildVersion")
     }
 }
