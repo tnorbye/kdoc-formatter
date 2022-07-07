@@ -126,48 +126,53 @@ object EditorConfigs {
                 ?: KDocFormattingOptions()
 
             getValue("max_line_length", "*.kt")?.let { stringValue ->
-                if (stringValue == "unset")
+                if (stringValue == "unset") {
                     EditorConfigs.root?.maxLineWidth?.let { options.maxLineWidth = it }
-                else
+                } else {
                     (stringValue as? String)?.toIntOrNull()?.let { value ->
                         options.maxLineWidth = value
                     }
+                }
             }
 
             getValue("max_line_length", "*.md", false)?.let { stringValue ->
-                if (stringValue == "unset")
+                if (stringValue == "unset") {
                     EditorConfigs.root?.maxCommentWidth?.let { options.maxCommentWidth = it }
-                else
+                } else {
                     (stringValue as? String)?.toIntOrNull()?.let { value ->
                         options.maxCommentWidth = value
                     }
+                }
             }
 
             getValue("indent_size", "*.kt")?.let { stringValue ->
-                if (stringValue == "unset")
+                if (stringValue == "unset") {
                     EditorConfigs.root?.hangingIndent?.let { options.hangingIndent = it }
-                else
+                } else {
                     (stringValue as? String)?.toIntOrNull()?.let { value ->
                         options.hangingIndent = value
                     }
+                }
             }
 
             getValue("tab_width", "*.kt")?.let { stringValue ->
-                if (stringValue == "unset")
+                if (stringValue == "unset") {
                     EditorConfigs.root?.tabWidth?.let { options.tabWidth = it }
-                else
+                } else {
                     (stringValue as? String)?.toIntOrNull()?.let { value ->
                         options.tabWidth = value
                     }
+                }
             }
 
             getValue("kdoc_formatter_doc_do_not_wrap_if_one_line", "*.kt")?.let { stringValue ->
-                if (stringValue == "unset")
+                if (stringValue == "unset") {
                     EditorConfigs.root?.collapseSingleLine?.let { options.collapseSingleLine = it }
-                else
+                } else {
                     (stringValue as? String)?.toBoolean()?.let { value ->
                         options.collapseSingleLine = !value
                     }
+                }
             }
 
             return options
@@ -208,6 +213,7 @@ object EditorConfigs {
                         }
                     } else {
                         val eq = line.indexOf('=')
+
                         @Suppress("DEPRECATION") // This is deprecated but the replacement requires Experimental API :-(
                         val key = line.substring(0, eq).trim().toLowerCase(Locale.US)
                         if (key == "root") {

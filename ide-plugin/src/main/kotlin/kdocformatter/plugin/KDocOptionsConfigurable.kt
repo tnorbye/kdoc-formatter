@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nls
 class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     @Nls
     override fun getDisplayName() = "KDoc Formatting"
+
     @Suppress("SpellCheckingInspection")
     override fun getId() = "kdocformatter.options"
     private val formatProcessorCheckBox = JBCheckBox("Participate in IDE formatting operations")

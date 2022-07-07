@@ -3,8 +3,8 @@ package kdocformatter
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.io.File
 import org.junit.jupiter.api.io.TempDir
+import java.io.File
 
 class EditorConfigsTest {
     companion object {
@@ -76,7 +76,7 @@ class EditorConfigsTest {
             ConfigFile(
                 "root/.editorconfig",
                 "root = true\n[*]\nmax_line_length=150\ntab_width = 10"
-            ),
+            )
         )
         val file1 = File(fileTree, "root/sub1/sub2/sub3/sub4/foo.kt")
         val options1 = EditorConfigs.getOptions(file1)
@@ -99,7 +99,7 @@ class EditorConfigsTest {
             ConfigFile(
                 "root/sub1/sub2/.editorconfig",
                 "[*]\nindent_size = 6\n[*.kt]\nmax_line_length = unset"
-            ),
+            )
         )
         val file = File(fileTree, "root/sub1/sub2/sub3/sub4/foo.kt")
         val options = EditorConfigs.getOptions(file)
@@ -121,7 +121,7 @@ class EditorConfigsTest {
             ConfigFile(
                 "root/sub1/sub2/.editorconfig",
                 "root = true\n[*]\nindent_size = 6\n"
-            ),
+            )
         )
         val file = File(fileTree, "root/sub1/sub2/sub3/sub4/foo.kt")
         val options = EditorConfigs.getOptions(file)

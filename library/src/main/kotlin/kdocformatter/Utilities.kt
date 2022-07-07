@@ -14,10 +14,11 @@ fun getIndent(width: Int): String {
 fun getIndentSize(indent: String, options: KDocFormattingOptions): Int {
     var size = 0
     for (c in indent) {
-        if (c == '\t')
+        if (c == '\t') {
             size += options.tabWidth
-        else
+        } else {
             size++
+        }
     }
     return size
 }
