@@ -162,9 +162,9 @@ class Paragraph(private val options: KDocFormattingOptions) {
     }
 
     fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
-        val maxLineWidth = maxLineWidth - getIndentSize(indent, options)
+        val lineWidth = maxLineWidth - getIndentSize(indent, options)
         val hangingIndentSize = getIndentSize(hangingIndent, options) - if (quoted) 2 else 0 // "> "
-        if (text.length < (maxLineWidth - hangingIndentSize)) {
+        if (text.length < (lineWidth - hangingIndentSize)) {
             return listOf(text.collapseSpaces())
         }
         // Split text into words
@@ -174,10 +174,10 @@ class Paragraph(private val options: KDocFormattingOptions) {
         if (words.size == 1) {
             return listOf(words[0])
         }
-        val lines = reflowOptimal(maxLineWidth, words)
+        val lines = reflowOptimal(lineWidth, words)
         if (lines.size <= 2 || options.alternate || !options.optimal) {
             // Just 2 lines? We prefer long+short instead of half+half:
-            return reflowGreedy(maxLineWidth, options, words)
+            return reflowGreedy(lineWidth, options, words)
         } else {
             // We could just return [lines] here, but the straightforward algorithm
             // doesn't do a great job with short paragraphs where the last line
@@ -193,18 +193,18 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 }
             }
             val longestLine = lines.maxOf(maxLine)
-            if (hangingIndentSize > 0 && words[0].length < maxLineWidth) {
-                // Fill first line greedily since it's wider then reflow the rest optimally
+            if (hangingIndentSize > 0 && words[0].length < lineWidth) {
+                // Fill first line greedily since it's wider, then reflow the rest optimally
                 var i = 0
                 val firstLine = StringBuilder()
                 while (i < words.size) {
                     val word = words[i]
                     val newEnd = firstLine.length + word.length
-                    if (newEnd == maxLineWidth) {
+                    if (newEnd == lineWidth) {
                         firstLine.append(word)
                         i++
                         break
-                    } else if (newEnd > maxLineWidth) {
+                    } else if (newEnd > lineWidth) {
                         break
                     }
                     firstLine.append(word).append(' ')
@@ -212,17 +212,17 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 }
                 if (i > 0) {
                     val remainingWords = words.subList(i, words.size)
-                    val remainingLines = reflowOptimal(maxLineWidth - hangingIndentSize, remainingWords)
+                    val remainingLines = reflowOptimal(lineWidth - hangingIndentSize, remainingWords)
                     return listOf(firstLine.toString().trim()) + remainingLines
                 }
 
-                return reflowOptimal(maxLineWidth - hangingIndentSize, words)
+                return reflowOptimal(lineWidth - hangingIndentSize, words)
             }
             var lastWord = words.size - 1
             while (true) {
                 // We can afford to do this because we're only repeating it for a single line's
                 // worth of words and because comments tend to be relatively short anyway
-                val newLines = reflowOptimal(maxLineWidth, words.subList(0, lastWord))
+                val newLines = reflowOptimal(lineWidth, words.subList(0, lastWord))
                 if (newLines.size < lines.size) {
                     val newLongestLine = newLines.maxOf(maxLine)
                     if (newLongestLine > longestLine) {
@@ -256,7 +256,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
             // in a special way?
             if (word.startsWith("#") ||
                 word.startsWith("-") ||
-                word == "```" ||
+                word.startsWith("```") ||
                 word.isListItem() && !word.equals("<li>", true) ||
                 insideSquareBrackets
             ) {

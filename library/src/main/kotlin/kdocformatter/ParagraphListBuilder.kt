@@ -377,8 +377,21 @@ class ParagraphListBuilder(
             prev = paragraph
         }
 
+        if (prev == null) {
+            return // empty list
+        }
+
+        val firstIndent = paragraphs[0].originalIndent
+        if (firstIndent > 0) {
+            for (paragraph in paragraphs) {
+                if (paragraph.originalIndent <= firstIndent) {
+                    paragraph.originalIndent = 0
+                }
+            }
+        }
+
         // Handle nested lists
-        var inList = false
+        var inList = paragraphs.firstOrNull()?.hanging ?: false
         var startIndent = 0
         var levels: MutableSet<Int>? = null
         for (i in 1 until paragraphs.size) {
@@ -400,6 +413,7 @@ class ParagraphListBuilder(
                 }
             }
         }
+
         levels?.sorted()?.let { sorted ->
             val assignments = mutableMapOf<Int, Int>()
             for (i in sorted.indices) {

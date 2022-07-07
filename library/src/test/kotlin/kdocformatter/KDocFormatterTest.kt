@@ -204,6 +204,22 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testEmpty() {
+        val source =
+            """
+            /** */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
     fun testJavadocParams() {
         val source =
             """
@@ -642,7 +658,7 @@ class KDocFormatterTest {
              *  * .value: XML > Attribute value
              *  * .tag: XML > Tag name
              *  * .lineno: For color, General > Code > Line number, Foreground, and for background-color,
-             * Editor > Gutter background
+             *  Editor > Gutter background
              *  * .error: General > Errors and Warnings > Error
              */
             """.trimIndent()
@@ -2013,5 +2029,299 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         )
+    }
+
+    @Test
+    fun testTripledQuotedPrefixNotBreakable() {
+        // Corresponds to b/189247595
+        val source =
+            """
+            /**
+             * Gets current ABCD Workspace information from the output of ```abcdtools info```.
+             *
+             * Migrated from
+             * http://com.example
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * Gets current ABCD Workspace information from the output
+             * of ```abcdtools info```.
+             *
+             * Migrated from http://com.example
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun test193246766() {
+        val source =
+            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
+            // same capitalization words from lorem ipsum
+            """
+            /**
+             * * Do do occaecat sunt in culpa:
+             *   * Id id reprehenderit cillum non `adipiscing` enim enim ad occaecat
+             *   * Cupidatat non officia anim adipiscing enim non reprehenderit in officia est:
+             *     * Do non officia anim voluptate esse non mollit mollit id tempor, enim u consequat. irure
+             *     in occaecat
+             *     * Cupidatat, in qui officia anim voluptate esse eu fugiat fugiat in mollit, anim anim id
+             *     occaecat
+             * * In h anim id laborum:
+             *   * Do non sunt voluptate esse non culpa mollit id tempor, enim u consequat. irure in occaecat
+             *   * Cupidatat, in qui anim voluptate esse non culpa mollit est do tempor, enim enim ad occaecat
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * * Do do occaecat sunt in culpa:
+             *    * Id id reprehenderit cillum non `adipiscing` enim enim ad
+             *      occaecat
+             *    * Cupidatat non officia anim adipiscing enim non reprehenderit
+             *      in officia est:
+             *       * Do non officia anim voluptate esse non mollit mollit id
+             *         tempor, enim u consequat. irure in occaecat
+             *       * Cupidatat, in qui officia anim voluptate esse eu fugiat
+             *         fugiat in mollit, anim anim id occaecat
+             * * In h anim id laborum:
+             *    * Do non sunt voluptate esse non culpa mollit id tempor, enim
+             *      u consequat. irure in occaecat
+             *    * Cupidatat, in qui anim voluptate esse non culpa mollit est
+             *      do tempor, enim enim ad occaecat
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun test203584301() {
+        // https://github.com/facebookincubator/ktfmt/issues/310
+        val source =
+            """
+            /**
+             * This is my SampleInterface interface.
+             * @sample com.example.java.sample.library.extra.long.path.MyCustomSampleInterfaceImplementationForTesting
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * This is my SampleInterface interface.
+             *
+             * @sample
+             *     com.example.java.sample.library.extra.long.path.MyCustomSampleInterfaceImplementationForTesting
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun test209435082() {
+        // b/209435082
+        val source =
+            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
+            // same capitalization words from lorem ipsum
+            """
+            /**
+             * eiusmod.com
+             * - - -
+             * PARIATUR_MOLLIT
+             * - - -
+             * Laborum: 1.4
+             * - - -
+             * Pariatur:
+             * https://officia.officia.com
+             * https://id.laborum.laborum.com
+             * https://sit.eiusmod.com
+             * https://non-in.officia.com
+             * https://anim.laborum.com
+             * https://exercitation.ullamco.com
+             * - - -
+             * Adipiscing do tempor:
+             * - NON: IN/IN
+             * - in 2IN officia? EST
+             * - do EIUSMOD eiusmod? NON
+             * - Mollit est do incididunt Nostrud non? IN
+             * - Mollit pariatur pariatur culpa? QUI
+             * - - -
+             * Lorem eiusmod magna/adipiscing:
+             * - Do eiusmod magna/adipiscing
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * eiusmod.com
+             * - - -
+             * PARIATUR_MOLLIT
+             * - - -
+             * Laborum: 1.4
+             * - - -
+             * Pariatur: https://officia.officia.com
+             * https://id.laborum.laborum.com https://sit.eiusmod.com
+             * https://non-in.officia.com https://anim.laborum.com
+             * https://exercitation.ullamco.com
+             * - - -
+             * Adipiscing do tempor:
+             * - NON: IN/IN
+             * - in 2IN officia? EST
+             * - do EIUSMOD eiusmod? NON
+             * - Mollit est do incididunt Nostrud non? IN
+             * - Mollit pariatur pariatur culpa? QUI
+             * - - -
+             * Lorem eiusmod magna/adipiscing:
+             * - Do eiusmod magna/adipiscing
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun test236743270() {
+        val source =
+            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
+            // same capitalization words from lorem ipsum
+            """
+            /**
+             * @return Amet do non adipiscing sed consequat duis non Officia ID (amet sed consequat non
+             * adipiscing sed eiusmod), magna consequat.
+             */
+            """.trimIndent()
+        val lorem = loremize(source)
+        assertEquals(source, lorem)
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * @return Amet do non adipiscing sed consequat duis non Officia ID
+             *     (amet sed consequat non adipiscing sed eiusmod), magna consequat.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun test238279769() {
+        val source =
+            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
+            // same capitalization words from lorem ipsum
+            """
+            /**
+             * @property dataItemOrderRandomizer sit tempor enim pariatur non culpa id [Pariatur]z in qui anim.
+             *  Anim id-lorem sit magna [Consectetur] pariatur.
+             * @property randomBytesProvider non mollit anim pariatur non culpa qui qui `mollit` lorem amet
+             *   consectetur [Pariatur]z in IssuerSignedItem culpa.
+             * @property preserveMapOrder officia id pariatur non culpa id lorem pariatur culpa culpa id o est
+             *    amet consectetur sed sed do ENIM minim.
+             * @property reprehenderit p esse cillum officia est do enim enim nostrud nisi d non sunt mollit id
+             *     est tempor enim.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * @property dataItemOrderRandomizer sit tempor enim pariatur non
+             *     culpa id [Pariatur]z in qui anim. Anim
+             *     id-lorem sit magna [Consectetur] pariatur.
+             * @property randomBytesProvider non mollit anim pariatur non culpa
+             *     qui qui `mollit` lorem amet consectetur
+             *     [Pariatur]z in IssuerSignedItem culpa.
+             * @property preserveMapOrder officia id pariatur non culpa id lorem
+             *     pariatur culpa culpa id o est amet
+             *     consectetur sed sed do ENIM minim.
+             * @property reprehenderit p esse cillum officia est do enim enim
+             *     nostrud nisi d non sunt mollit id est tempor enim.
+             */
+            """.trimIndent()
+        )
+    }
+
+    /** Test utility method: from a source kdoc, derive an "equivalent" kdoc (same punctuation,
+     * whitespace, capitalization and length of words) with words from Lorem Ipsum. Useful to
+     * create test cases for the formatter without checking in original comments.
+     * */
+    private fun loremize(s: String): String {
+        val lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt " +
+            "ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco " +
+            "laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in " +
+            "voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat " +
+            "non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+        val loremWords = lorem.filter { it.isLetter() || it == ' ' }.lowercase().split(" ")
+        var next = 0
+
+        fun adjustCapitalization(word: String, original: String): String {
+            return if (original[0].isUpperCase()) {
+                if (original.all { it.isUpperCase() }) {
+                    word.uppercase()
+                } else {
+                    word.replaceFirstChar { it.uppercase() }
+                }
+            } else {
+                word
+            }
+        }
+
+        fun nextLorem(word: String): String {
+            val length = word.length
+            val start = next
+            while (next < loremWords.size) {
+                val nextLorem = loremWords[next]
+                if (nextLorem.length == length) {
+                    return adjustCapitalization(nextLorem, word)
+                }
+                next++
+            }
+            next = 0
+            while (next < start) {
+                val nextLorem = loremWords[next]
+                if (nextLorem.length == length) {
+                    return adjustCapitalization(nextLorem, word)
+                }
+                next++
+            }
+            if (length == 1) {
+                return ('a' + (start % 26)).toString()
+            }
+            // No match for this word
+            return word
+        }
+
+        val sb = StringBuilder()
+        var i = 0
+        while (i < s.length) {
+            val c = s[i]
+            if (c.isLetter()) {
+                var end = i + 1
+                while (end < s.length && s[end].isLetter()) {
+                    end++
+                }
+                val word = s.substring(i, end)
+                if (i > 0 && s[i - 1] == '@' || word == "http" || word == "https" || word == "com") {
+                    // Don't translate URL prefix/suffixes and doc tags
+                    sb.append(word)
+                } else {
+                    sb.append(nextLorem(word))
+                }
+                i = end
+            } else {
+                sb.append(c)
+                i++
+            }
+        }
+        return sb.toString()
     }
 }
