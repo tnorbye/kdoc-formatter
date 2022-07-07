@@ -32,7 +32,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
 
     /**
      * Is this paragraph a block paragraph? If so, it must start on its
-     * own line
+     * own line.
      */
     var block = false
 

@@ -2,10 +2,10 @@ package kdocformatter
 
 import kotlin.math.min
 
-/** Formatter which can reformat KDoc comments */
+/** Formatter which can reformat KDoc comments. */
 class KDocFormatter(private val options: KDocFormattingOptions) {
     /**
-     * Reformats the [comment], which follows the given [indent] string
+     * Reformats the [comment], which follows the given [indent] string.
      */
     fun reformatComment(comment: String, indent: String): String {
         val lineComment = comment.startsWith("//")
@@ -108,7 +108,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         }
     }
 
-    /** Reformats a markdown document */
+    /** Reformats a markdown document. */
     fun reformatMarkdown(md: String): String {
         // Just leverage the comment machinery here -- convert the markdown into a
         // kdoc comment, reformat that, and then uncomment it

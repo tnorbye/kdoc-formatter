@@ -122,7 +122,7 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
 
         /**
          * Returns the .git folder for the [file] or directory somewhere
-         * in the report
+         * in the report.
          */
         private fun findGitRepo(file: File): File? {
             var curr = file.absoluteFile

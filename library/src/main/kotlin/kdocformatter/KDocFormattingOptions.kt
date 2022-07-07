@@ -1,25 +1,25 @@
 package kdocformatter
 
-/** Options controlling how the [KDocFormatter] will behave */
+/** Options controlling how the [KDocFormatter] will behave. */
 class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integer.MAX_VALUE) {
-    /** Right hand side margin to write lines at */
+    /** Right hand side margin to write lines at. */
     @Suppress("CanBePrimaryConstructorProperty")
     var maxLineWidth: Int = maxLineWidth
 
     /**
      * Limit comment to be at most [maxCommentWidth] characters even if
-     * more would fit on the line
+     * more would fit on the line.
      */
     @Suppress("CanBePrimaryConstructorProperty")
     var maxCommentWidth: Int = maxCommentWidth
 
     /**
      * Whether to collapse multi-line comments that would fit on a
-     * single line into a single line
+     * single line into a single line.
      */
     var collapseSingleLine: Boolean = true
 
-    /** Whether to collapse repeated spaces */
+    /** Whether to collapse repeated spaces. */
     var collapseSpaces: Boolean = true
 
     /**
@@ -38,7 +38,7 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
 
     /**
      * How many spaces to use for hanging indents in numbered lists and
-     * after block tags
+     * after block tags.
      */
     var hangingIndent: Int = 4
 
@@ -55,7 +55,9 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
      */
     var tabWidth: Int = 8
 
-    /** Whether to perform optimal line breaking instead of greeding */
+    /**
+     * Whether to perform optimal line breaking instead of greeding.
+     */
     var optimal: Boolean = true
 
     /**
@@ -68,7 +70,7 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
      */
     var alternate: Boolean = false
 
-    /** Creates a copy of this formatting object */
+    /** Creates a copy of this formatting object. */
     fun copy(): KDocFormattingOptions {
         val copy = KDocFormattingOptions()
         copy.maxLineWidth = maxLineWidth

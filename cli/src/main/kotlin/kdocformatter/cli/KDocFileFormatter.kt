@@ -14,7 +14,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
         EditorConfigs.root = options.formattingOptions
     }
 
-    /** Formats the given file or directory recursively */
+    /** Formats the given file or directory recursively. */
     fun formatFile(file: File): Int {
         if (file.isDirectory) {
             val name = file.name

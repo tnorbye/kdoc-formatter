@@ -337,7 +337,7 @@ class ParagraphListBuilder(
 
     /**
      * Make a pass over the paragraphs and make sure that we (for
-     * example) place blank lines around preformatted text
+     * example) place blank lines around preformatted text.
      */
     private fun arrange() {
         var prev: Paragraph? = null

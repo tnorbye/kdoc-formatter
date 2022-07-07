@@ -2,7 +2,7 @@ package kdocformatter.cli
 
 import java.io.File
 
-/** Filter to decide whether given text regions should be included */
+/** Filter to decide whether given text regions should be included. */
 open class RangeFilter {
     /**
      * Return true if the range in [file] containing the contents
@@ -19,7 +19,7 @@ open class RangeFilter {
 
     /**
      * Returns true if this filter is completely empty so nothing will
-     * match
+     * match.
      */
     open fun isEmpty(): Boolean = false
 }

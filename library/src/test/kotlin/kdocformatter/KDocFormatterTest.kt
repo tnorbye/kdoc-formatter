@@ -2250,10 +2250,12 @@ class KDocFormatterTest {
         )
     }
 
-    /** Test utility method: from a source kdoc, derive an "equivalent" kdoc (same punctuation,
-     * whitespace, capitalization and length of words) with words from Lorem Ipsum. Useful to
-     * create test cases for the formatter without checking in original comments.
-     * */
+    /**
+     * Test utility method: from a source kdoc, derive an "equivalent"
+     * kdoc (same punctuation, whitespace, capitalization and length of
+     * words) with words from Lorem Ipsum. Useful to create test cases
+     * for the formatter without checking in original comments.
+     */
     private fun loremize(s: String): String {
         val lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt " +
             "ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco " +
