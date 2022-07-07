@@ -2,6 +2,11 @@
 
 # KDoc Formatter Changelog
 
+## [1.4.2]
+
+- Fix two bugs: one related to nested lists, the other
+  to embedded triple-backtick strings on lines
+
 ## [1.4.1]
 
 - Fix formatting nested bulleted lists
