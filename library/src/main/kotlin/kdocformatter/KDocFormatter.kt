@@ -11,10 +11,11 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         val lineComment = comment.startsWith("//")
         val indentSize = getIndentSize(indent, options)
         val paragraphs = ParagraphListBuilder(comment, options).scan()
-        val lineSeparator = if (lineComment)
+        val lineSeparator = if (lineComment) {
             "\n$indent// "
-        else
+        } else {
             "\n$indent * "
+        }
 
         // Collapse single line? If alternate is turned on, use the opposite of the
         // setting
@@ -115,14 +116,15 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         val reformattedComment = " " + reformatComment(comment, "")
             .trim().removePrefix("/**").removeSuffix("*/").trim()
         val reformatted = reformattedComment.split("\n").joinToString(separator = "\n") {
-            if (it.startsWith(" * "))
+            if (it.startsWith(" * ")) {
                 it.substring(3)
-            else if (it.startsWith(" *"))
+            } else if (it.startsWith(" *")) {
                 ""
-            else if (it.startsWith("* "))
+            } else if (it.startsWith("* ")) {
                 it.substring(2)
-            else
+            } else {
                 it
+            }
         }
         return reformatted
     }

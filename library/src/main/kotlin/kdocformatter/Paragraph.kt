@@ -297,8 +297,9 @@ class Paragraph(private val options: KDocFormattingOptions) {
             return if (width <= maxLineWidth) {
                 val squared = (maxLineWidth - width) * (maxLineWidth - width)
                 minimum[i] + squared
-            } else
+            } else {
                 big
+            }
         }
 
         fun search(pi0: Int, pj0: Int, pi1: Int, pj1: Int) {

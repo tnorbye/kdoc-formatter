@@ -30,7 +30,8 @@ class KDocFormatterTest {
         // Make sure that formatting is stable -- format again and make sure it's the same
         if (verify) {
             assertEquals(
-                formatted, formatter.reformatComment(formatted.trim(), indent),
+                formatted,
+                formatter.reformatComment(formatted.trim(), indent),
                 "Formatting is unstable: if formatted a second time, it changes"
             )
         }
@@ -271,7 +272,6 @@ class KDocFormatterTest {
 
     @Test
     fun testBlockTagsNoSeparators() {
-
         checkFormatter(
             """
              /**
@@ -370,7 +370,8 @@ class KDocFormatterTest {
               */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(72),
+            source,
+            KDocFormattingOptions(72),
             """
              /** This could all fit on one line */
             """.trimIndent()
@@ -379,7 +380,8 @@ class KDocFormatterTest {
         options.collapseSingleLine = false
         options.addPunctuation = true
         checkFormatter(
-            source, options,
+            source,
+            options,
             """
              /**
               * This could all fit on one line.
@@ -398,7 +400,8 @@ class KDocFormatterTest {
         val options = KDocFormattingOptions(72)
         options.addPunctuation = true
         checkFormatter(
-            source, options,
+            source,
+            options,
             """
              /** Default implementation of [MyInterface]. */
             """.trimIndent()
@@ -417,7 +420,8 @@ class KDocFormatterTest {
 
         val options = KDocFormattingOptions(72)
         checkFormatter(
-            source, options,
+            source,
+            options,
             """
             /**
              * Sometimes the text of a link can have spaces, like
@@ -442,7 +446,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * Code sample:
@@ -473,7 +478,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * Code sample:
@@ -505,7 +511,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * Code sample:
@@ -535,7 +542,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * Code sample:
@@ -564,7 +572,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * Code sample:
@@ -599,7 +608,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * 1. This is a numbered list.
@@ -637,7 +647,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * * pre.errorlines: General > Text
@@ -671,7 +682,8 @@ class KDocFormatterTest {
             */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * Basic usage:
@@ -704,7 +716,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(40),
+            source,
+            KDocFormattingOptions(40),
             """
             /**
              * @param configuration the
@@ -729,7 +742,8 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         checkFormatter(
-            source, KDocFormattingOptions(72),
+            source,
+            KDocFormattingOptions(72),
             """
             /**
              * If non-null, this issue can **only** be suppressed with

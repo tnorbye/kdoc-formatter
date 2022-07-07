@@ -102,11 +102,11 @@ class ReformatKDocAction : AnAction(), DumbAware {
         if (files.isEmpty()) {
             return
         }
-        val formatFiles = if (files.any { it.isKotlinFile() })
+        val formatFiles = if (files.any { it.isKotlinFile() }) {
             files.toList()
-        else if (files.size == 1 && files[0].isDirectory)
+        } else if (files.size == 1 && files[0].isDirectory) {
             files[0].children.filter { it.isKotlinFile() }
-        else {
+        } else {
             return
         }
         val operationStatus = ReadonlyStatusHandler.getInstance(project).ensureFilesWritable(formatFiles)

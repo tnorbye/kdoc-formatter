@@ -1,11 +1,11 @@
 package kdocformatter.gradle
 
+import kdocformatter.cli.KDocFileFormatter
+import kdocformatter.cli.KDocFileFormattingOptions
 import org.gradle.api.DefaultTask
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.TaskAction
 import java.io.File
-import kdocformatter.cli.KDocFileFormatter
-import kdocformatter.cli.KDocFileFormattingOptions
 
 open class KDocFormatterTask : DefaultTask() {
     @TaskAction

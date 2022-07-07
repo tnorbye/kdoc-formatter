@@ -6,10 +6,11 @@ class ParagraphListBuilder(
 ) {
     private val lineComment: Boolean = comment.startsWith("//")
     private val paragraphs: MutableList<Paragraph> = mutableListOf()
-    private val lines = if (lineComment)
+    private val lines = if (lineComment) {
         comment.split("\n")
-    else
+    } else {
         comment.removePrefix("/**").removeSuffix("*/").trim().split("\n")
+    }
 
     private fun lineContent(line: String): String {
         val trimmed = line.trim()
@@ -63,7 +64,7 @@ class ParagraphListBuilder(
         until: (Int, String, String) -> Boolean = { _, _, _ -> true },
         customize: (Int, Paragraph) -> Unit = { _, _ -> },
         shouldBreak: (String, String) -> Boolean = { _, _ -> false },
-        separator: String = " ",
+        separator: String = " "
     ): Int {
         var j = i
         while (j < lines.size) {
@@ -218,7 +219,8 @@ class ParagraphListBuilder(
                 appendText(lineWithoutIndentation)
                 newParagraph().hanging = true
                 i = addLines(
-                    i, includeEnd = true,
+                    i,
+                    includeEnd = true,
                     until = { _, w, _ ->
                         w.equals("</ul>", true) ||
                             w.equals("</ol>", true)
@@ -235,7 +237,8 @@ class ParagraphListBuilder(
                 newParagraph().hanging = true
                 val start = i
                 i = addLines(
-                    i - 1, includeEnd = false,
+                    i - 1,
+                    includeEnd = false,
                     until = { j: Int, w: String, s: String ->
                         // See if it's a line continuation
                         if (s.isBlank() && j < lines.size - 1 &&
