@@ -4,7 +4,8 @@ import kotlin.math.min
 
 class Paragraph(private val options: KDocFormattingOptions) {
     var content = StringBuilder()
-    val text get() = content.toString()
+    val text
+        get() = content.toString()
     var prev: Paragraph? = null
     var next: Paragraph? = null
 
@@ -32,7 +33,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
 
     /**
      * Is this paragraph a block paragraph? If so, it must start on its
-     * own line
+     * own line.
      */
     var block = false
 
@@ -212,7 +213,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 }
                 if (i > 0) {
                     val remainingWords = words.subList(i, words.size)
-                    val remainingLines = reflowOptimal(lineWidth - hangingIndentSize, remainingWords)
+                    val remainingLines =
+                        reflowOptimal(lineWidth - hangingIndentSize, remainingWords)
                     return listOf(firstLine.toString().trim()) + remainingLines
                 }
 
@@ -255,10 +257,10 @@ class Paragraph(private val options: KDocFormattingOptions) {
             // Can we start a new line with this without interpreting it
             // in a special way?
             if (word.startsWith("#") ||
-                word.startsWith("-") ||
-                word.startsWith("```") ||
-                word.isListItem() && !word.equals("<li>", true) ||
-                insideSquareBrackets
+                    word.startsWith("-") ||
+                    word.startsWith("```") ||
+                    word.isListItem() && !word.equals("<li>", true) ||
+                    insideSquareBrackets
             ) {
                 // Combine with previous word with a single space; the line breaking algorithm
                 // won't know that it's more than one word.
@@ -368,7 +370,11 @@ class Paragraph(private val options: KDocFormattingOptions) {
         return lines
     }
 
-    private fun reflowGreedy(lineWidth: Int, options: KDocFormattingOptions, words: List<String>): List<String> {
+    private fun reflowGreedy(
+        lineWidth: Int,
+        options: KDocFormattingOptions,
+        words: List<String>
+    ): List<String> {
         // Greedy implementation
 
         var width = lineWidth
@@ -391,7 +397,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 }
                 else -> {
                     width = lineWidth
-                    if (options.hangingIndent > 0 && hanging && (lines.isNotEmpty() || continuation)) {
+                    if (options.hangingIndent > 0 && hanging && (lines.isNotEmpty() || continuation)
+                    ) {
                         width -= getIndentSize(hangingIndent, options)
                     }
                     lines.add(sb.toString())

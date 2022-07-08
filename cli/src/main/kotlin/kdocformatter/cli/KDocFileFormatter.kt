@@ -1,8 +1,8 @@
 package kdocformatter.cli
 
+import java.io.File
 import kdocformatter.EditorConfigs
 import kdocformatter.KDocFormatter
-import java.io.File
 
 /**
  * This class attempts to iterate over an entire Kotlin source file
@@ -14,7 +14,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
         EditorConfigs.root = options.formattingOptions
     }
 
-    /** Formats the given file or directory recursively */
+    /** Formats the given file or directory recursively. */
     fun formatFile(file: File): Int {
         if (file.isDirectory) {
             val name = file.name
@@ -31,7 +31,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
         }
 
         return if (file.path.endsWith(".kt") && options.filter.includes(file) ||
-            options.includeMd && file.path.endsWith(".md") && options.filter.includes(file)
+                options.includeMd && file.path.endsWith(".md") && options.filter.includes(file)
         ) {
             val original = file.readText()
             val reformatted = reformatFile(file, original)
@@ -59,7 +59,8 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
 
         val sb = StringBuilder()
         val tokens = tokenizeKotlin(source)
-        val formattingOptions = file?.let { EditorConfigs.getOptions(it) } ?: options.formattingOptions
+        val formattingOptions =
+            file?.let { EditorConfigs.getOptions(it) } ?: options.formattingOptions
         val formatter = KDocFormatter(formattingOptions)
         val filter = options.filter
         var nextIsComment = false

@@ -1,16 +1,14 @@
 package kdocformatter
 
+import java.io.File
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 class EditorConfigsTest {
     companion object {
-        @TempDir
-        @JvmField
-        var temporaryFolder: File? = null
+        @TempDir @JvmField var temporaryFolder: File? = null
     }
 
     class ConfigFile(val relativePath: String, @Language("EditorConfig") val contents: String)
@@ -29,20 +27,21 @@ class EditorConfigsTest {
     @Test
     fun testBasics() {
         EditorConfigs.root = null
-        val fileTree = createFileTree(
-            ConfigFile(
-                "root/.editorconfig",
-                ";comment\nroot = true\n[*]\nmax_line_length=150\ntab_width = 10"
-            ),
-            ConfigFile(
-                "root/sub1/sub2/.editorconfig",
-                "[*]\nindent_size = 6\n[*.md]\nmax_line_length = 40\n[*.kt]\nmax_line_length = 60"
-            ),
-            ConfigFile(
-                "root/sub1/sub3/.editorconfig",
-                "[*]\nindent_size = 6\n[{*.java,*.kt}]\nmax_line_length=120\n[*.md]\nmax_line_length = 80\n; max_line_length = 110"
+        val fileTree =
+            createFileTree(
+                ConfigFile(
+                    "root/.editorconfig",
+                    ";comment\nroot = true\n[*]\nmax_line_length=150\ntab_width = 10"
+                ),
+                ConfigFile(
+                    "root/sub1/sub2/.editorconfig",
+                    "[*]\nindent_size = 6\n[*.md]\nmax_line_length = 40\n[*.kt]\nmax_line_length = 60"
+                ),
+                ConfigFile(
+                    "root/sub1/sub3/.editorconfig",
+                    "[*]\nindent_size = 6\n[{*.java,*.kt}]\nmax_line_length=120\n[*.md]\nmax_line_length = 80\n; max_line_length = 110"
+                )
             )
-        )
         val file1 = File(fileTree, "root/sub1/sub2/sub3/sub4/foo.kt")
         val options1 = EditorConfigs.getOptions(file1)
         assertEquals(60, options1.maxLineWidth)
@@ -72,12 +71,13 @@ class EditorConfigsTest {
         fallback.maxCommentWidth = 50
         EditorConfigs.root = fallback
 
-        val fileTree = createFileTree(
-            ConfigFile(
-                "root/.editorconfig",
-                "root = true\n[*]\nmax_line_length=150\ntab_width = 10"
+        val fileTree =
+            createFileTree(
+                ConfigFile(
+                    "root/.editorconfig",
+                    "root = true\n[*]\nmax_line_length=150\ntab_width = 10"
+                )
             )
-        )
         val file1 = File(fileTree, "root/sub1/sub2/sub3/sub4/foo.kt")
         val options1 = EditorConfigs.getOptions(file1)
         assertEquals(150, options1.maxLineWidth)
@@ -91,19 +91,23 @@ class EditorConfigsTest {
         fallback.maxCommentWidth = 50
         EditorConfigs.root = fallback
 
-        val fileTree = createFileTree(
-            ConfigFile(
-                "root/.editorconfig",
-                "root = true\n[*]\nmax_line_length=150\ntab_width = 10"
-            ),
-            ConfigFile(
-                "root/sub1/sub2/.editorconfig",
-                "[*]\nindent_size = 6\n[*.kt]\nmax_line_length = unset"
+        val fileTree =
+            createFileTree(
+                ConfigFile(
+                    "root/.editorconfig",
+                    "root = true\n[*]\nmax_line_length=150\ntab_width = 10"
+                ),
+                ConfigFile(
+                    "root/sub1/sub2/.editorconfig",
+                    "[*]\nindent_size = 6\n[*.kt]\nmax_line_length = unset"
+                )
             )
-        )
         val file = File(fileTree, "root/sub1/sub2/sub3/sub4/foo.kt")
         val options = EditorConfigs.getOptions(file)
-        assertEquals(80, options.maxLineWidth) // go to fallback since set to unset in closest editor config
+        assertEquals(
+            80,
+            options.maxLineWidth
+        ) // go to fallback since set to unset in closest editor config
     }
 
     @Test
@@ -113,16 +117,14 @@ class EditorConfigsTest {
         fallback.maxCommentWidth = 50
         EditorConfigs.root = fallback
 
-        val fileTree = createFileTree(
-            ConfigFile(
-                "root/.editorconfig",
-                "root = true\n[*]\nmax_line_length=150\ntab_width = 10"
-            ),
-            ConfigFile(
-                "root/sub1/sub2/.editorconfig",
-                "root = true\n[*]\nindent_size = 6\n"
+        val fileTree =
+            createFileTree(
+                ConfigFile(
+                    "root/.editorconfig",
+                    "root = true\n[*]\nmax_line_length=150\ntab_width = 10"
+                ),
+                ConfigFile("root/sub1/sub2/.editorconfig", "root = true\n[*]\nindent_size = 6\n")
             )
-        )
         val file = File(fileTree, "root/sub1/sub2/sub3/sub4/foo.kt")
         val options = EditorConfigs.getOptions(file)
         assertEquals(80, options.maxLineWidth) // go to fallback since stops at local root

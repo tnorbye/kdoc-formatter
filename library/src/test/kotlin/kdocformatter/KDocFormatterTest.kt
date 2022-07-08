@@ -83,12 +83,7 @@ class KDocFormatterTest {
              * off by default
              */
             """.trimIndent()
-        checkFormatter(
-            source,
-            KDocFormattingOptions(72),
-            reformatted,
-            indent = "    "
-        )
+        checkFormatter(source, KDocFormattingOptions(72), reformatted, indent = "    ")
         val initialOffset = source.indexOf("default")
         val newOffset = findSamePosition(source, initialOffset, reformatted)
         assertNotEquals(initialOffset, newOffset)
@@ -112,12 +107,7 @@ class KDocFormatterTest {
              * aaaaaa - off by default
              */
             """.trimIndent()
-        checkFormatter(
-            source,
-            KDocFormattingOptions(72),
-            reformatted,
-            indent = "    "
-        )
+        checkFormatter(source, KDocFormattingOptions(72), reformatted, indent = "    ")
         val initialOffset = source.indexOf("default")
         val newOffset = findSamePosition(source, initialOffset, reformatted)
         assertNotEquals(initialOffset, newOffset)
@@ -205,8 +195,7 @@ class KDocFormatterTest {
 
     @Test
     fun testEmpty() {
-        val source =
-            """
+        val source = """
             /** */
             """.trimIndent()
         checkFormatter(
@@ -771,7 +760,6 @@ class KDocFormatterTest {
             // After reflowing @SuppressLint ends up on at the beginning of a line
             // which is then interpreted as a doc tag
             verify = true
-
         )
     }
 
@@ -960,8 +948,9 @@ class KDocFormatterTest {
 
     @Test
     fun testVariousMarkup() {
-        val source = "/**\n" +
-            """
+        val source =
+            "/**\n" +
+                """
             This document contains a bunch of markup examples
             that I will use
             to verify that things are handled
@@ -1051,7 +1040,11 @@ class KDocFormatterTest {
             ***
             * * *
             - - -
-            """.trimIndent().split("\n").joinToString(separator = "\n") { " * $it".trimEnd() } + "\n */"
+            """
+                    .trimIndent()
+                    .split("\n")
+                    .joinToString(separator = "\n") { " * $it".trimEnd() } +
+                "\n */"
 
         checkFormatter(
             source,
@@ -1212,7 +1205,9 @@ class KDocFormatterTest {
 
     @Test
     fun testListContinuations2() {
-        val source = "/**\n" + """
+        val source =
+            "/**\n" +
+                """
             List items with multiple paragraphs:
 
             * This is my list item. It has
@@ -1220,7 +1215,11 @@ class KDocFormatterTest {
 
               This is a continuation of the first bullet.
             * And this is the second.
-        """.trimIndent().split("\n").joinToString(separator = "\n") { " * $it".trimEnd() } + "\n */"
+        """
+                    .trimIndent()
+                    .split("\n")
+                    .joinToString(separator = "\n") { " * $it".trimEnd() } +
+                "\n */"
 
         checkFormatter(
             source,
@@ -2060,9 +2059,10 @@ class KDocFormatterTest {
     @Test
     fun test193246766() {
         val source =
-            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
-            // same capitalization words from lorem ipsum
-            """
+        // Nonsensical text derived from the original using the lorem() method and replacing
+        // same-length &
+        // same capitalization words from lorem ipsum
+        """
             /**
              * * Do do occaecat sunt in culpa:
              *   * Id id reprehenderit cillum non `adipiscing` enim enim ad occaecat
@@ -2128,9 +2128,10 @@ class KDocFormatterTest {
     fun test209435082() {
         // b/209435082
         val source =
-            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
-            // same capitalization words from lorem ipsum
-            """
+        // Nonsensical text derived from the original using the lorem() method and replacing
+        // same-length &
+        // same capitalization words from lorem ipsum
+        """
             /**
              * eiusmod.com
              * - - -
@@ -2190,9 +2191,10 @@ class KDocFormatterTest {
     @Test
     fun test236743270() {
         val source =
-            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
-            // same capitalization words from lorem ipsum
-            """
+        // Nonsensical text derived from the original using the lorem() method and replacing
+        // same-length &
+        // same capitalization words from lorem ipsum
+        """
             /**
              * @return Amet do non adipiscing sed consequat duis non Officia ID (amet sed consequat non
              * adipiscing sed eiusmod), magna consequat.
@@ -2215,9 +2217,10 @@ class KDocFormatterTest {
     @Test
     fun test238279769() {
         val source =
-            // Nonsensical text derived from the original using the lorem() method and replacing same-length &
-            // same capitalization words from lorem ipsum
-            """
+        // Nonsensical text derived from the original using the lorem() method and replacing
+        // same-length &
+        // same capitalization words from lorem ipsum
+        """
             /**
              * @property dataItemOrderRandomizer sit tempor enim pariatur non culpa id [Pariatur]z in qui anim.
              *  Anim id-lorem sit magna [Consectetur] pariatur.
@@ -2250,16 +2253,19 @@ class KDocFormatterTest {
         )
     }
 
-    /** Test utility method: from a source kdoc, derive an "equivalent" kdoc (same punctuation,
-     * whitespace, capitalization and length of words) with words from Lorem Ipsum. Useful to
-     * create test cases for the formatter without checking in original comments.
-     * */
+    /**
+     * Test utility method: from a source kdoc, derive an "equivalent"
+     * kdoc (same punctuation, whitespace, capitalization and length of
+     * words) with words from Lorem Ipsum. Useful to create test cases
+     * for the formatter without checking in original comments.
+     */
     private fun loremize(s: String): String {
-        val lorem = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt " +
-            "ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco " +
-            "laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in " +
-            "voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat " +
-            "non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
+        val lorem =
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt " +
+                "ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco " +
+                "laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in " +
+                "voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat " +
+                "non proident, sunt in culpa qui officia deserunt mollit anim id est laborum"
         val loremWords = lorem.filter { it.isLetter() || it == ' ' }.lowercase().split(" ")
         var next = 0
 
@@ -2310,7 +2316,8 @@ class KDocFormatterTest {
                     end++
                 }
                 val word = s.substring(i, end)
-                if (i > 0 && s[i - 1] == '@' || word == "http" || word == "https" || word == "com") {
+                if (i > 0 && s[i - 1] == '@' || word == "http" || word == "https" || word == "com"
+                ) {
                     // Don't translate URL prefix/suffixes and doc tags
                     sb.append(word)
                 } else {

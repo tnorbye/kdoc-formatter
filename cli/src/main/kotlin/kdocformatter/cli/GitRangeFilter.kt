@@ -15,7 +15,11 @@ import java.nio.file.Files
  */
 class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(rangeMap) {
     companion object {
-        fun create(gitPath: String, fileInRepository: File, staged: Boolean = false): GitRangeFilter? {
+        fun create(
+            gitPath: String,
+            fileInRepository: File,
+            staged: Boolean = false
+        ): GitRangeFilter? {
             val git = findGit(gitPath) ?: return null
             val args = mutableListOf<String>()
             val gitRepo = findGitRepo(fileInRepository) ?: return null
@@ -56,10 +60,14 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
                     // KDocFileFormattingOptions.parse (which is necessary such that we don't
                     // accidentally handle relative paths like "./" etc as "foo/./bar" which
                     // isn't treated as equal to "foo/bar").
-                    currentPath = (if (root != null) File(root, relative) else File(relative)).canonicalFile
+                    currentPath =
+                        (if (root != null) File(root, relative) else File(relative)).canonicalFile
                 } else if (line.startsWith("@@ ")) {
                     //noinspection FileComparisons
-                    if (currentPath === root || currentPath == null || !currentPath.path.endsWith(".kt")) {
+                    if (currentPath === root ||
+                            currentPath == null ||
+                            !currentPath.path.endsWith(".kt")
+                    ) {
                         continue
                     }
                     val rangeStart = line.indexOf('+') + 1
@@ -122,7 +130,7 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
 
         /**
          * Returns the .git folder for the [file] or directory somewhere
-         * in the report
+         * in the report.
          */
         private fun findGitRepo(file: File): File? {
             var curr = file.absoluteFile
@@ -146,8 +154,7 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
                 }
             }
 
-            val git = findOnPath("git")
-                ?: findOnPath("git.exe")
+            val git = findOnPath("git") ?: findOnPath("git.exe")
             if (git != null) {
                 val gitFile = File(git)
                 if (!gitFile.canExecute()) {
