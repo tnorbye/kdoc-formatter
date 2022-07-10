@@ -260,7 +260,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
                     word.startsWith("-") ||
                     word.startsWith("```") ||
                     word.isListItem() && !word.equals("<li>", true) ||
-                    insideSquareBrackets
+                    insideSquareBrackets ||
+                    word.isDirectiveMarker()
             ) {
                 // Combine with previous word with a single space; the line breaking algorithm
                 // won't know that it's more than one word.

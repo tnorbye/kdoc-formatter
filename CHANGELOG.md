@@ -2,6 +2,9 @@
 
 # KDoc Formatter Changelog
 
+## [1.4.3]
+- Support for kotlinx-knit markers
+
 ## [1.4.2]
 
 - Fix two bugs: one related to nested lists, the other
