@@ -23,7 +23,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         val collapseLine = options.collapseSingleLine.let { if (options.alternate) !it else it }
         if (paragraphs.isSingleParagraph() && collapseLine && !lineComment) {
             // Does the text fit on a single line?
-            val trimmed = paragraphs.first().text.trim()
+            val trimmed = paragraphs.firstOrNull()?.text?.trim() ?: ""
             // Subtract out space for "/** " and " */" and the indent:
             val width = min(options.maxLineWidth - indentSize - 7, options.maxCommentWidth)
             if (trimmed.length < width) {

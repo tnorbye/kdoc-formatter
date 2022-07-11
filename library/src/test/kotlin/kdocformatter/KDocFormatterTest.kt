@@ -202,6 +202,14 @@ class KDocFormatterTest {
             source,
             KDocFormattingOptions(72),
             """
+            /**  */
+            """.trimIndent()
+        )
+
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72).apply { collapseSingleLine = false },
+            """
             /**
              */
             """.trimIndent()
