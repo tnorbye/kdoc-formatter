@@ -579,7 +579,7 @@ class KDocFormatterTest {
              * Code sample:
              * ```kotlin
              * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
-             * 
+             *
              * println(s);
              * ```
              */
@@ -837,6 +837,7 @@ class KDocFormatterTest {
             * This whole paragraph should be treated as a block quote.
             * This whole paragraph should be treated as a block quote.
             * This whole paragraph should be treated as a block quote.
+            * @sample Sample
                  */
             """.trimIndent(),
             KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 30),
@@ -851,6 +852,8 @@ class KDocFormatterTest {
              * > be treated as a block quote.
              * > This whole paragraph should
              * > be treated as a block quote.
+             *
+             * @sample Sample
              */
             """.trimIndent()
         )
@@ -2256,6 +2259,79 @@ class KDocFormatterTest {
              *     consectetur sed sed do ENIM minim.
              * @property reprehenderit p esse cillum officia est do enim enim
              *     nostrud nisi d non sunt mollit id est tempor enim.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testKnit() {
+        // Some tests for the knit plugin -- https://github.com/Kotlin/kotlinx-knit
+        val source =
+            """
+           /**
+            * <!--- <directive> [<parameters>] -->
+            * <!--- <directive> [<parameters>]
+            * Some text here.
+            * This should all be merged into one
+            * line.
+            * -->
+            * <!--- super long text here; this not be broken into lines; super long text here super long text here super long text here super long text here -->
+            *
+            * <!--- INCLUDE
+            * import kotlin.system.*
+            * -->
+            * ```kotlin
+            * fun exit(): Nothing = exitProcess(0)
+            * ```
+            * <!--- PREFIX -->
+            * <!--- TEST_NAME BasicTest -->
+            * <!--- TEST
+            * Hello, world!
+            * -->
+            * <!--- TEST lines.single().toInt() in 1..100 -->
+            * <!--- TOC -->
+            * <!--- END -->
+            * <!--- MODULE kotlinx-knit-test -->
+            * <!--- INDEX kotlinx.knit.test -->
+            * [captureOutput]: https://example.com/kotlinx-knit-test/kotlinx.knit.test/capture-output.html
+            * <!--- END -->
+            *
+            * Make sure we never line break <!--- to the beginning a line: <!--- <!--- <!--- end.
+            */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * <!--- <directive> [<parameters>] -->
+             * <!--- <directive> [<parameters>]
+             * Some text here. This should all be merged into one line.
+             * -->
+             * <!--- super long text here; this not be broken into lines; super long text here super long text here super long text here super long text here -->
+             * <!--- INCLUDE
+             * import kotlin.system.*
+             * -->
+             * ```kotlin
+             * fun exit(): Nothing = exitProcess(0)
+             * ```
+             * <!--- PREFIX -->
+             * <!--- TEST_NAME BasicTest -->
+             * <!--- TEST
+             * Hello, world!
+             * -->
+             * <!--- TEST lines.single().toInt() in 1..100 -->
+             * <!--- TOC -->
+             * <!--- END -->
+             * <!--- MODULE kotlinx-knit-test -->
+             * <!--- INDEX kotlinx.knit.test -->
+             * [captureOutput]:
+             * https://example.com/kotlinx-knit-test/kotlinx.knit.test/capture-output.html
+             * <!--- END -->
+             *
+             * Make sure we never line break <!--- to the beginning a
+             * line: <!--- <!--- <!--- end.
              */
             """.trimIndent()
         )

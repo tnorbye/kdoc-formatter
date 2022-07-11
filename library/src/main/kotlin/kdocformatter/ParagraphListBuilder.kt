@@ -33,6 +33,10 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             }
             text.isListItem() -> paragraph.hanging = true
             text.startsWith("    ") -> paragraph.preformatted = true
+            text.isDirectiveMarker() -> {
+                paragraph.block = true
+                paragraph.preformatted = true
+            }
         }
         if (!paragraph.isEmpty() || paragraph.allowEmpty) {
             paragraphs.add(paragraph)
@@ -205,9 +209,14 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     addLines(
                         i - 1,
                         until = { _, w, s ->
-                            s.isBlank() || w.isListItem() || s.isKDocTag() || s.isTodo()
+                            s.isBlank() ||
+                                w.isListItem() ||
+                                s.isKDocTag() ||
+                                s.isTodo() ||
+                                s.isDirectiveMarker()
                         },
-                        customize = { _, p -> p.quoted = true }
+                        customize = { _, p -> p.quoted = true },
+                        includeEnd = false
                     )
                 newParagraph()
             } else if (lineWithoutIndentation.equals("<ul>", true) ||
@@ -252,7 +261,8 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                                     s.isKDocTag() ||
                                     s.isTodo() ||
                                     s.startsWith("```") ||
-                                    w.startsWith("<pre>")
+                                    w.startsWith("<pre>") ||
+                                    w.isDirectiveMarker()
                             }
                         },
                         shouldBreak = { w, _ -> w.isBlank() },
@@ -269,6 +279,10 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             } else if (lineWithoutIndentation.isTodo()) {
                 newParagraph().hanging = true
                 appendText(lineWithoutIndentation).appendText(" ")
+            } else if (lineWithoutIndentation.isDirectiveMarker()) {
+                newParagraph()
+                appendText(lineWithoutIndentation)
+                newParagraph().block = true
             } else {
                 // Some common HTML block tags
                 if (lineWithoutIndentation.startsWith("<p>", true) ||
@@ -361,6 +375,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     paragraph.separate -> true
                     // Don't separate kdoc tags, except for the first one
                     paragraph.doc -> !prev.doc
+                    text.isDirectiveMarker() -> false
                     text.isTodo() && !prev.text.isTodo() -> true
                     text.startsWith("#") -> true // header
                     // Set preformatted paragraphs off (but not <pre> tags where it's implicit)

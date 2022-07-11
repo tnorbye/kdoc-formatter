@@ -67,6 +67,10 @@ fun String.isTodo(): Boolean {
     return startsWith("TODO:")
 }
 
+fun String.isDirectiveMarker(): Boolean {
+    return startsWith("<!---") || startsWith("-->")
+}
+
 fun String.isKDocTag(): Boolean {
     if (!startsWith("@")) {
         return false
