@@ -338,7 +338,8 @@ class KDocFormatterTest {
              *       report errors to and
              *       to use to read files
              * @param classFiles the specific
-             *       set of class files to look for
+             *       set of class files to look
+             *       for
              * @param classFolders the list of
              *       class folders to look
              *       in (to determine
@@ -347,6 +348,37 @@ class KDocFormatterTest {
              *       results
              * @return the list of class
              *       entries, never null.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testGreedyBlockIndent() {
+        val options = KDocFormattingOptions(100, 72)
+        options.hangingIndent = 6
+        checkFormatter(
+            """
+            /**
+             * Returns the project resources, if available
+             *
+             * @param includeModuleDependencies if true, include merged view of
+             *     all module dependencies
+             * @param includeLibraries if true, include merged view of all
+             *     library dependencies (this also requires all module dependencies)
+             * @return the project resources, or null if not available
+             */
+            """.trimIndent(),
+            options,
+            """
+            /**
+             * Returns the project resources, if available
+             *
+             * @param includeModuleDependencies if true, include merged view of all
+             *       module dependencies
+             * @param includeLibraries if true, include merged view of all library
+             *       dependencies (this also requires all module dependencies)
+             * @return the project resources, or null if not available
              */
             """.trimIndent()
         )
@@ -464,7 +496,6 @@ class KDocFormatterTest {
             """
             /**
              * Code sample:
-             *
              *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
              *
@@ -496,7 +527,6 @@ class KDocFormatterTest {
             """
             /**
              * Code sample:
-             *
              * ```kotlin
              * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
              * println(s);
@@ -560,7 +590,6 @@ class KDocFormatterTest {
             """
             /**
              * Code sample:
-             *
              * ```kotlin
              * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
              *
@@ -590,12 +619,149 @@ class KDocFormatterTest {
             """
             /**
              * Code sample:
-             *
              * ```kotlin
              * val s = "hello, and this is code so should not be line broken at all, it should stay on one line";
              *
              * println(s);
              * ```
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreformattedTextNoSeparation() {
+        // Don't add a separating line between text and preformatted text if the line before
+        // ends with : or ,
+        val source =
+            """
+            /**
+             * For example,
+             *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
+             *     println(s);
+             * And here's another example:
+             *     More preformatted text.
+             *
+             * And a third example,
+             *
+             * ```
+             * Preformatted.
+             * ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /**
+             * For example,
+             *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
+             *     println(s);
+             * And here's another example:
+             *     More preformatted text.
+             *
+             * And a third example,
+             * ```
+             * Preformatted.
+             * ```
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testSeparateParagraphMarkers1() {
+        // If the markup still contains HTML paragraph separators, separate paragraphs
+        val source =
+            """
+            /**
+             * Here's paragraph 1.
+             *
+             * And here's paragraph 2.
+             * <p>And here's paragraph 3.
+             * <P/>And here's paragraph 4.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40).apply { convertMarkup = true },
+            """
+            /**
+             * Here's paragraph 1.
+             *
+             * And here's paragraph 2.
+             *
+             * And here's paragraph 3.
+             *
+             * And here's paragraph 4.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testSeparateParagraphMarkers2() {
+        // From ktfmt Tokenizer.kt
+        val source =
+            """
+            /**
+             * Tokenizer traverses a Kotlin parse tree (which blessedly contains whitespaces and comments,
+             * unlike Javac) and constructs a list of 'Tok's.
+             *
+             * <p>The google-java-format infra expects newline Toks to be separate from maximal-whitespace Toks,
+             * but Kotlin emits them together. So, we split them using Java's \R regex matcher. We don't use
+             * 'split' et al. because we want Toks for the newlines themselves.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(100, 100).apply {
+                convertMarkup = true
+                optimal = false
+            },
+            """
+            /**
+             * Tokenizer traverses a Kotlin parse tree (which blessedly contains whitespaces and comments,
+             * unlike Javac) and constructs a list of 'Tok's.
+             *
+             * The google-java-format infra expects newline Toks to be separate from maximal-whitespace Toks,
+             * but Kotlin emits them together. So, we split them using Java's \R regex matcher. We don't use
+             * 'split' et al. because we want Toks for the newlines themselves.
+             */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testConvertMarkup() {
+        // If the markup still contains HTML paragraph separators, separate paragraphs
+        val source =
+            """
+            /**
+             * This is <b>bold</b>, this is <i>italics</i>, but nothing
+             * should be converted in `<b>code</b>` or in
+             * ```
+             * <i>preformatted text</i>
+             * ```
+             * And this \` is <b>not code and should be converted</b>.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40).apply { convertMarkup = true },
+            """
+            /**
+             * This is **bold**, this is
+             * *italics*, but nothing should be
+             * converted in `<b>code</b>` or in
+             *
+             * ```
+             * <i>preformatted text</i>
+             * ```
+             *
+             * And this \` is **not code and
+             * should be converted**.
              */
             """.trimIndent()
         )
@@ -1330,7 +1496,8 @@ class KDocFormatterTest {
              * @return this for constructor chaining
              *
              * TODO: Consider looking at the localization="suggested" attribute
-             *     in the platform attrs.xml to catch future recommended attributes.
+             *     in the platform attrs.xml to catch future recommended
+             *     attributes.
              * TODO: Also adds the given dependency graph (the output of the
              *     Gradle dependency task) to be constructed
              *     when mocking a Gradle model for this project.
@@ -2068,6 +2235,50 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testGreedyLineBreak() {
+        // Make sure we correctly break at the max line width
+        val source =
+            """
+            /**
+             * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`
+             *
+             * This is by far the most complicated part of this formatter. We start by breaking the expression
+             * to the steps it is executed in (which are in the opposite order of how the syntax tree is
+             * built).
+             *
+             * We then calculate information to know which parts need to be groups, and finally go part by
+             * part, emitting it to the [builder] while closing and opening groups.
+             *
+             * @param brokeBeforeBrace used for tracking if a break was taken right before the lambda
+             * expression. Useful for scoping functions where we want good looking indentation. For example,
+             * here we have correct indentation before `bar()` and `car()` because we can detect the break
+             * after the equals:
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(100, 100).apply { optimal = false },
+            """
+            /**
+             * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`
+             *
+             * This is by far the most complicated part of this formatter. We start by breaking the
+             * expression to the steps it is executed in (which are in the opposite order of how the syntax
+             * tree is built).
+             *
+             * We then calculate information to know which parts need to be groups, and finally go part by
+             * part, emitting it to the [builder] while closing and opening groups.
+             *
+             * @param brokeBeforeBrace used for tracking if a break was taken right before the lambda
+             *     expression. Useful for scoping functions where we want good looking indentation. For
+             *     example, here we have correct indentation before `bar()` and `car()` because we can
+             *     detect the break after the equals:
+             */
+             """.trimIndent()
+        )
+    }
+
+    @Test
     fun test193246766() {
         val source =
         // Nonsensical text derived from the original using the lorem() method and replacing
@@ -2219,7 +2430,8 @@ class KDocFormatterTest {
             """
             /**
              * @return Amet do non adipiscing sed consequat duis non Officia ID
-             *     (amet sed consequat non adipiscing sed eiusmod), magna consequat.
+             *     (amet sed consequat non adipiscing sed eiusmod), magna
+             *     consequat.
              */
             """.trimIndent()
         )

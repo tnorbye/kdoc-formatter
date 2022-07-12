@@ -82,9 +82,23 @@ class Paragraph(private val options: KDocFormattingOptions) {
         val sb = StringBuilder(s.length)
         var i = 0
         val n = s.length
+        var code = false
         while (i < n) {
             val c = s[i++]
-            if (c == '<') {
+            if (c == '\\') {
+                sb.append(c)
+                if (i < n - 1) {
+                    sb.append(s[i++])
+                }
+                continue
+            } else if (c == '`') {
+                code = !code
+                sb.append(c)
+                continue
+            } else if (code) {
+                sb.append(c)
+                continue
+            } else if (c == '<') {
                 if (s.startsWith("b>", i, true) || s.startsWith("/b>", i, true)) {
                     // "<b>" or </b> -> "**"
                     sb.append('*').append('*')
@@ -398,14 +412,13 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 }
                 else -> {
                     width = lineWidth
-                    if (options.hangingIndent > 0 && hanging && (lines.isNotEmpty() || continuation)
-                    ) {
+                    if (options.hangingIndent > 0 && hanging) {
                         width -= getIndentSize(hangingIndent, options)
                     }
                     lines.add(sb.toString())
-                    column = 0
                     sb.setLength(0)
                     sb.append(word)
+                    column = sb.length
                 }
             }
         }

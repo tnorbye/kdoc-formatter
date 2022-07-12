@@ -71,6 +71,15 @@ fun String.isDirectiveMarker(): Boolean {
     return startsWith("<!---") || startsWith("-->")
 }
 
+/**
+ * Returns true if the string ends with a symbol that implies more text
+ * is coming, e.g. ":" or ","
+ */
+fun String.isExpectingMore(): Boolean {
+    val last = lastOrNull() { !it.isWhitespace() } ?: return false
+    return last == ':' || last == ','
+}
+
 fun String.isKDocTag(): Boolean {
     if (!startsWith("@")) {
         return false

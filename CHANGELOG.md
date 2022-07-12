@@ -2,6 +2,17 @@
 
 # KDoc Formatter Changelog
 
+## [1.4.4]
+- Fix bug in greedy line breaking which meant some lines were
+  actually wider than allowed by the line limit
+- Skip markup tag conversion for text inside `backticks` as
+  was already done for preformatted text
+- For lines that start with "<p>" treat these as a paragraph
+  start, as was already the case for lines containing only <p>
+  and drop these if markup conversion is enabled.
+- Don't add a blank line between text and preformatted text
+  if the preceding text ends with a colon or a comma.
+
 ## [1.4.3]
 - Support for kotlinx-knit markers
 

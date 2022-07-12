@@ -342,10 +342,17 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         continue
                     }
                 }
-                if (options.collapseSpaces) {
-                    appendText(lineWithoutIndentation.collapseSpaces())
+                val text =
+                    if (options.collapseSpaces) lineWithoutIndentation.collapseSpaces()
+                    else lineWithoutIndentation
+                if (options.convertMarkup &&
+                        (text.startsWith("<p>", true) || text.startsWith("<p/>", true))
+                ) {
+                    paragraph.separate = true
+                    val stripped = text.substring(text.indexOf('>') + 1)
+                    appendText(stripped)
                 } else {
-                    appendText(lineWithoutIndentation)
+                    appendText(text)
                 }
                 appendText(" ")
             }
@@ -379,14 +386,19 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     text.isTodo() && !prev.text.isTodo() -> true
                     text.startsWith("#") -> true // header
                     // Set preformatted paragraphs off (but not <pre> tags where it's implicit)
-                    paragraph.preformatted -> !prev.preformatted && !text.startsWith("<pre", true)
-                    !paragraph.preformatted &&
-                        prev.preformatted &&
-                        prev.text.startsWith("</pre>", true) -> false
+                    paragraph.preformatted ->
+                        !prev.preformatted &&
+                            !text.startsWith("<pre", true) &&
+                            // And as a special case, if the previous line ends with ":", no
+                            // separation:
+                            (options.alwaysNewLineBeforePreformatted ||
+                                !prev.text.isExpectingMore())
+                    prev.preformatted && prev.text.startsWith("</pre>", true) -> false
                     paragraph.continuation -> true
                     paragraph.hanging -> false
                     paragraph.quoted -> false
                     text.startsWith("#") || text.startsWith("<h", true) -> true
+                    text.startsWith("<p>", true) || text.startsWith("<p/>", true) -> true
                     else -> !paragraph.block && !paragraph.isEmpty()
                 }
 
