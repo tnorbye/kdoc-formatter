@@ -27,6 +27,13 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
     var convertMarkup: Boolean = true
 
     /**
+     * Whether there should **always** be a newline before codeblocks.
+     * When this is not set, we'll as a special case omit the newline if
+     * the previous line ends with ":" or ",".
+     */
+    var alwaysNewLineBeforePreformatted = false
+
+    /**
      * Whether to add punctuation where missing, such as ending
      * sentences with a period. (TODO: Make sure the FIRST sentence
      * ends with one too! Especially if the subsequent sentence is
@@ -77,6 +84,7 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
         copy.collapseSpaces = collapseSpaces
         copy.hangingIndent = hangingIndent
         copy.tabWidth = tabWidth
+        copy.alwaysNewLineBeforePreformatted = alwaysNewLineBeforePreformatted
         return copy
     }
 }

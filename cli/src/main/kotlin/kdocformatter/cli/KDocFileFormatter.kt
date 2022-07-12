@@ -96,6 +96,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
         val length = source.length
         var state = STATE_INITIAL
         var offset = 0
+        var blockCommentDepth = 0
         while (offset < length) {
             val c = source[offset]
             when (state) {
@@ -124,6 +125,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
                         tokens[offset - 1] = COMMENT
                     } else if (c == '*') {
                         state = STATE_BLOCK_COMMENT
+                        blockCommentDepth++
                         if (offset < source.length - 1 && source[offset + 1] == '*') {
                             tokens[offset - 1] = KDOC_COMMENT
                             offset++
@@ -147,10 +149,17 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
                 }
                 STATE_BLOCK_COMMENT -> {
                     if (c == '*' && offset < source.length - 1 && source[offset + 1] == '/') {
-                        state = STATE_INITIAL
-                        offset += 2
-                        tokens[offset] = PLAIN_TEXT
-                        continue
+                        blockCommentDepth--
+                        if (blockCommentDepth == 0) {
+                            state = STATE_INITIAL
+                            offset += 2
+                            tokens[offset] = PLAIN_TEXT
+                            continue
+                        }
+                    } else if (c == '/' && offset < source.length - 1 && source[offset + 1] == '*'
+                    ) {
+                        offset++
+                        blockCommentDepth++
                     }
                     offset++
                     continue
