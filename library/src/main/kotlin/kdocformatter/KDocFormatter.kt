@@ -5,9 +5,11 @@ import kotlin.math.min
 /** Formatter which can reformat KDoc comments. */
 class KDocFormatter(private val options: KDocFormattingOptions) {
     /**
-     * Reformats the [comment], which follows the given [indent] string.
+     * Reformats the [comment], which follows the given [initialIndent]
+     * string.
      */
-    fun reformatComment(comment: String, indent: String): String {
+    fun reformatComment(comment: String, initialIndent: String): String {
+        @Suppress("UnnecessaryVariable") val indent = initialIndent
         val lineComment = comment.startsWith("//")
         val indentSize = getIndentSize(indent, options)
         val paragraphs = ParagraphListBuilder(comment, options).scan()

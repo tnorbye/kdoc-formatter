@@ -27,13 +27,6 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
     var convertMarkup: Boolean = true
 
     /**
-     * Whether there should **always** be a newline before codeblocks.
-     * When this is not set, we'll as a special case omit the newline if
-     * the previous line ends with ":" or ",".
-     */
-    var alwaysNewLineBeforePreformatted = false
-
-    /**
      * Whether to add punctuation where missing, such as ending
      * sentences with a period. (TODO: Make sure the FIRST sentence
      * ends with one too! Especially if the subsequent sentence is
@@ -51,6 +44,15 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
      * When there are nested lists etc, how many spaces to indent by.
      */
     var nestedListIndent: Int = 3
+        set(value) {
+            if (value < 3) {
+                error(
+                    "Nested list indent must be at least 3; if list items are only indented 2 spaces they " +
+                        "will not be rendered as list items"
+                )
+            }
+            field = value
+        }
 
     /**
      * Don't format with tabs! (See
@@ -84,7 +86,6 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
         copy.collapseSpaces = collapseSpaces
         copy.hangingIndent = hangingIndent
         copy.tabWidth = tabWidth
-        copy.alwaysNewLineBeforePreformatted = alwaysNewLineBeforePreformatted
         return copy
     }
 }

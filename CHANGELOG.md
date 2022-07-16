@@ -2,6 +2,27 @@
 
 # KDoc Formatter Changelog
 
+## [1.5.0]
+- A number of bug fixes across the formatter based on running
+  the formatter on some larger code bases and inspecting
+  the results, as well as diffing the HTML output rendered by
+  Dokka.
+- Improved handling for docs with slightly off indentation
+  (e.g. an extra space here and there)
+- Make sure we never break lines in the middle where the
+  next word is ">" (which would be interpreted as a quoted
+  string on the new line) or starts with "@" (which will be
+  interpreted as a (possibly unknown) kdoc tag.)
+- Fix interpretation of nested preformatted text (and revert
+  optimization which skipped blank lines between these)
+- Don't convert @linkplain tags to KDoc references, since Dokka
+  will not render these as {@linkplain}.
+- Handle TODO(string), and numbered lists separated with )
+  instead of .
+- Revert the behavior from 1.4.4 which removed blank lines
+  before preformatted text where the preformatted text was
+  implicit via indentation.
+
 ## [1.4.4]
 - Fix bug in greedy line breaking which meant some lines were
   actually wider than allowed by the line limit

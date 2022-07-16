@@ -69,7 +69,15 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
             if (nextIsComment && (file == null || filter.overlaps(file, source, start, end))) {
                 val comment = source.substring(start, end)
                 val indent = getIndent(source, start)
-                val formatted = formatter.reformatComment(comment, indent)
+                val formatted =
+                    try {
+                        formatter.reformatComment(comment, indent)
+                    } catch (error: Throwable) {
+                        System.err.println(
+                            "Failed formatting comment in $file:\n\"\"\"\n$comment\n\"\"\""
+                        )
+                        throw error
+                    }
                 sb.append(formatted)
             } else {
                 val segment = source.substring(start, end)

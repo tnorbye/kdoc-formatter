@@ -1,40 +1,54 @@
 package kdocformatter
 
+import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class KDocFormatterTest {
+    @field:TempDir lateinit var tempDir: File
+
     private fun checkFormatter(
         source: String,
         options: KDocFormattingOptions,
         expected: String,
         indent: String = "    ",
-        verify: Boolean = true
+        verify: Boolean = true,
+        verifyDokka: Boolean = true
     ) {
-        val reformatted = reformatComment(source, options, indent, verify)
+        val reformatted = reformatComment(source, options, indent)
+
         // Because .trimIndent() will remove it:
         val indentedExpected = expected.split("\n").joinToString("\n") { indent + it }
+
         assertEquals(indentedExpected, reformatted)
+
+        if (verifyDokka && !options.addPunctuation) {
+            DokkaVerifier(tempDir).verify(source, reformatted)
+        }
+
+        // Make sure that formatting is stable -- format again and make sure it's the same
+        if (verify) {
+            val formattedAgain = reformatComment(reformatted.trim(), options, indent)
+            if (reformatted != formattedAgain) {
+                assertEquals(
+                    "$indent// FORMATTED ONCE\n\n$reformatted",
+                    "$indent// FORMATTED TWICE (implies unstable formatting)\n\n$formattedAgain",
+                    "Formatting is unstable: if formatted a second time, it changes"
+                )
+            }
+        }
     }
 
     private fun reformatComment(
         source: String,
         options: KDocFormattingOptions,
-        indent: String = "    ",
-        verify: Boolean = true
+        indent: String = "    "
     ): String {
         val formatter = KDocFormatter(options)
         val formatted = formatter.reformatComment(source.trim(), indent)
-        // Make sure that formatting is stable -- format again and make sure it's the same
-        if (verify) {
-            assertEquals(
-                formatted,
-                formatter.reformatComment(formatted.trim(), indent),
-                "Formatting is unstable: if formatted a second time, it changes"
-            )
-        }
         return indent + formatted
     }
 
@@ -496,6 +510,7 @@ class KDocFormatterTest {
             """
             /**
              * Code sample:
+             *
              *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
              *
@@ -630,17 +645,16 @@ class KDocFormatterTest {
     }
 
     @Test
-    fun testPreformattedTextNoSeparation() {
-        // Don't add a separating line between text and preformatted text if the line before
-        // ends with : or ,
+    fun testPreformattedTextSeparation() {
         val source =
             """
             /**
              * For example,
+             *
              *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
              * And here's another example:
-             *     More preformatted text.
+             *     This is not preformatted text.
              *
              * And a third example,
              *
@@ -655,10 +669,12 @@ class KDocFormatterTest {
             """
             /**
              * For example,
+             *
              *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
-             * And here's another example:
-             *     More preformatted text.
+             *
+             * And here's another example: This
+             * is not preformatted text.
              *
              * And a third example,
              * ```
@@ -830,8 +846,8 @@ class KDocFormatterTest {
             KDocFormattingOptions(40),
             """
             /**
-             * * pre.errorlines: General > Text
-             *   > Default Text
+             * * pre.errorlines: General >
+             *   Text > Default Text
              * * .prefix: XML > Namespace Prefix
              * * .attribute: XML > Attribute
              *   name
@@ -918,6 +934,9 @@ class KDocFormatterTest {
              * If non-null, this issue can **only** be suppressed with one of the
              * given annotations: not with @Suppress, not with @SuppressLint, not
              * with lint.xml, not with lintOptions{} and not with baselines.
+             *
+             * Test @IntRange and @FloatRange support annotation applied to
+             * arrays and vargs.
              */
             """.trimIndent()
         checkFormatter(
@@ -926,9 +945,12 @@ class KDocFormatterTest {
             """
             /**
              * If non-null, this issue can **only** be suppressed with
-             * one of the given annotations: not with @Suppress, not with
-             * @SuppressLint, not with lint.xml, not with lintOptions{} and not
-             * with baselines.
+             * one of the given annotations: not with @Suppress, not
+             * with @SuppressLint, not with lint.xml, not with lintOptions{} and
+             * not with baselines.
+             *
+             * Test @IntRange and @FloatRange support annotation applied to
+             * arrays and vargs.
              */
             """.trimIndent(),
             // After reflowing @SuppressLint ends up on at the beginning of a line
@@ -989,7 +1011,8 @@ class KDocFormatterTest {
              * This should not be on the same
              * line as the header.
              */
-            """.trimIndent()
+            """.trimIndent(),
+            verifyDokka = false
         )
     }
 
@@ -1020,6 +1043,27 @@ class KDocFormatterTest {
              * > be treated as a block quote.
              *
              * @sample Sample
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testDoNotFoldIntoHeader() {
+        checkFormatter(
+            """
+            /**
+             *  # Design
+             *  The splash screen icon uses the same specifications as
+             *  [Adaptive Icons](https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
+             */
+            """.trimIndent(),
+            KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 100),
+            """
+            /**
+             * # Design
+             * The splash screen icon uses the same specifications as
+             * [Adaptive Icons](https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
              */
             """.trimIndent()
         )
@@ -1073,27 +1117,81 @@ class KDocFormatterTest {
              */
             """.trimIndent()
         )
+    }
 
+    @Test
+    fun testAsciiArt2() {
         checkFormatter(
             """
             /**
-             *             +-> lib1
-             *             |
-             * feature1 ---+-> javalib1
-             *             |
-             *             +-> baseModule
+             *                 +-> lib1
+             *                 |
+             *     feature1 ---+-> javalib1
+             *                 |
+             *                 +-> baseModule
              */
             """.trimIndent(),
             KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 30),
             """
             /**
-             *             +-> lib1
-             *             |
-             * feature1 ---+-> javalib1
-             *             |
-             *             +-> baseModule
+             *                 +-> lib1
+             *                 |
+             *     feature1 ---+-> javalib1
+             *                 |
+             *                 +-> baseModule
              */
             """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testBrokenAsciiArt() {
+        // The first illustration has indentation 3, not 4, so isn't preformatted.
+        // The formatter will garble this -- but so will Dokka!
+        // From androidx' TwoDimensionalFocusTraversalOutTest.kt
+        checkFormatter(
+            """
+            /**
+             *    ___________________________
+             *   |  grandparent             |
+             *   |   _____________________  |
+             *   |  |  parent            |  |
+             *   |  |   _______________  |  |   ____________
+             *   |  |  | focusedItem  |  |  |  | nextItem  |
+             *   |  |  |______________|  |  |  |___________|
+             *   |  |____________________|  |
+             *   |__________________________|
+             *
+             *      __________________________
+             *     |  grandparent            |
+             *     |   ____________________  |
+             *     |  |  parent           |  |
+             *     |  |   ______________  |  |
+             *     |  |  | focusedItem |  |  |
+             *     |  |  |_____________|  |  |
+             *     |  |___________________|  |
+             *     |_________________________|
+             */
+            """.trimIndent(),
+            KDocFormattingOptions(maxLineWidth = 100),
+            """
+            /**
+             * ___________________________ | grandparent | | _____________________ | | | parent | | | |
+             * _______________ | | ____________ | | | focusedItem | | | | nextItem | | | |______________| |
+             * | |___________| | |____________________| | |__________________________|
+             *
+             *      __________________________
+             *     |  grandparent            |
+             *     |   ____________________  |
+             *     |  |  parent           |  |
+             *     |  |   ______________  |  |
+             *     |  |  | focusedItem |  |  |
+             *     |  |  |_____________|  |  |
+             *     |  |___________________|  |
+             *     |_________________________|
+             */
+            """.trimIndent(),
+            verifyDokka = false
         )
     }
 
@@ -1118,6 +1216,36 @@ class KDocFormatterTest {
              *     relative files have been made.
              * <li>Intermediate state must be saved between merges.
              * </ul>
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Disabled(
+        "Not yet working (but dokka rendering isn't right either; it includes > in the middle of the quote)"
+    )
+    @Test
+    fun testDoNotFoldNestedLists() {
+        checkFormatter(
+            """
+            /**
+             * Here's some text.
+             * > Here's some more text that
+             * > is indented. More text.
+             * > > And here's some even
+             * > > more indented text
+             * > Back to the top level
+             */
+            """.trimIndent(),
+            KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 60),
+            """
+            /**
+             * Here's some text.
+             * > Here's some more text that
+             * > is indented. More text.
+             * > > And here's some even
+             * > > more indented text
+             * > Back to the top level
              */
             """.trimIndent()
         )
@@ -1169,13 +1297,6 @@ class KDocFormatterTest {
             ~~strikethrough~~, _underlined_.
 
             ### Blockquotes #
-
-            Here's some text.
-            > Here's some more text that
-            > is indented. More text.
-            > > And here's some even
-            > > more indented text
-            > Back to the top level
 
             More:
             > This whole paragraph should be treated as a block quote.
@@ -1265,10 +1386,6 @@ class KDocFormatterTest {
              * ~~strikethrough~~, _underlined_.
              *
              * ### Blockquotes #
-             *
-             * Here's some text.
-             * > Here's some more text that is indented. More text. > And here's some even > more indented
-             * > text Back to the top level
              *
              * More:
              * > This whole paragraph should be treated as a block quote. This whole paragraph should be
@@ -1439,7 +1556,9 @@ class KDocFormatterTest {
              * signature from the [method] name, the list of [argumentTypes] and
              * optionally include the [returnType].
              */
-            """.trimIndent()
+            """.trimIndent(),
+            // {@link} text is not rendered by dokka when it cannot resolve the symbols
+            verifyDokka = false
         )
     }
 
@@ -1466,6 +1585,9 @@ class KDocFormatterTest {
              * the platform attrs.xml to catch future recommended attributes.
              * TODO: Also adds the given dependency graph (the output of the Gradle dependency task)
              * to be constructed when mocking a Gradle model for this project.
+             * TODO(b/144576310): Cover multi-module search.
+             *  Searching in the search bar should show an option to change module if there are resources in it.
+             * TODO(myldap): Cover filter usage. Eg: Look for a framework resource by enabling its filter.
              */
             """.trimIndent()
         checkFormatter(
@@ -1501,8 +1623,17 @@ class KDocFormatterTest {
              * TODO: Also adds the given dependency graph (the output of the
              *     Gradle dependency task) to be constructed
              *     when mocking a Gradle model for this project.
+             * TODO(b/144576310): Cover multi-module search. Searching in the
+             *     search bar should show an option to change
+             *     module if there are resources in it.
+             * TODO(myldap): Cover filter usage. Eg: Look for a framework
+             *     resource by enabling its filter.
              */
-            """.trimIndent()
+            """.trimIndent(),
+            // We indent TO-DO text deliberately, though this changes the structure to make
+            // each item have its own paragraph which doesn't happen by default. Working as
+            // intended.
+            verifyDokka = false
         )
     }
 
@@ -1784,19 +1915,19 @@ class KDocFormatterTest {
              *     handler methods. This is done rather than a general visitor from the root node to avoid having to
              *     have every single lint detector (there are hundreds) do a full tree traversal on its own.</li>
              * </ul>
-             * [SourceCodeScanner] exposes the UAST API to lint checks. UAST is short for "Universal AST" and is an abstract
-             * syntax tree library which abstracts away details about Java versus Kotlin versus other similar languages and lets
-             * the client of the library access the AST in a unified way.
+             * {@linkplain SourceCodeScanner} exposes the UAST API to lint checks. UAST is short for "Universal AST" and is an
+             * abstract syntax tree library which abstracts away details about Java versus Kotlin versus other similar languages
+             * and lets the client of the library access the AST in a unified way.
              *
              * UAST isn't actually a full replacement for PSI; it **augments** PSI. Essentially, UAST is used for the **inside**
              * of methods (e.g. method bodies), and things like field initializers. PSI continues to be used at the outer level:
              * for packages, classes, and methods (declarations and signatures). There are also wrappers around some of these
              * for convenience.
              *
-             * The [SourceCodeScanner] interface reflects this fact. For example, when you indicate that you want to check calls
-             * to a method named {@code foo}, the call site node is a UAST node (in this case, [UCallExpression], but the called
-             * method itself is a [PsiMethod], since that method might be anywhere (including in a library that we don't have
-             * source for, so UAST doesn't make sense.)
+             * The {@linkplain SourceCodeScanner} interface reflects this fact. For example, when you indicate that you want to
+             * check calls to a method named {@code foo}, the call site node is a UAST node (in this case, [UCallExpression],
+             * but the called method itself is a [PsiMethod], since that method might be anywhere (including in a library that
+             * we don't have source for, so UAST doesn't make sense.)
              *
              * ## Migrating JavaPsiScanner to SourceCodeScanner
              * As described above, PSI is still used, so a lot of code will remain the same. For example, all resolve methods,
@@ -1815,68 +1946,65 @@ class KDocFormatterTest {
              * If you have code which does something specific with PSI classes, the following mapping table in alphabetical
              * order might be helpful, since it lists the corresponding UAST classes.
              * <table>
-             *
-             *     <caption>Mapping between PSI and UAST classes</caption>
-             *     <tr><th>PSI</th><th>UAST</th></tr>
-             *     <tr><th>com.intellij.psi.</th><th>org.jetbrains.uast.</th></tr>
-             *     <tr><td>IElementType</td><td>UastBinaryOperator</td></tr>
-             *     <tr><td>PsiAnnotation</td><td>UAnnotation</td></tr>
-             *     <tr><td>PsiAnonymousClass</td><td>UAnonymousClass</td></tr>
-             *     <tr><td>PsiArrayAccessExpression</td><td>UArrayAccessExpression</td></tr>
-             *     <tr><td>PsiBinaryExpression</td><td>UBinaryExpression</td></tr>
-             *     <tr><td>PsiCallExpression</td><td>UCallExpression</td></tr>
-             *     <tr><td>PsiCatchSection</td><td>UCatchClause</td></tr>
-             *     <tr><td>PsiClass</td><td>UClass</td></tr>
-             *     <tr><td>PsiClassObjectAccessExpression</td><td>UClassLiteralExpression</td></tr>
-             *     <tr><td>PsiConditionalExpression</td><td>UIfExpression</td></tr>
-             *     <tr><td>PsiDeclarationStatement</td><td>UDeclarationsExpression</td></tr>
-             *     <tr><td>PsiDoWhileStatement</td><td>UDoWhileExpression</td></tr>
-             *     <tr><td>PsiElement</td><td>UElement</td></tr>
-             *     <tr><td>PsiExpression</td><td>UExpression</td></tr>
-             *     <tr><td>PsiForeachStatement</td><td>UForEachExpression</td></tr>
-             *     <tr><td>PsiIdentifier</td><td>USimpleNameReferenceExpression</td></tr>
-             *     <tr><td>PsiIfStatement</td><td>UIfExpression</td></tr>
-             *     <tr><td>PsiImportStatement</td><td>UImportStatement</td></tr>
-             *     <tr><td>PsiImportStaticStatement</td><td>UImportStatement</td></tr>
-             *     <tr><td>PsiJavaCodeReferenceElement</td><td>UReferenceExpression</td></tr>
-             *     <tr><td>PsiLiteral</td><td>ULiteralExpression</td></tr>
-             *     <tr><td>PsiLocalVariable</td><td>ULocalVariable</td></tr>
-             *     <tr><td>PsiMethod</td><td>UMethod</td></tr>
-             *     <tr><td>PsiMethodCallExpression</td><td>UCallExpression</td></tr>
-             *     <tr><td>PsiNameValuePair</td><td>UNamedExpression</td></tr>
-             *     <tr><td>PsiNewExpression</td><td>UCallExpression</td></tr>
-             *     <tr><td>PsiParameter</td><td>UParameter</td></tr>
-             *     <tr><td>PsiParenthesizedExpression</td><td>UParenthesizedExpression</td></tr>
-             *     <tr><td>PsiPolyadicExpression</td><td>UPolyadicExpression</td></tr>
-             *     <tr><td>PsiPostfixExpression</td><td>UPostfixExpression or UUnaryExpression</td></tr>
-             *     <tr><td>PsiPrefixExpression</td><td>UPrefixExpression or UUnaryExpression</td></tr>
-             *     <tr><td>PsiReference</td><td>UReferenceExpression</td></tr>
-             *     <tr><td>PsiReference</td><td>UResolvable</td></tr>
-             *     <tr><td>PsiReferenceExpression</td><td>UReferenceExpression</td></tr>
-             *     <tr><td>PsiReturnStatement</td><td>UReturnExpression</td></tr>
-             *     <tr><td>PsiSuperExpression</td><td>USuperExpression</td></tr>
-             *     <tr><td>PsiSwitchLabelStatement</td><td>USwitchClauseExpression</td></tr>
-             *     <tr><td>PsiSwitchStatement</td><td>USwitchExpression</td></tr>
-             *     <tr><td>PsiThisExpression</td><td>UThisExpression</td></tr>
-             *     <tr><td>PsiThrowStatement</td><td>UThrowExpression</td></tr>
-             *     <tr><td>PsiTryStatement</td><td>UTryExpression</td></tr>
-             *     <tr><td>PsiTypeCastExpression</td><td>UBinaryExpressionWithType</td></tr>
-             *     <tr><td>PsiWhileStatement</td><td>UWhileExpression</td></tr>
-             * </table>
-             *
-             * Note however that UAST isn't just a "renaming of classes"; there are some changes to the structure of the AST as
-             * well. Particularly around calls.
+             * <caption>Mapping between PSI and UAST classes</caption>
+             * <tr><th>PSI</th><th>UAST</th></tr>
+             * <tr><th>com.intellij.psi.</th><th>org.jetbrains.uast.</th></tr>
+             * <tr><td>IElementType</td><td>UastBinaryOperator</td></tr>
+             * <tr><td>PsiAnnotation</td><td>UAnnotation</td></tr>
+             * <tr><td>PsiAnonymousClass</td><td>UAnonymousClass</td></tr>
+             * <tr><td>PsiArrayAccessExpression</td><td>UArrayAccessExpression</td></tr>
+             * <tr><td>PsiBinaryExpression</td><td>UBinaryExpression</td></tr>
+             * <tr><td>PsiCallExpression</td><td>UCallExpression</td></tr>
+             * <tr><td>PsiCatchSection</td><td>UCatchClause</td></tr>
+             * <tr><td>PsiClass</td><td>UClass</td></tr>
+             * <tr><td>PsiClassObjectAccessExpression</td><td>UClassLiteralExpression</td></tr>
+             * <tr><td>PsiConditionalExpression</td><td>UIfExpression</td></tr>
+             * <tr><td>PsiDeclarationStatement</td><td>UDeclarationsExpression</td></tr>
+             * <tr><td>PsiDoWhileStatement</td><td>UDoWhileExpression</td></tr>
+             * <tr><td>PsiElement</td><td>UElement</td></tr>
+             * <tr><td>PsiExpression</td><td>UExpression</td></tr>
+             * <tr><td>PsiForeachStatement</td><td>UForEachExpression</td></tr>
+             * <tr><td>PsiIdentifier</td><td>USimpleNameReferenceExpression</td></tr>
+             * <tr><td>PsiIfStatement</td><td>UIfExpression</td></tr>
+             * <tr><td>PsiImportStatement</td><td>UImportStatement</td></tr>
+             * <tr><td>PsiImportStaticStatement</td><td>UImportStatement</td></tr>
+             * <tr><td>PsiJavaCodeReferenceElement</td><td>UReferenceExpression</td></tr>
+             * <tr><td>PsiLiteral</td><td>ULiteralExpression</td></tr>
+             * <tr><td>PsiLocalVariable</td><td>ULocalVariable</td></tr>
+             * <tr><td>PsiMethod</td><td>UMethod</td></tr>
+             * <tr><td>PsiMethodCallExpression</td><td>UCallExpression</td></tr>
+             * <tr><td>PsiNameValuePair</td><td>UNamedExpression</td></tr>
+             * <tr><td>PsiNewExpression</td><td>UCallExpression</td></tr>
+             * <tr><td>PsiParameter</td><td>UParameter</td></tr>
+             * <tr><td>PsiParenthesizedExpression</td><td>UParenthesizedExpression</td></tr>
+             * <tr><td>PsiPolyadicExpression</td><td>UPolyadicExpression</td></tr>
+             * <tr><td>PsiPostfixExpression</td><td>UPostfixExpression or UUnaryExpression</td></tr>
+             * <tr><td>PsiPrefixExpression</td><td>UPrefixExpression or UUnaryExpression</td></tr>
+             * <tr><td>PsiReference</td><td>UReferenceExpression</td></tr>
+             * <tr><td>PsiReference</td><td>UResolvable</td></tr>
+             * <tr><td>PsiReferenceExpression</td><td>UReferenceExpression</td></tr>
+             * <tr><td>PsiReturnStatement</td><td>UReturnExpression</td></tr>
+             * <tr><td>PsiSuperExpression</td><td>USuperExpression</td></tr>
+             * <tr><td>PsiSwitchLabelStatement</td><td>USwitchClauseExpression</td></tr>
+             * <tr><td>PsiSwitchStatement</td><td>USwitchExpression</td></tr>
+             * <tr><td>PsiThisExpression</td><td>UThisExpression</td></tr>
+             * <tr><td>PsiThrowStatement</td><td>UThrowExpression</td></tr>
+             * <tr><td>PsiTryStatement</td><td>UTryExpression</td></tr>
+             * <tr><td>PsiTypeCastExpression</td><td>UBinaryExpressionWithType</td></tr>
+             * <tr><td>PsiWhileStatement</td><td>UWhileExpression</td></tr> </table> Note however that UAST isn't just a
+             * "renaming of classes"; there are some changes to the structure of the AST as well. Particularly around calls.
              *
              * ### Parents
-             * In UAST, you get your parent [UElement] by calling {@code getUastParent} instead of {@code getParent}. This is to
-             * avoid method name clashes on some elements which are both UAST elements and PSI elements at the same time - such
-             * as [UMethod].
+             * In UAST, you get your parent {@linkplain UElement} by calling {@code getUastParent} instead of {@code getParent}.
+             * This is to avoid method name clashes on some elements which are both UAST elements and PSI elements at the same
+             * time - such as [UMethod].
              *
              * ### Children
-             * When you're going in the opposite direction (e.g. you have a [PsiMethod] and you want to look at its content,
-             * you should **not** use [PsiMethod.getBody]. This will only give you the PSI child content, which won't work
-             * for example when dealing with Kotlin methods. Normally lint passes you the [UMethod] which you should be
-             * procesing instead. But if for some reason you need to look up the UAST method body from a [PsiMethod], use this:
+             * When you're going in the opposite direction (e.g. you have a {@linkplain PsiMethod} and you want to look at its
+             * content, you should **not** use [PsiMethod.getBody]. This will only give you the PSI child content, which won't
+             * work for example when dealing with Kotlin methods. Normally lint passes you the {@linkplain UMethod} which you
+             * should be procesing instead. But if for some reason you need to look up the UAST method body from a {@linkplain
+             * PsiMethod}, use this:
              * <pre>
              *     UastContext context = UastUtils.getUastContext(element);
              *     UExpression body = context.getMethodBody(method);
@@ -1890,8 +2018,8 @@ class KDocFormatterTest {
              * ### Call names
              * In PSI, a call was represented by a PsiCallExpression, and to get to things like the method called or to the
              * operand/qualifier, you'd first need to get the "method expression". In UAST there is no method expression and
-             * this information is available directly on the [UCallExpression] element. Therefore, here's how you'd change the
-             * code:
+             * this information is available directly on the {@linkplain UCallExpression} element. Therefore, here's how you'd
+             * change the code:
              * <pre>
              * &lt;    call.getMethodExpression().getReferenceName();
              * ---
@@ -1948,26 +2076,24 @@ class KDocFormatterTest {
              * ### Method name changes
              * The following table maps some common method names and what their corresponding names are in UAST.
              * <table>
-             *
-             *     <caption>Mapping between PSI and UAST method names</caption></caption>
-             *     <tr><th>PSI</th><th>UAST</th></tr>
-             *     <tr><td>getArgumentList</td><td>getValueArguments</td></tr>
-             *     <tr><td>getCatchSections</td><td>getCatchClauses</td></tr>
-             *     <tr><td>getDeclaredElements</td><td>getDeclarations</td></tr>
-             *     <tr><td>getElseBranch</td><td>getElseExpression</td></tr>
-             *     <tr><td>getInitializer</td><td>getUastInitializer</td></tr>
-             *     <tr><td>getLExpression</td><td>getLeftOperand</td></tr>
-             *     <tr><td>getOperationTokenType</td><td>getOperator</td></tr>
-             *     <tr><td>getOwner</td><td>getUastParent</td></tr>
-             *     <tr><td>getParent</td><td>getUastParent</td></tr>
-             *     <tr><td>getRExpression</td><td>getRightOperand</td></tr>
-             *     <tr><td>getReturnValue</td><td>getReturnExpression</td></tr>
-             *     <tr><td>getText</td><td>asSourceString</td></tr>
-             *     <tr><td>getThenBranch</td><td>getThenExpression</td></tr>
-             *     <tr><td>getType</td><td>getExpressionType</td></tr>
-             *     <tr><td>getTypeParameters</td><td>getTypeArguments</td></tr>
-             *     <tr><td>resolveMethod</td><td>resolve</td></tr>
-             * </table>
+             * <caption>Mapping between PSI and UAST method names</caption></caption>
+             * <tr><th>PSI</th><th>UAST</th></tr>
+             * <tr><td>getArgumentList</td><td>getValueArguments</td></tr>
+             * <tr><td>getCatchSections</td><td>getCatchClauses</td></tr>
+             * <tr><td>getDeclaredElements</td><td>getDeclarations</td></tr>
+             * <tr><td>getElseBranch</td><td>getElseExpression</td></tr>
+             * <tr><td>getInitializer</td><td>getUastInitializer</td></tr>
+             * <tr><td>getLExpression</td><td>getLeftOperand</td></tr>
+             * <tr><td>getOperationTokenType</td><td>getOperator</td></tr>
+             * <tr><td>getOwner</td><td>getUastParent</td></tr>
+             * <tr><td>getParent</td><td>getUastParent</td></tr>
+             * <tr><td>getRExpression</td><td>getRightOperand</td></tr>
+             * <tr><td>getReturnValue</td><td>getReturnExpression</td></tr>
+             * <tr><td>getText</td><td>asSourceString</td></tr>
+             * <tr><td>getThenBranch</td><td>getThenExpression</td></tr>
+             * <tr><td>getType</td><td>getExpressionType</td></tr>
+             * <tr><td>getTypeParameters</td><td>getTypeArguments</td></tr>
+             * <tr><td>resolveMethod</td><td>resolve</td></tr> </table>
              *
              * ### Handlers versus visitors
              * If you are processing a method on your own, or even a full class, you should switch from
@@ -1977,20 +2103,23 @@ class KDocFormatterTest {
              * corresponding visit methods. However, from these visitors you should **not** be calling super.visitX. To remove
              * this whole confusion, lint now provides a separate class, [UElementHandler]. For the shared traversal, just
              * provide this handler instead and implement the appropriate visit methods. It will throw an error if you register
-             * element types in [getApplicableUastTypes] that you don't override.
+             * element types in {@linkplain #getApplicableUastTypes()} that you don't override.
              *
              * ### Migrating JavaScanner to SourceCodeScanner
-             * First read the javadoc on how to convert from the older [JavaScanner] interface over to [JavaPsiScanner]. While
-             * [JavaPsiScanner] is itself deprecated, it's a lot closer to [SourceCodeScanner] so a lot of the same concepts
-             * apply; then follow the above section.
+             * First read the javadoc on how to convert from the older {@linkplain JavaScanner} interface over to {@linkplain
+             * JavaPsiScanner}. While {@linkplain JavaPsiScanner} is itself deprecated, it's a lot closer to [SourceCodeScanner]
+             * so a lot of the same concepts apply; then follow the above section.
              */
             """.trimIndent(),
-            verify = false // Not quite working yet
+            verify = false,
+            // {@link} tags are not rendered from [references] when Dokka cannot resolve the symbols
+            verifyDokka = false
         )
     }
 
     @Test
     fun testWordJoining() {
+        // "-" alone can mean beginning of a list, but not as part of a word
         val source =
             """
             /**
@@ -2003,8 +2132,26 @@ class KDocFormatterTest {
             KDocFormattingOptions(65),
             """
             /**
-             * which you can render with something like this:
-             * `dot -Tpng -o/tmp/graph.png toString.dot`
+             * which you can render with something like this: `dot -Tpng
+             * -o/tmp/graph.png toString.dot`
+             */
+            """.trimIndent()
+        )
+
+        val source2 =
+            """
+            /**
+             * ABCDE which you can render with something like this:
+             * `dot - Tpng -o/tmp/graph.png toString.dot`
+             */
+            """.trimIndent()
+        checkFormatter(
+            source2,
+            KDocFormattingOptions(65),
+            """
+            /**
+             * ABCDE which you can render with something like this:
+             * `dot - Tpng -o/tmp/graph.png toString.dot`
              */
             """.trimIndent()
         )
@@ -2103,18 +2250,21 @@ class KDocFormatterTest {
 
     @Test
     fun testConvertLinks() {
-        // Make sure we convert {@link} and {@linkplain} if convertMarkup is true.
+        // Make sure we convert {@link} and NOT {@linkplain} if convertMarkup is true.
         val source =
             """
             /**
+             * {@link SourceCodeScanner} exposes the UAST API to lint checks.
+             * The {@link SourceCodeScanner} interface reflects this fact.
+             *
              * {@linkplain SourceCodeScanner} exposes the UAST API to lint checks.
              * The {@linkplain SourceCodeScanner} interface reflects this fact.
              *
              * It will throw an error if you register element types in
-             * {@linkplain #getApplicableUastTypes()} that you don't override.
+             * {@link #getApplicableUastTypes()} that you don't override.
              *
-             * First read the javadoc on how to convert from the older {@linkplain
-             * JavaScanner} interface over to {@linkplain JavaPsiScanner}.
+             * First read the javadoc on how to convert from the older {@link
+             * JavaScanner} interface over to {@link JavaPsiScanner}.
              *
              * 1. A file header, which is the exact contents of {@link FILE_HEADER} encoded
              *     as ASCII characters.
@@ -2136,6 +2286,10 @@ class KDocFormatterTest {
              * [SourceCodeScanner] exposes the UAST API to lint checks. The
              * [SourceCodeScanner] interface reflects this fact.
              *
+             * {@linkplain SourceCodeScanner} exposes the UAST API to lint
+             * checks. The {@linkplain SourceCodeScanner} interface reflects
+             * this fact.
+             *
              * It will throw an error if you register element types in
              * [getApplicableUastTypes] that you don't override.
              *
@@ -2152,7 +2306,10 @@ class KDocFormatterTest {
              *
              * [getQualifiedName] method.
              */
-            """.trimIndent()
+            """.trimIndent(),
+            // When dokka cannot resolve the links it doesn't render {@link} which makes
+            // before and after not match
+            verifyDokka = false
         )
     }
 
@@ -2192,17 +2349,17 @@ class KDocFormatterTest {
 
         checkFormatter(
             source,
-            KDocFormattingOptions(72, 72).apply { nestedListIndent = 2 },
+            KDocFormattingOptions(72, 72).apply { nestedListIndent = 4 },
             """
             /**
              * Paragraph
              * * Top Bullet
-             *   * Sub-Bullet 1
-             *   * Sub-Bullet 2
-             *     * Sub-Sub-Bullet 1
+             *     * Sub-Bullet 1
+             *     * Sub-Bullet 2
+             *         * Sub-Sub-Bullet 1
              * 1. Top level
-             *   1. First item
-             *   2. Second item
+             *     1. First item
+             *     2. Second item
              */
             """.trimIndent()
         )
@@ -2318,7 +2475,11 @@ class KDocFormatterTest {
              *    * Cupidatat, in qui anim voluptate esse non culpa mollit est
              *      do tempor, enim enim ad occaecat
              */
-            """.trimIndent()
+            """.trimIndent(),
+            // We indent the last bullets as if they are nested list items; this
+            // is likely the intent (though with indent only being 2, dokka would
+            // interpret it as top level text.)
+            verifyDokka = false
         )
     }
 
@@ -2544,6 +2705,377 @@ class KDocFormatterTest {
              *
              * Make sure we never line break <!--- to the beginning a
              * line: <!--- <!--- <!--- end.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testNPE() {
+        // Reproduces formatting bug found in androidx' SplashScreen.kt:
+        val source =
+            """
+            /**
+             *  ## Specs
+             *  - With icon background (`Theme.SplashScreen.IconBackground`)
+             *    + Image Size: 240x240 dp
+             *    + Inner Circle diameter: 160 dp
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * ## Specs
+             * - With icon background (`Theme.SplashScreen.IconBackground`)
+             *    + Image Size: 240x240 dp
+             *    + Inner Circle diameter: 160 dp
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testExtraNewlines() {
+        // Reproduced a bug which was inserting extra newlines in preformatted text
+        val source =
+            """
+            /**
+             * Simple helper class useful for creating a message bundle for your module.
+             *
+             * It creates a soft reference to an underlying text bundle, which means that it can
+             * be garbage collected if needed (although it will be reallocated again if you request
+             * a new message from it).
+             *
+             * You might use it like so:
+             *
+             * ```
+             * # In module 'custom'...
+             *
+             * # resources/messages/CustomBundle.properties:
+             * sample.text.key=This is a sample text value.
+             *
+             * # src/messages/CustomBundle.kt:
+             * private const val BUNDLE_NAME = "messages.CustomBundle"
+             * object CustomBundle {
+             *   private val bundleRef = MessageBundleReference(BUNDLE_NAME)
+             *   fun message(@PropertyKey(resourceBundle = BUNDLE_NAME) key: String, vararg params: Any) = bundleRef.message(key, *params)
+             * }
+             * ```
+             *
+             * That's it! Now you can call `CustomBundle.message("sample.text.key")` to fetch the text value.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * Simple helper class useful for creating a message bundle for your
+             * module.
+             *
+             * It creates a soft reference to an underlying text bundle, which
+             * means that it can be garbage collected if needed (although it
+             * will be reallocated again if you request a new message from it).
+             *
+             * You might use it like so:
+             * ```
+             * # In module 'custom'...
+             *
+             * # resources/messages/CustomBundle.properties:
+             * sample.text.key=This is a sample text value.
+             *
+             * # src/messages/CustomBundle.kt:
+             * private const val BUNDLE_NAME = "messages.CustomBundle"
+             * object CustomBundle {
+             *   private val bundleRef = MessageBundleReference(BUNDLE_NAME)
+             *   fun message(@PropertyKey(resourceBundle = BUNDLE_NAME) key: String, vararg params: Any) = bundleRef.message(key, *params)
+             * }
+             * ```
+             *
+             * That's it! Now you can call
+             * `CustomBundle.message("sample.text.key")` to fetch the text
+             * value.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testQuotedBug() {
+        // Reproduced a bug which was mishandling quoted strings: when you have *separate* but
+        // adjacent
+        // quoted lists, make sure we preserve line break between them
+        val source =
+            """
+            /**
+             * Eg:
+             * > anydpi-v26 &emsp; | &emsp; Adaptive icon - ic_launcher.xml
+             *
+             *
+             * > hdpi &emsp;&emsp;&emsp;&emsp;&nbsp; | &emsp; Mip Map File - ic_launcher.png
+             */
+             """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(100, 72),
+            """
+            /**
+             * Eg:
+             * > anydpi-v26 &emsp; | &emsp; Adaptive icon - ic_launcher.xml
+             *
+             * > hdpi &emsp;&emsp;&emsp;&emsp;&nbsp; | &emsp; Mip Map File -
+             * > ic_launcher.png
+             */
+            """.trimIndent(),
+            indent = "  "
+        )
+    }
+
+    @Test
+    fun testListBreaking() {
+        // If we have, in a list, "* very-long-word", we cannot break this line with a bullet on its
+        // line
+        // by itself. In the below, prior to the bug fix, the "- spec:width..." would get split into
+        // "-"
+        // and "spec:width..." on its own hanging indent line.
+        val source =
+            """
+            /**
+             * In other words, completes the parameters so that either of these declarations can be achieved:
+             * - spec:width=...,height=...,dpi=...,isRound=...,chinSize=...,orientation=...
+             * - spec:parent=...,orientation=...
+             * > spec:width=...,height=...,dpi=...,isRound=...,chinSize=...,orientation=...
+             */
+             """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(100, 72),
+            """
+            /**
+             * In other words, completes the parameters so that either of these
+             * declarations can be achieved:
+             * - spec:width=...,height=...,dpi=...,isRound=...,chinSize=...,orientation=...
+             * - spec:parent=...,orientation=...
+             * > spec:width=...,height=...,dpi=...,isRound=...,chinSize=...,orientation=...
+             */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testNewList() {
+        // Make sure we never place "1)" or "+" at the beginning of a new line.
+        val source =
+            """
+            /**
+             * Handles both the START_ALLOC_TRACKING and STOP_ALLOC_TRACKING commands in tests. This is responsible for generating a status event.
+             * For the start tracking command,  if |trackStatus| is set to be |SUCCESS|, this generates a start event with timestamp matching what is
+             * specified in |trackStatus|. For the end tracking command, an event (start timestamp + 1) is only added if a start event already
+             * exists in the input event list.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(100, 72),
+            """
+            /**
+             * Handles both the START_ALLOC_TRACKING and STOP_ALLOC_TRACKING commands
+             * in tests. This is responsible for generating a status event. For the
+             * start tracking command, if |trackStatus| is set to be |SUCCESS|, this
+             * generates a start event with timestamp matching what is specified
+             * in |trackStatus|. For the end tracking command, an event (start
+             * timestamp + 1) is only added if a start event already exists in the
+             * input event list.
+             */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testSplashScreen() {
+        val source =
+            """
+            /**
+             * Provides control over the splash screen once the application is started.
+             *
+             * On API 31+ (Android 12+) this class calls the platform methods.
+             *
+             * Prior API 31, the platform behavior is replicated with the exception of the Animated Vector
+             * Drawable support on the launch screen.
+             *
+             * # Usage of the `core-splashscreen` library:
+             *
+             * To replicate the splash screen behavior from Android 12 on older APIs the following steps need to
+             * be taken:
+             *  1. Create a new Theme (e.g `Theme.App.Starting`) and set its parent to `Theme.SplashScreen` or
+             *  `Theme.SplashScreen.IconBackground`
+             *
+             *  2. In your manifest, set the `theme` attribute of the whole `<application>` or just the
+             *  starting `<activity>` to `Theme.App.Starting`
+             *
+             *  3. In the `onCreate` method the starting activity, call [installSplashScreen] just before
+             *  `super.onCreate()`. You also need to make sure that `postSplashScreenTheme` is set
+             *  to the application's theme. Alternatively, this call can be replaced by [Activity#setTheme]
+             *  if a [SplashScreen] instance isn't needed.
+             *
+             *  ## Themes
+             *
+             *  The library provides two themes: [R.style.Theme_SplashScreen] and
+             *  [R.style.Theme_SplashScreen_IconBackground]. If you wish to display a background right under
+             *  your icon, the later needs to be used. This ensure that the scale and masking of the icon are
+             *  similar to the Android 12 Splash Screen.
+             *
+             *  `windowSplashScreenAnimatedIcon`: The splash screen icon. On API 31+ it can be an animated
+             *  vector drawable.
+             *
+             *  `windowSplashScreenAnimationDuration`: Duration of the Animated Icon Animation. The value
+             *  needs to be > 0 if the icon is animated.
+             *
+             *  **Note:** This has no impact on the time during which the splash screen is displayed and is
+             *  only used in [SplashScreenViewProvider.iconAnimationDurationMillis]. If you need to display the
+             *  splash screen for a longer time, you can use [SplashScreen.setKeepOnScreenCondition]
+             *
+             *  `windowSplashScreenIconBackgroundColor`: _To be used in with
+             *  `Theme.SplashScreen.IconBackground`_. Sets a background color under the splash screen icon.
+             *
+             *  `windowSplashScreenBackground`: Background color of the splash screen. Defaults to the theme's
+             *  `?attr/colorBackground`.
+             *
+             *  `postSplashScreenTheme`*  Theme to apply to the Activity when [installSplashScreen] is called.
+             *
+             *  **Known incompatibilities:**
+             *  - On API < 31, `windowSplashScreenAnimatedIcon` cannot be animated. If you want to provide an
+             *  animated icon for API 31+ and a still icon for API <31, you can do so by overriding the still
+             *  icon with an animated vector drawable in `res/drawable-v31`.
+             *
+             *  - On API < 31, if the value of `windowSplashScreenAnimatedIcon` is an
+             *  [adaptive icon](http://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
+             *  , it will be cropped and scaled. The workaround is to respectively assign
+             *  `windowSplashScreenAnimatedIcon` and `windowSplashScreenIconBackgroundColor` to the values of
+             *  the adaptive icon `foreground` and `background`.
+             *
+             *  - On API 21-22, The icon isn't displayed until the application starts, only the background is
+             *  visible.
+             *
+             *  # Design
+             *  The splash screen icon uses the same specifications as
+             *  [Adaptive Icons](https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
+             *  . This means that the icon needs to fit within a circle whose diameter is 2/3 the size of the
+             *  icon. The actual values don't really matter if you use a vector icon.
+             *
+             *  ## Specs
+             *  - With icon background (`Theme.SplashScreen.IconBackground`)
+             *    + Image Size: 240x240 dp
+             *    + Inner Circle diameter: 160 dp
+             *  - Without icon background  (`Theme.SplashScreen`)
+             *     + Image size: 288x288 dp
+             *     + Inner circle diameter: 192 dp
+             *
+             *  _Example:_ if the full size of the image is 300dp*300dp, the icon needs to fit within a
+             *  circle with a diameter of 200dp. Everything outside the circle will be invisible (masked).
+             *
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * Provides control over the splash screen once the application is
+             * started.
+             *
+             * On API 31+ (Android 12+) this class calls the platform methods.
+             *
+             * Prior API 31, the platform behavior is replicated with the
+             * exception of the Animated Vector Drawable support on the launch
+             * screen.
+             *
+             * # Usage of the `core-splashscreen` library:
+             *
+             * To replicate the splash screen behavior from Android 12 on older
+             * APIs the following steps need to be taken:
+             * 1. Create a new Theme (e.g `Theme.App.Starting`) and set its
+             *    parent to `Theme.SplashScreen` or
+             *    `Theme.SplashScreen.IconBackground`
+             * 2. In your manifest, set the `theme` attribute of the whole
+             *    `<application>` or just the starting
+             *    `<activity>` to `Theme.App.Starting`
+             * 3. In the `onCreate` method the starting activity, call
+             *    [installSplashScreen] just before `super.onCreate()`.
+             *    You also need to make sure that `postSplashScreenTheme`
+             *    is set to the application's theme. Alternatively,
+             *    this call can be replaced by [Activity#setTheme]
+             *    if a [SplashScreen] instance isn't needed.
+             *
+             * ## Themes
+             *
+             * The library provides two themes: [R.style.Theme_SplashScreen]
+             * and [R.style.Theme_SplashScreen_IconBackground]. If you wish to
+             * display a background right under your icon, the later needs to
+             * be used. This ensure that the scale and masking of the icon are
+             * similar to the Android 12 Splash Screen.
+             *
+             * `windowSplashScreenAnimatedIcon`: The splash screen icon. On API
+             * 31+ it can be an animated vector drawable.
+             *
+             * `windowSplashScreenAnimationDuration`: Duration of the Animated
+             * Icon Animation. The value needs to be > 0 if the icon is
+             * animated.
+             *
+             * **Note:** This has no impact on the time during which
+             * the splash screen is displayed and is only used in
+             * [SplashScreenViewProvider.iconAnimationDurationMillis]. If you
+             * need to display the splash screen for a longer time, you can use
+             * [SplashScreen.setKeepOnScreenCondition]
+             *
+             * `windowSplashScreenIconBackgroundColor`: _To be used in with
+             * `Theme.SplashScreen.IconBackground`_. Sets a background color
+             * under the splash screen icon.
+             *
+             * `windowSplashScreenBackground`: Background color of the splash
+             * screen. Defaults to the theme's `?attr/colorBackground`.
+             *
+             * `postSplashScreenTheme`* Theme to apply to the Activity when
+             * [installSplashScreen] is called.
+             *
+             * **Known incompatibilities:**
+             * - On API < 31, `windowSplashScreenAnimatedIcon` cannot be
+             *   animated. If you want to provide an animated icon
+             *   for API 31+ and a still icon for API <31, you
+             *   can do so by overriding the still icon with an
+             *   animated vector drawable in `res/drawable-v31`.
+             * - On API < 31, if the value of `windowSplashScreenAnimatedIcon`
+             *   is an
+             *   [adaptive icon](http://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
+             *   , it will be cropped and scaled. The workaround is to
+             *   respectively assign `windowSplashScreenAnimatedIcon` and
+             *   `windowSplashScreenIconBackgroundColor` to the values
+             *   of the adaptive icon `foreground` and `background`.
+             * - On API 21-22, The icon isn't displayed until the application
+             *   starts, only the background is visible.
+             *
+             * # Design
+             * The splash screen icon uses the same specifications as
+             * [Adaptive Icons](https://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
+             * . This means that the icon needs to fit within a circle
+             * whose diameter is 2/3 the size of the icon. The actual
+             * values don't really matter if you use a vector icon.
+             *
+             * ## Specs
+             * - With icon background (`Theme.SplashScreen.IconBackground`)
+             *    + Image Size: 240x240 dp
+             *    + Inner Circle diameter: 160 dp
+             * - Without icon background (`Theme.SplashScreen`)
+             *       + Image size: 288x288 dp
+             *       + Inner circle diameter: 192 dp
+             *
+             *   _Example:_ if the full size of the image is 300dp*300dp, the icon
+             *   needs to fit within a circle with a diameter of 200dp.
+             *   Everything outside the circle will be invisible (masked).
              */
             """.trimIndent()
         )

@@ -35,7 +35,7 @@ fun getLineNumber(source: String, offset: Int, startLine: Int = 1, startOffset: 
     return line
 }
 
-private val numberPattern = Pattern.compile("^\\d+\\. ")
+private val numberPattern = Pattern.compile("^\\d+([.)]) ")
 
 fun String.isListItem(): Boolean {
     return startsWith("- ") ||
@@ -51,7 +51,7 @@ fun String.collapseSpaces(): String {
     }
     val sb = StringBuilder()
     var prev: Char = this[0]
-    for (i in 0 until length) {
+    for (i in indices) {
         if (prev == ' ') {
             if (this[i] == ' ') {
                 continue
@@ -64,7 +64,15 @@ fun String.collapseSpaces(): String {
 }
 
 fun String.isTodo(): Boolean {
-    return startsWith("TODO:")
+    return startsWith("TODO:") || startsWith("TODO(")
+}
+
+fun String.isHeader(): Boolean {
+    return startsWith("#") || startsWith("<h", true)
+}
+
+fun String.isQuoted(): Boolean {
+    return startsWith("> ")
 }
 
 fun String.isDirectiveMarker(): Boolean {
