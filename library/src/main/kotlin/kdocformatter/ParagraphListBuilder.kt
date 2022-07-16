@@ -32,7 +32,6 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 paragraph.hanging = true
             }
             text.isListItem() -> paragraph.hanging = true
-            text.startsWith("    ") -> paragraph.preformatted = true
             text.isDirectiveMarker() -> {
                 paragraph.block = true
                 paragraph.preformatted = true
@@ -86,7 +85,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 customize(j, p)
             }
 
-            if (lineWithIndentation.startsWith("> ")) { // Look for quoted && too?
+            if (lineWithIndentation.isQuoted()) {
                 appendText(lineWithoutIndentation.substring(2).collapseSpaces())
             } else {
                 appendText(lineWithoutIndentation.collapseSpaces())
@@ -109,17 +108,25 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
         return j
     }
 
-    private fun addPreformatted(i: Int, until: (String) -> Boolean = { true }): Int {
+    private fun addPreformatted(
+        i: Int,
+        includeEnd: Boolean = true,
+        until: (String) -> Boolean = { true }
+    ): Int {
         newParagraph()
         var j = i
         while (j < lines.size) {
             val l = lines[j]
             val lineWithIndentation = lineContent(l)
+            if (!includeEnd && j > i && until(lineWithIndentation)) {
+                stripTrailingBlankLines()
+                return j
+            }
             appendText(lineWithIndentation)
             paragraph.preformatted = true
             paragraph.allowEmpty = true
             newParagraph()
-            if (j > i && until(lineWithIndentation)) {
+            if (includeEnd && j > i && until(lineWithIndentation)) {
                 stripTrailingBlankLines()
                 return j + 1
             }
@@ -154,54 +161,54 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 return paragraph
             }
 
-            // Look for special cases that indicates this line is a block element (which
-            // begins a new paragraph)
-            if (lineWithIndentation.startsWith("-") &&
-                    lineWithIndentation.containsOnly('-', '|', ' ')
+            if (lineWithIndentation.startsWith("    ") && // markdown preformatted text
+                (i == 1 || lineContent(lines[i - 2]).isBlank()) && // we've already ++'ed i above
+                    // Make sure it's not just deeply indented inside a different block
+                    (paragraph.prev == null ||
+                        lineWithIndentation.length - lineWithoutIndentation.length >=
+                            paragraph.prev!!.originalIndent + 4)
             ) {
-                // Horizontal rule or table row
+                i = addPreformatted(i - 1, includeEnd = false) { !it.startsWith(" ") }
+            } else if (lineWithoutIndentation.startsWith("-") &&
+                    lineWithoutIndentation.containsOnly('-', '|', ' ')
+            ) {
+                // Horizontal rule or table row (or potentially a line under a header)
                 // ----------------
                 //
                 // cell1 | cell2
                 // ------|------
                 // cell3 | cell4
                 newParagraph().block = true
-                appendText(lineWithIndentation)
+                appendText(lineWithoutIndentation)
                 newParagraph().block = true
-            } else if (lineWithIndentation.startsWith("=") &&
-                    lineWithIndentation.containsOnly('=', ' ')
+            } else if (lineWithoutIndentation.startsWith("=") &&
+                    lineWithoutIndentation.containsOnly('=', ' ')
             ) {
                 // Header
                 // ======
                 newParagraph().block = true
-                appendText(lineWithIndentation)
+                appendText(lineWithoutIndentation)
                 newParagraph().block = true
-            } else if (lineWithIndentation.startsWith("#")) {
+            } else if (lineWithoutIndentation.startsWith("#")
+            ) { // not isHeader() because <h> is handled separately
                 // ## Header
                 newParagraph().block = true
-                appendText(lineWithIndentation)
+                appendText(lineWithoutIndentation)
                 newParagraph().block = true
-            } else if (lineWithIndentation.startsWith("*") &&
-                    lineWithIndentation.containsOnly('*', ' ')
+            } else if (lineWithoutIndentation.startsWith("*") &&
+                    lineWithoutIndentation.containsOnly('*', ' ')
             ) {
                 // Horizontal rule:
                 // *******
                 // * * *
                 newParagraph().block = true
-                appendText(lineWithIndentation)
+                appendText(lineWithoutIndentation)
                 newParagraph().block = true
             } else if (lineWithoutIndentation.startsWith("```")) {
                 i = addPreformatted(i - 1) { it.startsWith("```") }
             } else if (lineWithoutIndentation.startsWith("<pre>", ignoreCase = true)) {
                 i = addPreformatted(i - 1) { it.startsWith("</pre>", ignoreCase = true) }
-            } else if (lineWithIndentation.startsWith("    ") && // markdown preformatted text
-                    // Make sure it's not just deeply indented inside a different block
-                    (paragraph.prev == null ||
-                        lineWithIndentation.length - lineWithoutIndentation.length >=
-                            paragraph.prev!!.originalIndent + 4)
-            ) {
-                i = addPreformatted(i - 1) { !it.startsWith(" ") }
-            } else if (lineWithIndentation.startsWith("> ")) {
+            } else if (lineWithoutIndentation.isQuoted()) {
                 val paragraph = newParagraph()
                 paragraph.quoted = true
                 paragraph.block = false
@@ -209,11 +216,12 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     addLines(
                         i - 1,
                         until = { _, w, s ->
-                            s.isBlank() ||
+                            w.isBlank() ||
                                 w.isListItem() ||
-                                s.isKDocTag() ||
-                                s.isTodo() ||
-                                s.isDirectiveMarker()
+                                w.isKDocTag() ||
+                                w.isTodo() ||
+                                w.isDirectiveMarker() ||
+                                w.isHeader()
                         },
                         customize = { _, p -> p.quoted = true },
                         includeEnd = false
@@ -258,11 +266,13 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                             } else {
                                 s.isBlank() ||
                                     w.isListItem() ||
-                                    s.isKDocTag() ||
-                                    s.isTodo() ||
+                                    w.isQuoted() ||
+                                    w.isKDocTag() ||
+                                    w.isTodo() ||
                                     s.startsWith("```") ||
                                     w.startsWith("<pre>") ||
-                                    w.isDirectiveMarker()
+                                    w.isDirectiveMarker() ||
+                                    w.isHeader()
                             }
                         },
                         shouldBreak = { w, _ -> w.isBlank() },
@@ -285,15 +295,18 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 newParagraph().block = true
             } else {
                 // Some common HTML block tags
-                if (lineWithoutIndentation.startsWith("<p>", true) ||
-                        lineWithoutIndentation.startsWith("<p/>", true) ||
-                        lineWithoutIndentation.startsWith("<h1>", true) ||
-                        lineWithoutIndentation.startsWith("<h2>", true) ||
-                        lineWithoutIndentation.startsWith("<h3>", true) ||
-                        lineWithoutIndentation.startsWith("<h4>", true) ||
-                        lineWithoutIndentation.startsWith("<table>", true) ||
-                        lineWithoutIndentation.startsWith("<tr>", true) ||
-                        lineWithoutIndentation.startsWith("<div>", true)
+                if (lineWithoutIndentation.startsWith("<") &&
+                        (lineWithoutIndentation.startsWith("<p>", true) ||
+                            lineWithoutIndentation.startsWith("<p/>", true) ||
+                            lineWithoutIndentation.startsWith("<h1", true) ||
+                            lineWithoutIndentation.startsWith("<h2", true) ||
+                            lineWithoutIndentation.startsWith("<h3", true) ||
+                            lineWithoutIndentation.startsWith("<h4", true) ||
+                            lineWithoutIndentation.startsWith("<table", true) ||
+                            lineWithoutIndentation.startsWith("<tr", true) ||
+                            lineWithoutIndentation.startsWith("<caption", true) ||
+                            lineWithoutIndentation.startsWith("<td", true) ||
+                            lineWithoutIndentation.startsWith("<div", true))
                 ) {
                     val prevEmpty = paragraph.isEmpty()
                     newParagraph().block = true
@@ -307,7 +320,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                                 paragraph.separate = true
                             }
                         } else {
-                            appendText(lineWithIndentation)
+                            appendText(lineWithoutIndentation)
                             newParagraph().block = true
                         }
                         continue
@@ -379,25 +392,23 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             paragraph.separate =
                 when {
                     prev == null -> false
+                    paragraph.preformatted && prev.preformatted -> false
                     paragraph.separate -> true
                     // Don't separate kdoc tags, except for the first one
                     paragraph.doc -> !prev.doc
                     text.isDirectiveMarker() -> false
                     text.isTodo() && !prev.text.isTodo() -> true
-                    text.startsWith("#") -> true // header
+                    text.isHeader() -> true
                     // Set preformatted paragraphs off (but not <pre> tags where it's implicit)
                     paragraph.preformatted ->
                         !prev.preformatted &&
                             !text.startsWith("<pre", true) &&
-                            // And as a special case, if the previous line ends with ":", no
-                            // separation:
-                            (options.alwaysNewLineBeforePreformatted ||
-                                !prev.text.isExpectingMore())
+                            (!text.startsWith("```") || !prev.text.isExpectingMore())
                     prev.preformatted && prev.text.startsWith("</pre>", true) -> false
                     paragraph.continuation -> true
                     paragraph.hanging -> false
-                    paragraph.quoted -> false
-                    text.startsWith("#") || text.startsWith("<h", true) -> true
+                    paragraph.quoted -> prev.quoted
+                    text.isHeader() -> true
                     text.startsWith("<p>", true) || text.startsWith("<p/>", true) -> true
                     else -> !paragraph.block && !paragraph.isEmpty()
                 }
@@ -464,21 +475,21 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             }
             for (paragraph in paragraphs) {
                 if (paragraph.originalIndent > 0) {
-                    paragraph.originalIndent = assignments[paragraph.originalIndent]!!
+                    val assigned = assignments[paragraph.originalIndent] ?: continue
+                    paragraph.originalIndent = assigned
                     paragraph.indent = getIndent(paragraph.originalIndent)
                 }
             }
         }
 
-        // Trim blank lines from the end
-        for (i in paragraphs.size - 1 downTo 0) {
-            if (paragraphs[i].isEmpty()) {
+        // Remove blank lines between list items and from the end
+        for (i in paragraphs.size - 2 downTo 0) {
+            if (paragraphs[i].isEmpty() && (!paragraphs[i].preformatted || i == paragraphs.size - 1)
+            ) {
                 paragraphs.removeAt(i)
                 if (i > 0) {
                     paragraphs[i - 1].next = null
                 }
-            } else {
-                break
             }
         }
     }

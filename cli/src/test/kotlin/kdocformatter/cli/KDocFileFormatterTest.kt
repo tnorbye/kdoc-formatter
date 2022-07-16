@@ -268,7 +268,7 @@ class KDocFileFormatterTest {
             * Can optionally convert various remaining HTML tags in the comments
               to the corresponding KDoc/markdown text. For example, <b>bold</b> is
               converted into **bold**, <p> is converted to a blank line,
-              <h1>Heading</h1> is converted into # Heading, and so on.
+              \<h1>Heading</h1> is converted into # Heading, and so on.
 
             * Support for .editorconfig configuration files to automatically pick
               up line widths. It will normally use the line width configured for
@@ -492,7 +492,7 @@ class KDocFileFormatterTest {
             * Can optionally convert various remaining HTML tags in the comments
               to the corresponding KDoc/markdown text. For example, **bold** is
               converted into **bold**, <p> is converted to a blank line,
-              <h1>Heading</h1> is converted into # Heading, and so on.
+              \<h1>Heading</h1> is converted into # Heading, and so on.
             * Support for .editorconfig configuration files to automatically pick
               up line widths. It will normally use the line width configured for
               Kotlin files, but, if Markdown (.md) files are also configured, it

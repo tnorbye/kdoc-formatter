@@ -132,7 +132,11 @@ class Paragraph(private val options: KDocFormattingOptions) {
                     continue
                 }
             } else if (c == '{') {
-                if (s.startsWith("@link", i, true)) {
+                if (s.startsWith("@link", i, true)
+                    // @linkplain is similar to @link, but kdoc does *not* render a [symbol]
+                    // into a {@linkplain} in HTML, so converting these would change the output.
+                    && !s.startsWith("@linkplain", i, true)
+                ) {
                     // {@link} or {@linkplain}
                     sb.append('[')
                     var curr = i + 5
@@ -188,6 +192,11 @@ class Paragraph(private val options: KDocFormattingOptions) {
         // See divide & conquer algorithm listed here: https://xxyxyz.org/line-breaking/
         if (words.size == 1) {
             return listOf(words[0])
+        } else if (words.size == 2 && (quoted || hanging)) {
+            // For list items, quoted lines, TODO items etc, don't split the list item bullet (or
+            // quote etc)
+            // from a potentially long word on the next line.
+            return words
         }
         val lines = reflowOptimal(lineWidth, words)
         if (lines.size <= 2 || options.alternate || !options.optimal) {
@@ -253,16 +262,62 @@ class Paragraph(private val options: KDocFormattingOptions) {
         }
     }
 
+    /**
+     * Returns true if it's okay to break at the current word.
+     *
+     * We need to check for this, because a word can have a different
+     * meaning at the beginning of a line than in the middle somewhere,
+     * so if it just so happens to be at the break boundary, we need to
+     * make sure we don't make it the first word on the next line since
+     * that would change the documentation.
+     */
+    private fun canBreakAt(word: String): Boolean {
+        // Can we start a new line with this without interpreting it
+        // in a special way?
+
+        if (word.startsWith("#") ||
+                word.startsWith("```") ||
+                word.isDirectiveMarker() ||
+                word.startsWith("@") // interpreted as a tag
+        ) {
+            return false
+        }
+
+        if (!word.first().isLetter()) {
+            val wordWithSpace = "$word " // for regex matching in below checks
+            if (wordWithSpace.isListItem() && !word.equals("<li>", true) || wordWithSpace.isQuoted()
+            ) {
+                return false
+            }
+        }
+
+        return true
+    }
+
     private fun computeWords(): List<String> {
         val words = text.split(Regex("\\s+")).filter { it.isNotBlank() }.map { it.trim() }
+        if (words.size == 1) {
+            return words
+        }
+
         // See if any of the words should never be broken up. We do that for list separators
         // and a few others.
-        // We never want to put "1." at the beginning of a line as an overflow
+        // We never want to put "1." at the beginning of a line as an overflow.
+
         val combined = ArrayList<String>(words.size)
-        combined.add(words[0])
-        var prev = ""
-        var insideSquareBrackets = false
-        for (i in 1 until words.size) {
+
+        // If this paragraph is a list item or a quoted line, merge the first word with this
+        // item such that we never split them apart.
+        var start = 0
+        var first = words[start++]
+        if (quoted || hanging && !text.isKDocTag()) {
+            first = first + " " + words[start++]
+        }
+
+        combined.add(first)
+        var prev = first
+        var insideSquareBrackets = words[start - 1].startsWith("[")
+        for (i in start until words.size) {
             val word = words[i]
 
             if (prev.startsWith("[")) insideSquareBrackets = true
@@ -270,13 +325,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
 
             // Can we start a new line with this without interpreting it
             // in a special way?
-            if (word.startsWith("#") ||
-                    word.startsWith("-") ||
-                    word.startsWith("```") ||
-                    word.isListItem() && !word.equals("<li>", true) ||
-                    insideSquareBrackets ||
-                    word.isDirectiveMarker()
-            ) {
+            if (!canBreakAt(word) || insideSquareBrackets) {
                 // Combine with previous word with a single space; the line breaking algorithm
                 // won't know that it's more than one word.
                 val joined = "$prev $word"
