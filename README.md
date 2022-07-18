@@ -44,6 +44,9 @@ Features
 * Cleans up the double spaces left by the IntelliJ "Convert to
   Kotlin" action right before the closing comment token.
 * Removes trailing spaces.
+* Realigns table columns in Markdown tables and adds padding.
+* Reorders KDoc tags into a canonical order (for example placing
+  @return after @param, and so on.)
 * Can optionally convert various remaining HTML tags in the comments
   to the corresponding KDoc/markdown text. For example, \*\*bold**
   is converted into **bold**, \<p> is converted to a blank line,
@@ -72,7 +75,7 @@ Options:
     you don't want to limit the formatter maximum line width since
     indented code still needs to be properly formatted, but you also
     don't want comments to span 100+ characters, since that's less
-    readable. By default this option is not set.
+    readable. Defaults to 72 (or max-line-width, if set lower than 72.)
   --hanging-indent=<n>
     Sets the number of spaces to use for hanging indents, e.g. second
     and subsequent lines in a bulleted list or kdoc blog tag.
@@ -82,6 +85,15 @@ Options:
     With `collapse`, turns multi-line comments into a single line if it
     fits, and with `expand` it will always format commands with /** and
     */ on their own lines. The default is `collapse`.
+  --align-table-columns
+    Reformat tables such that the |column|separators| line up
+  --no-align-table-columns
+    Do not adjust formatting within table cells
+  --order-doc-tags
+    Move KDoc tags to the end of comments, and order them in a canonical
+    order (@param before @return, and so on)
+  --no-order-doc-tags
+    Do not move or reorder KDoc tagså
   --overlaps-git-changes=<HEAD | staged>
     If git is on the path, and the command is invoked in a git
     repository, kdoc-formatter will invoke git to find the changes either
@@ -103,7 +115,7 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.5.0
+kdoc-formatter: Version 1.5.1
 https://github.com/tnorbye/kdoc-formatter
 ```
 

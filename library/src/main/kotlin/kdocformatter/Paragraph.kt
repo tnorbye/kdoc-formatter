@@ -46,6 +46,9 @@ class Paragraph(private val options: KDocFormattingOptions) {
      */
     var quoted = false
 
+    /** Is this line part of a table? */
+    var table = false
+
     /**
      * Should this paragraph use a hanging indent? (Implies [block] as
      * well).
@@ -320,6 +323,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
         for (i in start until words.size) {
             val word = words[i]
 
+            // We also cannot break up a URL text across lines, which will alter
+            // the rendering of the docs.
             if (prev.startsWith("[")) insideSquareBrackets = true
             if (prev.contains("]")) insideSquareBrackets = false
 

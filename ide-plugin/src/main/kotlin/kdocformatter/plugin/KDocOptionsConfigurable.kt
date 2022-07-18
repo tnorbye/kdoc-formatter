@@ -19,6 +19,8 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
   private val convertMarkupCheckBox = JBCheckBox("Convert markup like <b>bold</b> into **bold**")
   private val addPunctuationCheckBox = JBCheckBox("Add missing punctuation")
   private val lineCommentsCheckBox = JBCheckBox("Allow formatting line comments interactively")
+  private val alignTableColumnsCheckBox = JBCheckBox("Align table columns")
+  private val reorderKDocTagsCheckBox = JBCheckBox("Move and reorder KDoc tags")
 
   private val state = KDocPluginOptions.instance.globalState
 
@@ -29,6 +31,8 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     row { convertMarkupCheckBox() }
     row { addPunctuationCheckBox() }
     row { lineCommentsCheckBox() }
+    row { alignTableColumnsCheckBox() }
+    row { reorderKDocTagsCheckBox() }
   }
 
   override fun isModified() =
@@ -37,7 +41,9 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
           convertMarkupCheckBox.isSelected != state.convertMarkup ||
           lineCommentsCheckBox.isSelected != state.lineComments ||
           addPunctuationCheckBox.isSelected != state.addPunctuation ||
-          formatProcessorCheckBox.isSelected != state.formatProcessor
+          formatProcessorCheckBox.isSelected != state.formatProcessor ||
+          alignTableColumnsCheckBox.isSelected != state.alignTableColumns ||
+          reorderKDocTagsCheckBox.isSelected != state.reorderDocTags
 
   @Throws(ConfigurationException::class)
   override fun apply() {
@@ -47,6 +53,8 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     state.lineComments = lineCommentsCheckBox.isSelected
     state.addPunctuation = addPunctuationCheckBox.isSelected
     state.formatProcessor = formatProcessorCheckBox.isSelected
+    state.alignTableColumns = alignTableColumnsCheckBox.isSelected
+    state.reorderDocTags = reorderKDocTagsCheckBox.isSelected
   }
 
   override fun reset() {
@@ -56,5 +64,7 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     lineCommentsCheckBox.isSelected = state.lineComments
     addPunctuationCheckBox.isSelected = state.addPunctuation
     formatProcessorCheckBox.isSelected = state.formatProcessor
+    alignTableColumnsCheckBox.isSelected = state.alignTableColumns
+    reorderKDocTagsCheckBox.isSelected = state.reorderDocTags
   }
 }

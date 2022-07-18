@@ -46,6 +46,8 @@ class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentSt
     var lineComments = false
     var addPunctuation = false
     var formatProcessor = true
+    var alignTableColumns = true
+    var reorderDocTags = true
   }
 
   companion object {

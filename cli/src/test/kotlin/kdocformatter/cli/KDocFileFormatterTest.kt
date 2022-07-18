@@ -137,6 +137,115 @@ class KDocFileFormatterTest {
     }
 
     @Test
+    fun testStringInterpolation() {
+        val source =
+            "val t = \"\"\"This is a raw string! \${'\"'.minus(50) /**  KDoc  comment */ }string\"\"\""
+        val reformatted = reformatFile(source, KDocFormattingOptions(100, 72))
+        assertEquals(
+            "val t = \"\"\"This is a raw string! \${'\"'.minus(50) /** KDoc comment */ }string\"\"\"",
+            reformatted
+        )
+    }
+
+    @Test
+    fun testLexer() {
+        val source =
+            "" +
+                "class Test {\n" +
+                "  @Test\n" +
+                "  fun `There's something going on`() {}\n" +
+                "  fun test2() =\n" +
+                "      test(\n" +
+                "          \"\"\"\n" +
+                "      |// Comment 1\n" +
+                "      |// There's something else going on.\n" +
+                "      |\"\"\")\n" +
+                "\n" +
+                "  fun test3() {\n" +
+                "    val s =\n" +
+                "        \"\"\"\n" +
+                "          |/**\n" +
+                "          | * @throws Exception\n" +
+                "          | * @exception Exception\n" +
+                "          | * @param unused [Param]\n" +
+                "          | */\n" +
+                "          |class Sample\n" +
+                "          |\"\"\"\n" +
+                "  }\n" +
+                "}"
+        val reformatted = reformatFile(source, KDocFormattingOptions(100, 72))
+        assertEquals(source, reformatted)
+    }
+
+    @Test
+    fun testLineSuffixFits() {
+        val source =
+            """
+            class ComposeIssueNotificationAction(
+              private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
+              : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {  /**
+               * [Alarm] used to trigger the popup as a hint.
+               */
+              private val popupAlarm = Alarm()
+            }
+            """.trimIndent()
+        val reformatted = reformatFile(source, KDocFormattingOptions(1000, 1000))
+        assertEquals(
+            """
+            class ComposeIssueNotificationAction(
+              private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
+              : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {  /** [Alarm] used to trigger the popup as a hint. */
+              private val popupAlarm = Alarm()
+            }
+            """.trimIndent(),
+            reformatted
+        )
+    }
+
+    @Test
+    fun testLineSuffixDoesNotFit() {
+        val source =
+            """
+            class ComposeIssueNotificationAction(
+              private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
+              : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {  /**
+               * [Alarm] used to trigger the popup as a hint.
+               */
+              private val popupAlarm = Alarm()
+            }
+            """.trimIndent()
+
+        assertEquals(
+            """
+            class ComposeIssueNotificationAction(
+              private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
+              : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {
+              /** [Alarm] used to trigger the popup as a hint. */
+              private val popupAlarm = Alarm()
+            }
+            """.trimIndent(),
+            reformatFile(source, KDocFormattingOptions(60, 60))
+        )
+
+        assertEquals(
+            """
+            class ComposeIssueNotificationAction(
+              private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
+              : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {
+              /**
+               * [Alarm] used to trigger the popup as a hint.
+               */
+              private val popupAlarm = Alarm()
+            }
+            """.trimIndent(),
+            reformatFile(
+                source,
+                KDocFormattingOptions(100, 72).apply { collapseSingleLine = false }
+            )
+        )
+    }
+
+    @Test
     fun testGitRanges() {
         val source =
             """

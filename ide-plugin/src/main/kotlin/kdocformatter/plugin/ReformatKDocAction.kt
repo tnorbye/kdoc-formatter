@@ -324,5 +324,7 @@ fun getKDocFormattingOptions(
   configOptions.convertMarkup = state.convertMarkup
   configOptions.alternate = alternate
   configOptions.addPunctuation = state.addPunctuation
+  configOptions.alignTableColumns = state.alignTableColumns
+  configOptions.orderDocTags = state.reorderDocTags
   return configOptions
 }

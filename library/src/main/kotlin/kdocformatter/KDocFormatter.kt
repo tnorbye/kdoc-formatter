@@ -12,7 +12,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
         @Suppress("UnnecessaryVariable") val indent = initialIndent
         val lineComment = comment.startsWith("//")
         val indentSize = getIndentSize(indent, options)
-        val paragraphs = ParagraphListBuilder(comment, options).scan()
+        val paragraphs = ParagraphListBuilder(comment, options).scan(indentSize)
         val lineSeparator =
             if (lineComment) {
                 "\n$indent// "
@@ -50,7 +50,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
                 sb.append(lineSeparator)
             }
             val text = paragraph.text
-            if (paragraph.preformatted) {
+            if (paragraph.preformatted || paragraph.table) {
                 sb.append(text)
                 // Remove trailing spaces which can happen when we
                 // have an empty line in a preformatted paragraph.
