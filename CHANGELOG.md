@@ -19,7 +19,6 @@
   double quotes backtick quoted function names.
 - Fix a bug where formatting kdocs that started at the end of
   lines with code was not handled correctly
-- Removed Kotlin logo from the IDE plugin icon
 
 ## [1.5.0]
 - A number of bug fixes across the formatter based on running
