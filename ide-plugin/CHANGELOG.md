@@ -2,6 +2,12 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.5.1]
+- Updated formatter with many bug fixes, as well as improved support
+  for formatting tables as well as reordering KDoc tags. There are new
+  options controlling both of these behaviors.
+- Removed Kotlin logo from the IDE plugin icon
+
 ## [1.4.1]
 
 - Fix formatting nested bulleted lists
