@@ -2,6 +2,25 @@
 
 # KDoc Formatter Changelog
 
+## [1.5.1]
+- Support for tables; by default it will realign columns and
+  add edges, but this can be controlled via
+  --align-table-columns and --no-align-table-columns.
+  Horizontal padding is added inside the cells if there is
+  space within the line.
+- Move KDoc tags to the end of comments, and order them
+  (e.g. @param before @return and so on). Can be enabled
+  or disabled with --order-doc-tags and
+  --no-order-doc-tags.
+- Change default maxCommentWidth to 72 (was previously defaulting
+  to the maxLineWidth.)
+- Fix command line driver to properly handle nested
+  string substitutions and to not get confused by single or
+  double quotes backtick quoted function names.
+- Fix a bug where formatting kdocs that started at the end of
+  lines with code was not handled correctly
+- Removed Kotlin logo from the IDE plugin icon
+
 ## [1.5.0]
 - A number of bug fixes across the formatter based on running
   the formatter on some larger code bases and inspecting

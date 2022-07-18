@@ -89,29 +89,19 @@ fun String.isExpectingMore(): Boolean {
 }
 
 fun String.isKDocTag(): Boolean {
-    if (!startsWith("@")) {
-        return false
+    // Not using a hardcoded list here since tags can change over time
+    if (startsWith("@")) {
+        for (i in 1 until length) {
+            val c = this[i]
+            if (c.isWhitespace()) {
+                return i > 2
+            } else if (!c.isLetter() || !c.isLowerCase()) {
+                return false
+            }
+        }
+        return true
     }
-    // Match actual set of kdoc tags instead of just "@something" such that we
-    // don't accidentally interpret docs that contain for example annotation names
-    // as block tags. (See KDocFormatterTest.testAtInMiddle for an example
-    // which was affected by this.)
-    // (See https://kotlinlang.org/docs/reference/kotlin-doc.html#block-tags)
-    return startsWith("@param") ||
-        startsWith("@param") ||
-        startsWith("@return") ||
-        startsWith("@constructor") ||
-        startsWith("@receiver") ||
-        startsWith("@property") ||
-        startsWith("@throws") ||
-        startsWith("@exception") ||
-        startsWith("@sample") ||
-        startsWith("@see") ||
-        startsWith("@author") ||
-        startsWith("@since") ||
-        startsWith("@suppress") ||
-        // Not an actual kdoc tag but might appear in converted docs
-        startsWith("@deprecated")
+    return false
 }
 
 /**

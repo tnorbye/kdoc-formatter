@@ -171,7 +171,7 @@ class KDocFormatterTest {
 
         checkFormatter(
             source,
-            KDocFormattingOptions(100),
+            KDocFormattingOptions(100, 100),
             """
             /**
              * Information about a request to run lint.
@@ -953,9 +953,6 @@ class KDocFormatterTest {
              * arrays and vargs.
              */
             """.trimIndent(),
-            // After reflowing @SuppressLint ends up on at the beginning of a line
-            // which is then interpreted as a doc tag
-            verify = true
         )
     }
 
@@ -1049,7 +1046,7 @@ class KDocFormatterTest {
     }
 
     @Test
-    fun testDoNotFoldIntoHeader() {
+    fun testNoBreakUrl() {
         checkFormatter(
             """
             /**
@@ -1145,6 +1142,60 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testAsciiArt3() {
+        val source =
+            """
+            /**
+             * This test creates a layout of this shape:
+             *
+             *  ---------------
+             *  | t      |    |
+             *  |        |    |
+             *  |  |-------|  |
+             *  |  | t     |  |
+             *  |  |       |  |
+             *  |  |       |  |
+             *  |--|  |-------|
+             *  |  |  | t     |
+             *  |  |  |       |
+             *  |  |  |       |
+             *  |  |--|       |
+             *  |     |       |
+             *  ---------------
+             *
+             * There are 3 staggered children and 3 pointers, the first is on child 1, the second is on
+             * child 2 in a space that overlaps child 1, and the third is in a space in child 3 that
+             * overlaps child 2.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 30),
+            """
+            /**
+             * This test creates a layout of
+             * this shape:
+             * ---------------
+             * | t | | | | | | |-------| | |
+             * | t | | | | | | | | | | |--|
+             * |-------| | | | t | | | | | |
+             * | | | | |--| | | | |
+             * ---------------
+             *
+             * There are 3 staggered children
+             * and 3 pointers, the first is
+             * on child 1, the second is
+             * on child 2 in a space that
+             * overlaps child 1, and the
+             * third is in a space in child
+             * 3 that overlaps child 2.
+             */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
     fun testBrokenAsciiArt() {
         // The first illustration has indentation 3, not 4, so isn't preformatted.
         // The formatter will garble this -- but so will Dokka!
@@ -1173,7 +1224,7 @@ class KDocFormatterTest {
              *     |_________________________|
              */
             """.trimIndent(),
-            KDocFormattingOptions(maxLineWidth = 100),
+            KDocFormattingOptions(maxLineWidth = 100, 100),
             """
             /**
              * ___________________________ | grandparent | | _____________________ | | | parent | | | |
@@ -1216,36 +1267,6 @@ class KDocFormatterTest {
              *     relative files have been made.
              * <li>Intermediate state must be saved between merges.
              * </ul>
-             */
-            """.trimIndent()
-        )
-    }
-
-    @Disabled(
-        "Not yet working (but dokka rendering isn't right either; it includes > in the middle of the quote)"
-    )
-    @Test
-    fun testDoNotFoldNestedLists() {
-        checkFormatter(
-            """
-            /**
-             * Here's some text.
-             * > Here's some more text that
-             * > is indented. More text.
-             * > > And here's some even
-             * > > more indented text
-             * > Back to the top level
-             */
-            """.trimIndent(),
-            KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 60),
-            """
-            /**
-             * Here's some text.
-             * > Here's some more text that
-             * > is indented. More text.
-             * > > And here's some even
-             * > > more indented text
-             * > Back to the top level
              */
             """.trimIndent()
         )
@@ -1346,7 +1367,7 @@ class KDocFormatterTest {
 
         checkFormatter(
             source,
-            KDocFormattingOptions(100),
+            KDocFormattingOptions(100, 100),
             """
             /**
              * This document contains a bunch of markup examples that I will use to verify that things are
@@ -1592,7 +1613,7 @@ class KDocFormatterTest {
             """.trimIndent()
         checkFormatter(
             source,
-            KDocFormattingOptions(72),
+            KDocFormattingOptions(72).apply { orderDocTags = true },
             // Note how this places the "#" in column 0 which will then
             // be re-interpreted as a header next time we format it!
             // Idea: @{link #} should become {@link#} or with a nbsp;
@@ -1613,10 +1634,6 @@ class KDocFormatterTest {
              *     dependency task) to be constructed when
              *     mocking a Gradle model for this project.
              * TODO: More stuff to do here
-             *
-             * @param dependencyGraph the graph description
-             * @return this for constructor chaining
-             *
              * TODO: Consider looking at the localization="suggested" attribute
              *     in the platform attrs.xml to catch future recommended
              *     attributes.
@@ -1628,12 +1645,109 @@ class KDocFormatterTest {
              *     module if there are resources in it.
              * TODO(myldap): Cover filter usage. Eg: Look for a framework
              *     resource by enabling its filter.
+             *
+             * @param dependencyGraph the graph description
+             * @return this for constructor chaining
              */
             """.trimIndent(),
             // We indent TO-DO text deliberately, though this changes the structure to make
             // each item have its own paragraph which doesn't happen by default. Working as
             // intended.
             verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testReorderTags() {
+        val source =
+            """
+            /**
+             * Constructs a new location range for the given file, from start to
+             * end. If the length of the range is not known, end may be null.
+             *
+             * @return Something
+             * @sample Other
+             * @param file the associated file (but see the documentation for
+             * [Location.file] for more information on what the file
+             * represents)
+             *
+             * @param start the starting position, or null
+             * @param end the ending position, or null
+             * @see More
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            // Note how this places the "#" in column 0 which will then
+            // be re-interpreted as a header next time we format it!
+            // Idea: @{link #} should become {@link#} or with a nbsp;
+            """
+            /**
+             * Constructs a new location range for the given file, from start to
+             * end. If the length of the range is not known, end may be null.
+             *
+             * @param file the associated file (but see the documentation for
+             *     [Location.file] for more information on what the file
+             *     represents)
+             * @param start the starting position, or null
+             * @param end the ending position, or null
+             * @return Something
+             * @sample Other
+             * @see More
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testKDocOrdering() {
+        // From AndroidX'
+        // frameworks/support/biometric/biometric-ktx/src/main/java/androidx/biometric/auth/CredentialAuthExtensions.kt
+        val source =
+            """
+            /**
+             * Shows an authentication prompt to the user.
+             *
+             * @param host A wrapper for the component that will host the prompt.
+             * @param crypto A cryptographic object to be associated with this authentication.
+             *
+             * @return [AuthenticationResult] for a successful authentication.
+             *
+             * @throws AuthPromptErrorException  when an unrecoverable error has been encountered and
+             * authentication has stopped.
+             * @throws AuthPromptFailureException when an authentication attempt by the user has been rejected.
+             *
+             * @see CredentialAuthPrompt.authenticate(
+             *     AuthPromptHost host,
+             *     BiometricPrompt.CryptoObject,
+             *     AuthPromptCallback
+             * )
+             *
+             * @sample androidx.biometric.samples.auth.credentialAuth
+             */
+        """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * Shows an authentication prompt to the user.
+             *
+             * @param host A wrapper for the component that will host the prompt.
+             * @param crypto A cryptographic object to be associated with this
+             *     authentication.
+             * @return [AuthenticationResult] for a successful authentication.
+             * @throws AuthPromptErrorException when an unrecoverable error has been
+             *     encountered and authentication has stopped.
+             * @throws AuthPromptFailureException when an authentication attempt by
+             *     the user has been rejected.
+             * @sample androidx.biometric.samples.auth.credentialAuth
+             * @see CredentialAuthPrompt.authenticate( AuthPromptHost host,
+             *     BiometricPrompt.CryptoObject, AuthPromptCallback )
+             */
+            """.trimIndent(),
+            indent = "",
         )
     }
 
@@ -1896,7 +2010,7 @@ class KDocFormatterTest {
             """.trimIndent()
         checkFormatter(
             source,
-            KDocFormattingOptions(120),
+            KDocFormattingOptions(120, 120),
             """
             /**
              * Interface to be implemented by lint detectors that want to analyze Java source files (or other similar source
@@ -1915,6 +2029,7 @@ class KDocFormatterTest {
              *     handler methods. This is done rather than a general visitor from the root node to avoid having to
              *     have every single lint detector (there are hundreds) do a full tree traversal on its own.</li>
              * </ul>
+             *
              * {@linkplain SourceCodeScanner} exposes the UAST API to lint checks. UAST is short for "Universal AST" and is an
              * abstract syntax tree library which abstracts away details about Java versus Kotlin versus other similar languages
              * and lets the client of the library access the AST in a unified way.
@@ -2111,9 +2226,36 @@ class KDocFormatterTest {
              * so a lot of the same concepts apply; then follow the above section.
              */
             """.trimIndent(),
-            verify = false,
             // {@link} tags are not rendered from [references] when Dokka cannot resolve the symbols
             verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testPreserveParagraph() {
+        // Make sure that when we convert <p>, it's preserved.
+        val source =
+            """
+             /**
+             * <ul>
+             * <li>test</li>
+             * </ul>
+             * <p>
+             * After.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(120, 120),
+            """
+            /**
+             * <ul>
+             * <li>test</li>
+             * </ul>
+             *
+             * After.
+             */
+            """.trimIndent()
         )
     }
 
@@ -2152,66 +2294,6 @@ class KDocFormatterTest {
             /**
              * ABCDE which you can render with something like this:
              * `dot - Tpng -o/tmp/graph.png toString.dot`
-             */
-            """.trimIndent()
-        )
-    }
-
-    // --------------------------------------------------------------------
-    // A few failing test cases here for corner cases that aren't handled
-    // right yet.
-    // --------------------------------------------------------------------
-
-    @Disabled("Lists within quoted blocks not yet supported")
-    @Test
-    fun testNestedWithinQuoted() {
-        val source =
-            """
-            /*
-             * Lists within a block quote:
-             * > Here's my quoted text.
-             * > 1. First item
-             * > 2. Second item
-             * > 3. Third item
-             */
-            """.trimIndent()
-        checkFormatter(
-            source,
-            KDocFormattingOptions(40),
-            """
-            /*
-             * Lists within a block quote:
-             * > Here's my quoted text.
-             * > 1. First item
-             * > 2. Second item
-             * > 3. Third item
-             */
-            """.trimIndent()
-        )
-    }
-
-    @Disabled("Tables are not properly supported")
-    @Test
-    fun testTables() {
-        // Leave formatting within table cells alone
-        val source =
-            """
-            /**
-             * ### Tables
-             * column 1 | column 2
-             * ---------|---------
-             * value 1  | value 2
-             */
-            """.trimIndent()
-        checkFormatter(
-            source,
-            KDocFormattingOptions(40),
-            """
-            /**
-             * ### Tables
-             * column 1 | column 2
-             * ---------|---------
-             * value 1  | value 2
              */
             """.trimIndent()
         )
@@ -3073,11 +3155,522 @@ class KDocFormatterTest {
              *       + Image size: 288x288 dp
              *       + Inner circle diameter: 192 dp
              *
-             *   _Example:_ if the full size of the image is 300dp*300dp, the icon
-             *   needs to fit within a circle with a diameter of 200dp.
-             *   Everything outside the circle will be invisible (masked).
+             * _Example:_ if the full size of the image is 300dp*300dp, the icon
+             * needs to fit within a circle with a diameter of 200dp. Everything
+             * outside the circle will be invisible (masked).
              */
             """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testRaggedIndentation() {
+        // From Dokka's plugins/base/src/main/kotlin/translators/psi/parsers/JavadocParser.kt
+        val source =
+            """
+            /**
+             * We would like to know if we need to have a space after a this tag
+             *
+             * The space is required when:
+             *  - tag spans multiple lines, between every line we would need a space
+             *
+             *  We wouldn't like to render a space if:
+             *  - tag is followed by an end of comment
+             *  - after a tag there is another tag (eg. multiple @author tags)
+             *  - they end with an html tag like: <a href="...">Something</a> since then the space will be displayed in the following text
+             *  - next line starts with a <p> or <pre> token
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * We would like to know if we need to have a space after a this tag
+             *
+             * The space is required when:
+             * - tag spans multiple lines, between every line we would need a
+             *   space
+             *
+             * We wouldn't like to render a space if:
+             * - tag is followed by an end of comment
+             * - after a tag there is another tag (eg. multiple @author tags)
+             * - they end with an html tag like: <a href="...">Something</a>
+             *   since then the space will be displayed in the following text
+             * - next line starts with a <p> or <pre> token
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testCustomKDocTag() {
+        // From Dokka's core/testdata/comments/multilineSection.kt
+        val source =
+            """
+            /**
+             * Summary
+             * @one
+             *   line one
+             *   line two
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72),
+            """
+            /**
+             * Summary
+             *
+             * @one line one line two
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTables() {
+        val source =
+            """
+            /**
+             * ### Tables
+             * column 1 | column 2
+             * ---------|---------
+             * value\| 1  | value 2
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /**
+             * ### Tables
+             * | column 1  | column 2 |
+             * |-----------|----------|
+             * | value\| 1 | value 2  |
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTableMixedWithHtml() {
+        // https://stackoverflow.com/questions/19950648/how-to-write-lists-inside-a-markdown-table
+        val source =
+            """
+            /**
+             | Tables        | Are           | Cool  |
+             | ------------- |:-------------:| -----:|
+             | col 3 is      | right-aligned |  1600 |
+             | col 2 is      | centered      |    12 |
+             | zebra stripes | are neat      |     1 |
+             | <ul><li>item1</li><li>item2</li></ul>| See the list | from the first column|
+            */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(100),
+            """
+            /**
+             * | Tables                                | Are           | Cool                  |
+             * |---------------------------------------|:-------------:|----------------------:|
+             * | col 3 is                              | right-aligned |                  1600 |
+             * | col 2 is                              |   centered    |                    12 |
+             * | zebra stripes                         |   are neat    |                     1 |
+             * | <ul><li>item1</li><li>item2</li></ul> | See the list  | from the first column |
+             */
+            """.trimIndent()
+        )
+
+        // Reduce formatting width to 40; table won't fit, but we'll skip the padding
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /**
+             * |Tables                               |Are          |Cool                 |
+             * |-------------------------------------|:-----------:|--------------------:|
+             * |col 3 is                             |right-aligned|                 1600|
+             * |col 2 is                             |  centered   |                   12|
+             * |zebra stripes                        |  are neat   |                    1|
+             * |<ul><li>item1</li><li>item2</li></ul>|See the list |from the first column|
+             */
+            """.trimIndent()
+        )
+
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40).apply { alignTableColumns = false },
+            """
+            /**
+             * | Tables        | Are           | Cool  |
+             * | ------------- |:-------------:| -----:|
+             * | col 3 is      | right-aligned |  1600 |
+             * | col 2 is      | centered      |    12 |
+             * | zebra stripes | are neat      |     1 |
+             * | <ul><li>item1</li><li>item2</li></ul>| See the list | from the first column|
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTableExtraCells() {
+        // If there are extra columns in a row (after the header and divider), preserve these
+        // (though Dokka will drop them from the rendering); don't widen the table to accommodate
+        // it.
+        val source =
+            """
+            /**
+             | Tables        | Are           | Cool  |
+             | ------------- |:-------------:| -----:|
+             | col 3 is      | right-aligned |  1600 |
+             | col 2 is      | centered      |    12 | extra
+             | zebra stripes | are neat      |     1 |
+            */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(100),
+            """
+            /**
+             * | Tables        | Are           | Cool |
+             * |---------------|:-------------:|-----:|
+             * | col 3 is      | right-aligned | 1600 |
+             * | col 2 is      |   centered    |   12 | extra |
+             * | zebra stripes |   are neat    |    1 |
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTables2() {
+        // See https://github.com/Kotlin/dokka/issues/199
+        val source =
+            """
+            /**
+             * | Level | Color |
+             * | ----- | ----- |
+             * | ERROR | RED |
+             * | WARN | YELLOW |
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /**
+             * | Level | Color  |
+             * |-------|--------|
+             * | ERROR | RED    |
+             * | WARN  | YELLOW |
+             */
+            """.trimIndent()
+        )
+
+        // With alignTableColumns=false, leave formatting within table cells alone
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40).apply { alignTableColumns = false },
+            """
+            /**
+             * | Level | Color |
+             * | ----- | ----- |
+             * | ERROR | RED |
+             * | WARN | YELLOW |
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTables3() {
+        val source =
+            """
+            /**
+             * Line Before
+             * # test
+             * |column 1 | column 2 | column3
+             * |---|---|---
+             * value 1  | value 3
+             * this is missing
+             * this is more
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40).apply { alignTableColumns = true },
+            """
+            /**
+             * Line Before
+             *
+             * # test
+             * | column 1 | column 2 | column3 |
+             * |----------|----------|---------|
+             * | value 1  | value 3  |         |
+             *
+             * this is missing this is more
+             */
+            """.trimIndent()
+        )
+
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40).apply { alignTableColumns = false },
+            """
+            /**
+             * Line Before
+             *
+             * # test
+             * |column 1 | column 2 | column3
+             * |---|---|---
+             * value 1  | value 3
+             *
+             * this is missing this is more
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTables4() {
+        // Test short dividers (:--, :-:, --:)
+        val source =
+            """
+            /**
+             * ### Tables
+             * column 1 | column 2 | column3
+             *  :-:|--:|:--
+             * cell 1|cell2|cell3
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /**
+             * ### Tables
+             * | column 1 | column 2 | column3 |
+             * |:--------:|---------:|---------|
+             * |  cell 1  |    cell2 | cell3   |
+             */
+            """.trimIndent(),
+            // Dokka doesn't actually handle this right; it looks for ---
+            verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testTablesEmptyCells() {
+        // Checks what happens with blank cells (here in column 0 on the last row). Test case from
+        // Studio's
+        // designer/testSrc/com/android/tools/idea/uibuilder/property/testutils/AndroidAttributeTypeLookup.kt
+        val source =
+            """
+            /**
+             * | Function                         | Type                            | Notes                                 |
+             * | -------------------------------- | ------------------------------- | --------------------------------------|
+             * | TypedArray.getDrawable           | NlPropertyType.DRAWABLE         |                                       |
+             * | TypedArray.getColor              | NlPropertyType.COLOR            | Make sure this is not a color list !! |
+             * | TypedArray.getColorStateList     | NlPropertyType.COLOR_STATE_LIST |                                       |
+             * | TypedArray.getDimensionPixelSize | NlPropertyType.DIMENSION        |                                       |
+             * | TypedArray.getResourceId         | NlPropertyType.ID               |                                       |
+             * | TypedArray.getInt                | NlPropertyType.ENUM             | If attrs.xml defines this as an enum  |
+             * |                                  | NlPropertyType.INTEGER          | If this is not an enum                |
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * |Function                        |Type                           |Notes                                |
+             * |--------------------------------|-------------------------------|-------------------------------------|
+             * |TypedArray.getDrawable          |NlPropertyType.DRAWABLE        |                                     |
+             * |TypedArray.getColor             |NlPropertyType.COLOR           |Make sure this is not a color list !!|
+             * |TypedArray.getColorStateList    |NlPropertyType.COLOR_STATE_LIST|                                     |
+             * |TypedArray.getDimensionPixelSize|NlPropertyType.DIMENSION       |                                     |
+             * |TypedArray.getResourceId        |NlPropertyType.ID              |                                     |
+             * |TypedArray.getInt               |NlPropertyType.ENUM            |If attrs.xml defines this as an enum |
+             * |                                |NlPropertyType.INTEGER         |If this is not an enum               |
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testTables5() {
+        // Test case from Studio's
+        // project-system-gradle-upgrade/src/com/android/tools/idea/gradle/project/upgrade/AgpUpgradeRefactoringProcessor.kt
+        val source =
+            """
+            /**
+            | 1 | 2 | 3 | 4 | Necessity
+            |---|---|---|---|----------
+            |v_n|v_o|cur|new| [IRRELEVANT_PAST]
+            |cur|new|v_n|v_o| [IRRELEVANT_FUTURE]
+            |cur|v_n|v_o|new| [MANDATORY_CODEPENDENT] (must do the refactoring in the same action as the AGP version upgrade)
+            |v_n|cur|v_o|new| [MANDATORY_INDEPENDENT] (must do the refactoring, but can do it before the AGP version upgrade)
+            |cur|v_n|new|v_o| [OPTIONAL_CODEPENDENT] (need not do the refactoring, but if done must be with or after the AGP version upgrade)
+            |v_n|cur|new|v_o| [OPTIONAL_INDEPENDENT] (need not do the refactoring, but if done can be at any point in the process)
+
+            For the possibly-simpler case where we have a discontinuity in behaviour, v_o = v_n = vvv, and the three possible cases are:
+
+            | 1 | 2 | 3 | Necessity
+            +---+---+---+----------
+            |vvv|cur|new| [IRRELEVANT_PAST]
+            |cur|vvv|new| [MANDATORY_CODEPENDENT]
+            |cur|new|vvv| [IRRELEVANT_FUTURE]
+
+            (again in case of equality, vvv sorts before cur and new)
+            */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * |1  |2  |3  |4  |Necessity                                                                                                      |
+             * |---|---|---|---|---------------------------------------------------------------------------------------------------------------|
+             * |v_n|v_o|cur|new|[IRRELEVANT_PAST]                                                                                              |
+             * |cur|new|v_n|v_o|[IRRELEVANT_FUTURE]                                                                                            |
+             * |cur|v_n|v_o|new|[MANDATORY_CODEPENDENT] (must do the refactoring in the same action as the AGP version upgrade)                |
+             * |v_n|cur|v_o|new|[MANDATORY_INDEPENDENT] (must do the refactoring, but can do it before the AGP version upgrade)                |
+             * |cur|v_n|new|v_o|[OPTIONAL_CODEPENDENT] (need not do the refactoring, but if done must be with or after the AGP version upgrade)|
+             * |v_n|cur|new|v_o|[OPTIONAL_INDEPENDENT] (need not do the refactoring, but if done can be at any point in the process)           |
+             *
+             * For the possibly-simpler case where we have a discontinuity in
+             * behaviour, v_o = v_n = vvv, and the three possible cases are:
+             *
+             * | 1 | 2 | 3 | Necessity +---+---+---+---------- |vvv|cur|new|
+             * [IRRELEVANT_PAST] |cur|vvv|new| [MANDATORY_CODEPENDENT] |cur|new|vvv|
+             * [IRRELEVANT_FUTURE]
+             *
+             * (again in case of equality, vvv sorts before cur and new)
+             */
+             """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testTables6() {
+        // Test case from IntelliJ's
+        // plugins/kotlin/idea/tests/testData/editor/quickDoc/OnFunctionDeclarationWithGFMTable.kt
+        val source =
+            """
+            /**
+             * | left  | center | right | default |
+             * | :---- | :----: | ----: | ------- |
+             * | 1     | 2      | 3     | 4       |
+             *
+             *
+             * | foo | bar | baz |
+             * | --- | --- | --- |
+             * | 1   | 2   |
+             * | 3   | 4   | 5   | 6 |
+             *
+             * | header | only |
+             * | ------ | ---- |
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * | left | center | right | default |
+             * |------|:------:|------:|---------|
+             * | 1    |   2    |     3 | 4       |
+             *
+             * | foo | bar | baz |
+             * |-----|-----|-----|
+             * | 1   | 2   |     |
+             * | 3   | 4   | 5   | 6   |
+             *
+             * | header | only |
+             * |--------|------|
+             */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testTables7() {
+        val source =
+            """
+            /**
+             * This is my code
+             * @author Me
+             * And here's.
+             * Another.
+             * Thing.
+            *
+             * my | table
+             * ---|---
+             * item 1|item 2
+             * item 3|
+             * item 4|item 5
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * This is my code
+             *
+             * | my     | table  |
+             * |--------|--------|
+             * | item 1 | item 2 |
+             * | item 3 |        |
+             * | item 4 | item 5 |
+             *
+             * @author Me And here's. Another. Thing.
+             */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testTables7b() {
+        val source =
+            """
+            /**
+             * This is my code
+             * @author Me
+             * Plain text.
+            *
+             * my | table
+             * ---|---
+             * item 1|item 2
+             * item 3|
+             * item 4|item 5
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72).apply {
+                orderDocTags = false
+                alignTableColumns = false
+            },
+            """
+            /**
+             * This is my code
+             *
+             * @author Me Plain text.
+             *
+             * my | table
+             * ---|---
+             * item 1|item 2
+             * item 3|
+             * item 4|item 5
+             */
+            """.trimIndent(),
+            indent = ""
         )
     }
 
@@ -3158,5 +3751,62 @@ class KDocFormatterTest {
             }
         }
         return sb.toString()
+    }
+
+    // --------------------------------------------------------------------
+    // A few failing test cases here for corner cases that aren't handled
+    // right yet.
+    // --------------------------------------------------------------------
+
+    @Disabled("Lists within quoted blocks not yet supported")
+    @Test
+    fun testNestedWithinQuoted() {
+        val source =
+            """
+            /*
+             * Lists within a block quote:
+             * > Here's my quoted text.
+             * > 1. First item
+             * > 2. Second item
+             * > 3. Third item
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(40),
+            """
+            /*
+             * Lists within a block quote:
+             * > Here's my quoted text.
+             * > 1. First item
+             * > 2. Second item
+             * > 3. Third item
+             */
+            """.trimIndent()
+        )
+
+        checkFormatter(
+            """
+            /**
+             * Here's some text.
+             * > Here's some more text that
+             * > is indented. More text.
+             * > > And here's some even
+             * > > more indented text
+             * > Back to the top level
+             */
+            """.trimIndent(),
+            KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 60),
+            """
+            /**
+             * Here's some text.
+             * > Here's some more text that
+             * > is indented. More text.
+             * > > And here's some even
+             * > > more indented text
+             * > Back to the top level
+             */
+            """.trimIndent()
+        )
     }
 }

@@ -1,6 +1,7 @@
 package kdocformatter.cli
 
 import java.io.File
+import java.util.ArrayDeque
 import kdocformatter.EditorConfigs
 import kdocformatter.KDocFormatter
 
@@ -30,7 +31,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
             return count
         }
 
-        return if (file.path.endsWith(".kt") && options.filter.includes(file) ||
+        return if (file.path.endsWith(".kt") && file.isFile && options.filter.includes(file) ||
                 options.includeMd && file.path.endsWith(".md") && options.filter.includes(file)
         ) {
             val original = file.readText()
@@ -68,10 +69,44 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
         for ((end, tokenType) in tokens.entries) {
             if (nextIsComment && (file == null || filter.overlaps(file, source, start, end))) {
                 val comment = source.substring(start, end)
-                val indent = getIndent(source, start)
+                val originalIndent = getIndent(source, start)
+                val suffix = !originalIndent.all { it.isWhitespace() }
+                val indent =
+                    if (suffix) {
+                        val endIndex = originalIndent.indexOfFirst { !it.isWhitespace() }
+                        originalIndent.substring(0, endIndex)
+                    } else {
+                        originalIndent
+                    }
                 val formatted =
                     try {
-                        formatter.reformatComment(comment, indent)
+                        val formatted = formatter.reformatComment(comment, indent)
+
+                        // If it's the suffix of a line, see if it can fit there even when indented
+                        // with the previous code
+                        var addNewline = false
+                        val reformatted = if (suffix && !formatted.contains("\n")) {
+                            val sameLineFormatted =
+                                formatter.reformatComment(comment, originalIndent)
+                            if (sameLineFormatted.contains('\n')) {
+                                addNewline = true
+                                formatted
+                            } else sameLineFormatted
+                        } else if (suffix) {
+                            addNewline = true
+                            formatted
+                        } else {
+                            formatted
+                        }
+                        if (addNewline) {
+                            // Remove trailing whitespace on the line (e.g. separator between code and /** */)
+                            while (sb.isNotEmpty() && sb[sb.length - 1].isWhitespace()) {
+                                sb.setLength(sb.length - 1)
+                            }
+                            sb.append('\n').append(indent)
+
+                        }
+                        reformatted
                     } catch (error: Throwable) {
                         System.err.println(
                             "Failed formatting comment in $file:\n\"\"\"\n$comment\n\"\"\""
@@ -100,11 +135,15 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     }
 
     private fun tokenizeKotlin(source: String): Map<Int, Int> {
+        class NestingContext(var depth: Int, var state: Int)
+
         val tokens: MutableMap<Int, Int> = LinkedHashMap() // order matters
         val length = source.length
         var state = STATE_INITIAL
         var offset = 0
         var blockCommentDepth = 0
+        var braceDepth = 0
+        val stack = ArrayDeque<NestingContext>()
         while (offset < length) {
             val c = source[offset]
             when (state) {
@@ -123,6 +162,20 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
                         }
                     } else if (c == '\'') {
                         state = STATE_STRING_SINGLE_QUOTE
+                    } else if (c == '`') {
+                        offset = source.indexOf('`', offset + 1)
+                        if (offset == -1) {
+                            break
+                        }
+                    } else if (c == '{') {
+                        braceDepth++
+                    } else if (c == '}') {
+                        braceDepth--
+                        var last = stack.peekLast()
+                        if (last != null && last.depth == braceDepth) {
+                            last = stack.removeLast()
+                            state = last.state
+                        }
                     }
                     offset++
                     continue
@@ -180,8 +233,13 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
                         state = STATE_INITIAL
                         offset++
                         continue
+                    } else if (c == '$' && source.startsWith("\${", offset)) {
+                        offset += 2
+                        stack.addLast(NestingContext(braceDepth, STATE_STRING_DOUBLE_QUOTE))
+                        braceDepth++
+                        state = STATE_INITIAL
+                        continue
                     }
-
                     offset++
                     continue
                 }
@@ -200,6 +258,12 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
                 STATE_STRING_TRIPLE_DOUBLE_QUOTE -> {
                     if (c == '"' && source.startsWith("\"\"\"", offset)) {
                         offset += 3
+                        state = STATE_INITIAL
+                        continue
+                    } else if (c == '$' && source.startsWith("\${", offset)) {
+                        offset += 2
+                        stack.addLast(NestingContext(braceDepth, STATE_STRING_TRIPLE_DOUBLE_QUOTE))
+                        braceDepth++
                         state = STATE_INITIAL
                         continue
                     }

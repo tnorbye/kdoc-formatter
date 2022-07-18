@@ -1,16 +1,17 @@
 package kdocformatter
 
-/** Options controlling how the [KDocFormatter] will behave. */
-class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integer.MAX_VALUE) {
-    /** Right hand side margin to write lines at. */
-    @Suppress("CanBePrimaryConstructorProperty") var maxLineWidth: Int = maxLineWidth
+import kotlin.math.min
 
+/** Options controlling how the [KDocFormatter] will behave. */
+class KDocFormattingOptions(
+    /** Right hand side margin to write lines at. */
+    var maxLineWidth: Int = 72,
     /**
      * Limit comment to be at most [maxCommentWidth] characters even if
      * more would fit on the line.
      */
-    @Suppress("CanBePrimaryConstructorProperty") var maxCommentWidth: Int = maxCommentWidth
-
+    var maxCommentWidth: Int = min(maxLineWidth, 72)
+) {
     /**
      * Whether to collapse multi-line comments that would fit on a
      * single line into a single line.
@@ -68,6 +69,19 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
     var optimal: Boolean = true
 
     /**
+     * If true, reformat markdown tables such that the column markers
+     * line up. When false, markdown tables are left alone (except for
+     * left hand side cleanup.)
+     */
+    var alignTableColumns: Boolean = true
+
+    /**
+     * If true, moves any kdoc tags to the end of the comment and
+     * `@return` tags after `@param` tags.
+     */
+    var orderDocTags: Boolean = true
+
+    /**
      * If true, perform "alternative" formatting. This is only relevant
      * in the IDE. You can invoke the action repeatedly and it will
      * jump between normal formatting an alternative formatting.
@@ -86,6 +100,8 @@ class KDocFormattingOptions(maxLineWidth: Int = 72, maxCommentWidth: Int = Integ
         copy.collapseSpaces = collapseSpaces
         copy.hangingIndent = hangingIndent
         copy.tabWidth = tabWidth
+        copy.alignTableColumns = alignTableColumns
+        copy.orderDocTags = orderDocTags
         return copy
     }
 }
