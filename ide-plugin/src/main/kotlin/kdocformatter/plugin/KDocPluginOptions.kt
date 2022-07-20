@@ -48,6 +48,7 @@ class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentSt
     var formatProcessor = true
     var alignTableColumns = true
     var reorderDocTags = true
+    var maxCommentWidthEnabled = true
   }
 
   companion object {

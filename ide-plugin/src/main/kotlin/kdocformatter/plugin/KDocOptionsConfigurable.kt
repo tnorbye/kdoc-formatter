@@ -5,6 +5,7 @@ import com.intellij.openapi.options.ConfigurationException
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.layout.panel
+import com.intellij.util.ui.UIUtil
 import org.jetbrains.annotations.Nls
 
 class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
@@ -21,6 +22,8 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
   private val lineCommentsCheckBox = JBCheckBox("Allow formatting line comments interactively")
   private val alignTableColumnsCheckBox = JBCheckBox("Align table columns")
   private val reorderKDocTagsCheckBox = JBCheckBox("Move and reorder KDoc tags")
+  private val maxCommentWidthEnabledCheckBox =
+      JBCheckBox("Allow max comment width to be separate from line width")
 
   private val state = KDocPluginOptions.instance.globalState
 
@@ -33,6 +36,14 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     row { lineCommentsCheckBox() }
     row { alignTableColumnsCheckBox() }
     row { reorderKDocTagsCheckBox() }
+    row { label("") }
+    row { maxCommentWidthEnabledCheckBox() }
+    row {
+      label(
+          "When checked, comments will be limited 72 characters (or the configured Markdown line length),\n" +
+              "for improved readability. Otherwise, comments will use the full available line width.",
+          style = UIUtil.ComponentStyle.SMALL)
+    }
   }
 
   override fun isModified() =
@@ -43,7 +54,8 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
           addPunctuationCheckBox.isSelected != state.addPunctuation ||
           formatProcessorCheckBox.isSelected != state.formatProcessor ||
           alignTableColumnsCheckBox.isSelected != state.alignTableColumns ||
-          reorderKDocTagsCheckBox.isSelected != state.reorderDocTags
+          reorderKDocTagsCheckBox.isSelected != state.reorderDocTags ||
+          maxCommentWidthEnabledCheckBox.isSelected != state.maxCommentWidthEnabled
 
   @Throws(ConfigurationException::class)
   override fun apply() {
@@ -55,6 +67,7 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     state.formatProcessor = formatProcessorCheckBox.isSelected
     state.alignTableColumns = alignTableColumnsCheckBox.isSelected
     state.reorderDocTags = reorderKDocTagsCheckBox.isSelected
+    state.maxCommentWidthEnabled = maxCommentWidthEnabledCheckBox.isSelected
   }
 
   override fun reset() {
@@ -66,5 +79,6 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     formatProcessorCheckBox.isSelected = state.formatProcessor
     alignTableColumnsCheckBox.isSelected = state.alignTableColumns
     reorderKDocTagsCheckBox.isSelected = state.reorderDocTags
+    maxCommentWidthEnabledCheckBox.isSelected = state.maxCommentWidthEnabled
   }
 }

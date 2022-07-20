@@ -2,6 +2,10 @@
 
 # KDoc Formatter Changelog
 
+## [1.5.2]
+- Updates to the IDE plugin to allow configuring maxCommentWidth
+  behavior. Fixes https://github.com/tnorbye/kdoc-formatter/issues/53
+
 ## [1.5.1]
 - Support for tables; by default it will realign columns and
   add edges, but this can be controlled via
