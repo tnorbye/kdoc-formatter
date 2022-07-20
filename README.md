@@ -1,21 +1,21 @@
 KDoc Formatter
 ==============
 
-Reformats Kotlin KDoc comments, reflowing text and other cleanup,
-both via IDE plugin and command line utility.
+Reformats Kotlin KDoc comments, reflowing text and other cleanup, both
+via IDE plugin and command line utility.
 
-This tool reflows comments in KDoc; either on a file or recursively
-over nested folders, as well as an IntelliJ IDE plugin where you can
-reflow the current comment around the cursor.
+This tool reflows comments in KDoc; either on a file or recursively over
+nested folders, as well as an IntelliJ IDE plugin where you can reflow
+the current comment around the cursor.
 
 Here's an example of the plugin in use, showing editing a comment and
 then applying the formatting action to clean it up:
 
 ![Screenshot](cleanup.gif)
 
-In addition to general cleanup, this is also handy when you're editing
-a comment and you need to reflow the paragraph because the current line
-is too long or too short:
+In addition to general cleanup, this is also handy when you're editing a
+comment and you need to reflow the paragraph because the current line is
+too long or too short:
 
 ![Screenshot](modify-line.gif)
 
@@ -27,32 +27,29 @@ Features
 * Command line script which can recursively format a whole source
   folder.
 * IDE plugin to format selected files or current comment. Preserves
-  caret position in the current comment. Also hooks into the IDE
-  formatting action.
+  caret position in the current comment.
+  Also hooks into the IDE formatting action.
 * Gradle plugin to format the source folders in the current project.
 * Block tags (like @param) are separated out from the main text, and
-  subsequent lines are indented. Blank spaces
-  between doc tags are removed. Preformatted text
-  (indented 4 spaces or more) is left alone.
+  subsequent lines are indented. Blank spaces between doc tags are
+  removed. Preformatted text (indented 4 spaces or more) is left alone.
 * Can be run in a mode where it only reformats comments that were
-  touched by the current git HEAD commit, or the
-  currently staged files. Can also be passed
-  specific line ranges to limit formatting to.
-* Multiline comments that would fit on a single line are converted to
-  a single line comment (configurable via options)
+  touched by the current git HEAD commit, or the currently staged files.
+  Can also be passed specific line ranges to limit formatting to.
+* Multiline comments that would fit on a single line are converted to a
+  single line comment (configurable via options)
 * Adds hanging indents for ordered and unordered indents.
-* Cleans up the double spaces left by the IntelliJ "Convert to
-  Kotlin" action right before the closing comment token.
+* Cleans up the double spaces left by the IntelliJ "Convert to Kotlin"
+  action right before the closing comment token.
 * Removes trailing spaces.
 * Realigns table columns in Markdown tables and adds padding.
 * Reorders KDoc tags into a canonical order (for example placing
-  @return after @param, and so on.)
-* Can optionally convert various remaining HTML tags in the comments
-  to the corresponding KDoc/markdown text. For example, \*\*bold**
+* Can optionally convert various remaining HTML tags in the comments to
+  the corresponding KDoc/markdown text. For example, \*\*bold**
   is converted into **bold**, \<p> is converted to a blank line,
   \<h1>Heading\</h1> is converted into # Heading, and so on.
-* Support for .editorconfig configuration files to automatically pick
-  up line widths. It will normally use the line width configured for
+* Support for .editorconfig configuration files to automatically pick up
+  line widths. It will normally use the line width configured for
   Kotlin files, but, if Markdown (.md) files are also configured, it
   will use that width as the maximum comment width. This allows you
   to have code line widths of for example 140 but limit comments to
@@ -115,59 +112,64 @@ Options:
   @<filename>
     Read filenames from file.
 
-kdoc-formatter: Version 1.5.1
+kdoc-formatter: Version 1.5.3
 https://github.com/tnorbye/kdoc-formatter
 ```
 
 IntelliJ Plugin Usage
 ---------------------
-Install the IDE plugin. Then move the caret to a KDoc comment and
-invoke Code > Reformat KDoc. You can configure a keyboard shortcut
-if you perform this action frequently (go to Preferences, search for
-Keymap, and then in the Keymap search field look for "KDoc", and then
-double click and choose Add Keyboard Shortcut.
+Install the IDE plugin. Open up the KDoc Formatting Options and inspect
+the settings to see if you want to change any of the options. By
+default, KDoc Formatter will use the line width configured for in the
+Kotlin editor code style for line breaking, but it will **also** look
+up the Markdown line width (typically 72) and use that as the maximum
+comment width. This means that by default, comments will be at most 72
+characters wide, even when using a code style which for example breaks
+at 140 characters.
 
-You can also select one or more files in the Project View and invoke
-the same action to format whole files.
+This is deliberate; comments are optimized for readability, and
+very long lines are not very readable -- which is why books are
+typically printed in portrait orientation, not landscape orientation.
 
-![Screenshot](screenshot.png)
+The code style line width is used to make sure that when the comment is
+in deeply nested code, it will still break comments into even shorter
+lines such that no line goes beyond the line limit.
 
-The above formats only comments. You can also invoke the general
-formatting action in the IDE (Code > Reformat Code) and the KDoc formatter
-will participate in formatting, updating any comments that overlap
-with the formatted text region.
-
-Finally, you can configure various options in the Settings panel. The
-line length settings are inherited from the IDE code style or from
-the .editorconfig files, if any. However, you can turn on "alternate"
-mode where invoking the action repeatedly will toggle between normal
-formatting and alternate formatting each time you invoke it. For
-a short comment that means toggling between a multi-line and a
-single-line comment. But for a longer comment, it will toggle between
-optimal line breaking (the default) and greedy line breaking, which
-can look better for short paragraphs.
-
-You can also configure whether the formatter should do more than
-formatting and actually replace markup constructs like **bold** with
-markdown markup.
+(Note that if your project uses .editorconfig files to specify
+indentation, those will be used instead of the Codestyle settings.)
 
 ![Screenshot](screenshot-settings.png)
+
+Other options here allow you to for example enable the option to
+add punctuation where it's missing, or to turn off features such as
+conversion of HTML tags into KDoc markup.
+
+The KDoc Formatter plugin integrates into the IDE's formatting actions,
+so if you reformat (for example via Code > Reformat Code), the comment
+will be reformatted along with the IDE's other code formatting.
+
+You can disable this in options, and instead explicitly invoke the
+formatter using Code > Reformat KDoc. You can configure a keyboard
+shortcut if you perform this action frequently (go to Preferences,
+search for Keymap, and then in the Keymap search field look for "KDoc",
+and then double click and choose Add Keyboard Shortcut.
+
+![Screenshot](screenshot.png)
 
 The plugin is available from the JetBrains Marketplace at
 [https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter](https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter)
 
 Gradle Plugin Usage
 -------------------
-The plugin is not yet distributed, so for now, download the zip file
-and install it somewhere, then add this to your build.gradle file:
-
+The plugin is not yet distributed, so for now, download the zip file and
+install it somewhere, then add this to your build.gradle file:
 ```
 buildscript {
     repositories {
         maven { url '/path/to/m2' }
     }
     dependencies {
-        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.3.2"
+        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.5.3"
         // (Sorry about the vanity URL --
         // I tried to get kdoc-formatter:kdoc-formatter:1.3.2 but that
         // didn't meet the naming requirements for publishing:
@@ -182,8 +184,8 @@ kdocformatter {
 }
 ```
 
-Here, the [options] property lets you use any of the command line
-flags from the kdoc-formatter command.
+Here, the [options] property lets you use any of the command line flags
+from the kdoc-formatter command.
 
 Building and testing
 --------------------
@@ -222,7 +224,6 @@ To reformat the source tree run
 ```
 
 To build the Gradle plugin locally:
-
 ```
 cd gradle-plugin
 ./gradlew publish
@@ -231,26 +232,3 @@ cd gradle-plugin
 This will create a Maven local repository in m2/ which you can then
 point to from your consuming projects as shown in the Gradle Plugin
 Usage section above.
-
-Support Javadoc?
-----------------
-KDoc is pretty similar to javadoc and there's a good chance that
-most of this functionality would work well. However, I already use
-[google-java-formatter](https://github.com/google/google-java-format)
-to format all Java source code, which does a great job reflowing
-javadoc comments already (along with formatting the rest of
-the file), so making this tool support Java is not needed.
-
-Integrate into ktlint?
-----------------------
-I use [ktlint](https://github.com/pinterest/ktlint) to format and
-pretty-print my Kotlin source code. However, it does not do comment
-reformatting, which means I spend time either manually reflowing
-myself when I edit comments, or worse, leave it unformatted.
-
-Given that I use ktlint for formatting, the Right Thing would
-have been for me to figure out how it works, and implement the
-functionality there. However, I'm busy with a million other things,
-and this was just a quick weekend -- which unfortunately satisfies my
-immediate formatting needs -- so I no longer have the same motivation
-to get ktlint to support it.

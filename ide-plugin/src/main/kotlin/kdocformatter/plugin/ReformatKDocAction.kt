@@ -32,6 +32,8 @@ import org.jetbrains.annotations.Nullable
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.kdoc.psi.api.KDoc
 import org.jetbrains.kotlin.lexer.KtTokens
+import org.jetbrains.kotlin.psi.KtCallableDeclaration
+import org.jetbrains.kotlin.psi.KtNamedFunction
 
 class ReformatKDocAction : AnAction(), DumbAware {
   override fun actionPerformed(event: AnActionEvent) {
@@ -349,6 +351,18 @@ fun getKDocFormattingOptions(
   configOptions.addPunctuation = state.addPunctuation
   configOptions.alignTableColumns = state.alignTableColumns
   configOptions.orderDocTags = state.reorderDocTags
+  if (state.reorderDocTags) {
+    val parent = kdoc.parent
+    if (parent is KtCallableDeclaration) {
+      configOptions.orderedParameterNames = parent.valueParameters.mapNotNull { it.name }.toList()
+    }
+  }
+  if (state.overrideLineWidth > 0) {
+    configOptions.maxLineWidth = state.overrideLineWidth
+  }
+  if (state.overrideCommentWidth > 0) {
+    configOptions.maxCommentWidth = state.overrideCommentWidth
+  }
   if (!state.maxCommentWidthEnabled) {
     configOptions.maxCommentWidth = configOptions.maxLineWidth
   }

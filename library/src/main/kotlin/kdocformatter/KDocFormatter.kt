@@ -109,26 +109,4 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
             sb.setLength(sb.length - 1)
         }
     }
-
-    /** Reformats a markdown document. */
-    fun reformatMarkdown(md: String): String {
-        // Just leverage the comment machinery here -- convert the markdown into a
-        // kdoc comment, reformat that, and then uncomment it
-        val comment = "/**\n" + md.split("\n").joinToString(separator = "\n") { " * $it" } + "\n*/"
-        val reformattedComment =
-            " " + reformatComment(comment, "").trim().removePrefix("/**").removeSuffix("*/").trim()
-        val reformatted =
-            reformattedComment.split("\n").joinToString(separator = "\n") {
-                if (it.startsWith(" * ")) {
-                    it.substring(3)
-                } else if (it.startsWith(" *")) {
-                    ""
-                } else if (it.startsWith("* ")) {
-                    it.substring(2)
-                } else {
-                    it
-                }
-            }
-        return reformatted
-    }
 }

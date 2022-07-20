@@ -183,6 +183,40 @@ class Paragraph(private val options: KDocFormattingOptions) {
         return sb.toString()
     }
 
+    /**
+     * If this paragraph represents a KDoc `@param` tag, returns the
+     * corresponding parameter name, otherwise null.
+     */
+    fun getParamName(): String? {
+        val s = text
+        var start = 0
+        while (start < s.length && s[start].isWhitespace()) {
+            start++
+        }
+        if (!text.startsWith("@param", start)) {
+            return null
+        }
+
+        start += 6
+        if (!s[start++].isWhitespace()) {
+            return null
+        }
+
+        var end = start
+        while (end < s.length) {
+            if (!s[end].isJavaIdentifierPart()) {
+                break
+            }
+            end++
+        }
+
+        if (end > start) {
+            return s.substring(start, end)
+        }
+
+        return null
+    }
+
     fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
         val lineWidth = maxLineWidth - getIndentSize(indent, options)
         val hangingIndentSize = getIndentSize(hangingIndent, options) - if (quoted) 2 else 0 // "> "

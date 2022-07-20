@@ -1,7 +1,6 @@
 package kdocformatter.cli
 
 import java.io.File
-import kdocformatter.KDocFormatter
 import kdocformatter.KDocFormattingOptions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -12,13 +11,21 @@ import org.junit.jupiter.api.Test
 // outside the comments and stitch it all together with the right indentation
 // etc.
 class KDocFileFormatterTest {
-    private fun reformatFile(source: String, options: KDocFormattingOptions): String {
-        val fileOptions = KDocFileFormattingOptions()
-        fileOptions.formattingOptions = options
+    private fun reformatFile(
+        source: String,
+        options: KDocFormattingOptions,
+        markdown: Boolean = false
+    ): String {
+        val fileOptions =
+            KDocFileFormattingOptions().apply {
+                formattingOptions = options
+                includeMd = markdown
+            }
         val formatter = KDocFileFormatter(fileOptions)
-        val reformatted = formatter.reformatFile(null, source.trim())
+        val file = if (markdown) File("test.md") else File("test.kt")
+        val reformatted = formatter.reformatFile(file, source.trim())
         // Make sure that formatting is stable -- format again and make sure it's the same
-        assertEquals(reformatted, formatter.reformatFile(null, reformatted.trim()))
+        assertEquals(reformatted, formatter.reformatFile(file, reformatted.trim()))
         return reformatted
     }
 
@@ -83,6 +90,88 @@ class KDocFileFormatterTest {
             }
             """.trimIndent(),
             reformatted
+        )
+    }
+
+    @Test
+    fun testReorderParameters() {
+        val source =
+            """
+            class Test {
+                /** My comment
+                 * @param third Description of third parameter
+                 * @param   second Description of second parameter
+                 * @param first   Description of first parameter */
+                @Suppress("all")
+                fun test(first: String, @Suppress("unused") second: String, vararg third: String): String = "hello world"
+
+                /**
+                 * @param fourth Desc 4
+                 * @param third Desc 3
+                 * @param second Desc 2
+                 * @param first Desc 1
+                 */
+                fun `test(third)`(
+                    first: MutableMap<String, MutableList<String>>?,
+                    // fourth: Boolean = false,
+                    second: Boolean = false,
+                    third: String = "fun(test: String, test2: String)",
+                    /* , first: String */
+                    fourth: (Collection<String>) -> Unit = {}
+                ) {
+                }
+
+                /**
+                 * (Signature and doc list different parameters)
+                 * @param foo Desc 1
+                 * @param baz Desc 2
+                 */
+                fun test2(foo: String, bar: String) {
+                }
+            }
+            """.trimIndent()
+        val reformatted =
+            reformatFile(source, KDocFormattingOptions(72).apply { orderDocTags = true })
+        assertEquals(
+            """
+            class Test {
+                /**
+                 * My comment
+                 *
+                 * @param first Description of first parameter
+                 * @param second Description of second parameter
+                 * @param third Description of third parameter
+                 */
+                @Suppress("all")
+                fun test(first: String, @Suppress("unused") second: String, vararg third: String): String = "hello world"
+
+                /**
+                 * @param first Desc 1
+                 * @param second Desc 2
+                 * @param third Desc 3
+                 * @param fourth Desc 4
+                 */
+                fun `test(third)`(
+                    first: MutableMap<String, MutableList<String>>?,
+                    // fourth: Boolean = false,
+                    second: Boolean = false,
+                    third: String = "fun(test: String, test2: String)",
+                    /* , first: String */
+                    fourth: (Collection<String>) -> Unit = {}
+                ) {
+                }
+
+                /**
+                 * (Signature and doc list different parameters)
+                 *
+                 * @param foo Desc 1
+                 * @param baz Desc 2
+                 */
+                fun test2(foo: String, bar: String) {
+                }
+            }
+            """.trimIndent(),
+            reformatted.trim()
         )
     }
 
@@ -556,23 +645,19 @@ class KDocFileFormatterTest {
             to get ktlint to support it.
             """.trimIndent()
 
-        val fileOptions = KDocFileFormattingOptions()
-        val options = KDocFormattingOptions(72)
-        options.optimal = false
-        fileOptions.formattingOptions = options
-        val formatter = KDocFormatter(fileOptions.formattingOptions)
-        val reformatted = formatter.reformatMarkdown(source)
+        val options = KDocFormattingOptions(72).apply { optimal = false }
+        val reformatted = reformatFile(source, options, markdown = true)
         assertEquals(
             """
             KDoc Formatter
             ==============
 
-            Reformats Kotlin KDoc comments, reflowing text and other cleanup,
-            both via IDE plugin and command line utility.
+            Reformats Kotlin KDoc comments, reflowing text and other cleanup, both
+            via IDE plugin and command line utility.
 
-            This tool reflows comments in KDoc; either on a file or recursively
-            over nested folders, as well as an IntelliJ IDE plugin where you can
-            reflow the current comment around the cursor.
+            This tool reflows comments in KDoc; either on a file or recursively over
+            nested folders, as well as an IntelliJ IDE plugin where you can reflow
+            the current comment around the cursor.
 
             Features
             --------
@@ -586,29 +671,27 @@ class KDocFileFormatterTest {
             * Gradle plugin to format the source folders in the current project.
             * Block tags (like @param) are separated out from the main text, and
               subsequent lines are indented. Blank spaces between doc tags are
-              removed. Preformatted text (indented 4 spaces or more) is left
-              alone.
+              removed. Preformatted text (indented 4 spaces or more) is left alone.
             * Can be run in a mode where it only reformats comments that were
-              touched by the current git HEAD commit, or the currently staged
-              files. Can also be passed specific line ranges to limit formatting
-              to.
-            * Multiline comments that would fit on a single line are converted to
-              a single line comment (configurable via options)
+              touched by the current git HEAD commit, or the currently staged files.
+              Can also be passed specific line ranges to limit formatting to.
+            * Multiline comments that would fit on a single line are converted to a
+              single line comment (configurable via options)
             * Adds hanging indents for ordered and unordered indents.
-            * Cleans up the double spaces left by the IntelliJ "Convert to
-              Kotlin" action right before the closing comment token.
+            * Cleans up the double spaces left by the IntelliJ "Convert to Kotlin"
+              action right before the closing comment token.
             * Removes trailing spaces.
-            * Can optionally convert various remaining HTML tags in the comments
-              to the corresponding KDoc/markdown text. For example, **bold** is
+            * Can optionally convert various remaining HTML tags in the comments to
+              the corresponding KDoc/markdown text. For example, **bold** is
               converted into **bold**, <p> is converted to a blank line,
               \<h1>Heading</h1> is converted into # Heading, and so on.
-            * Support for .editorconfig configuration files to automatically pick
-              up line widths. It will normally use the line width configured for
-              Kotlin files, but, if Markdown (.md) files are also configured, it
-              will use that width as the maximum comment width. This allows you
-              to have code line widths of for example 140 but limit comments to
-              70 characters (possibly indented). For code, avoiding line breaking
-              is helpful, but for text, shorter lines are better for reading.
+            * Support for .editorconfig configuration files to automatically pick up
+              line widths. It will normally use the line width configured for Kotlin
+              files, but, if Markdown (.md) files are also configured, it will use
+              that width as the maximum comment width. This allows you to have code
+              line widths of for example 140 but limit comments to 70 characters
+              (possibly indented). For code, avoiding line breaking is helpful, but
+              for text, shorter lines are better for reading.
 
             Command Usage
             -------------
@@ -660,26 +743,26 @@ class KDocFileFormatterTest {
 
             IntelliJ Plugin Usage
             ---------------------
-            Install the IDE plugin. Then move the caret to a KDoc comment and
-            invoke Code > Reformat KDoc. You can configure a keyboard shortcut if
-            you perform this action frequently (go to Preferences, search for
-            Keymap, and then in the Keymap search field look for "KDoc", and then
-            double click and choose Add Keyboard Shortcut.
+            Install the IDE plugin. Then move the caret to a KDoc comment and invoke
+            Code > Reformat KDoc. You can configure a keyboard shortcut if you
+            perform this action frequently (go to Preferences, search for Keymap,
+            and then in the Keymap search field look for "KDoc", and then double
+            click and choose Add Keyboard Shortcut.
 
-            You can also select one or more files in the Project View and invoke
-            the same action to format whole files.
+            You can also select one or more files in the Project View and invoke the
+            same action to format whole files.
 
             ![Screenshot](screenshot.png)
 
             Finally, you can configure various options in the Settings panel. The
-            line length settings are inherited from the IDE code style or from
-            the .editorconfig files, if any. However, you can turn on "alternate"
-            mode where invoking the action repeatedly will toggle between normal
-            formatting and alternate formatting each time you invoke it. For a
-            short comment that means toggling between a multi-line and a
-            single-line comment. But for a longer comment, it will toggle between
-            optimal line breaking (the default) and greedy line breaking, which
-            can look better for short paragraphs.
+            line length settings are inherited from the IDE code style or from the
+            .editorconfig files, if any. However, you can turn on "alternate" mode
+            where invoking the action repeatedly will toggle between normal
+            formatting and alternate formatting each time you invoke it. For a short
+            comment that means toggling between a multi-line and a single-line
+            comment. But for a longer comment, it will toggle between optimal line
+            breaking (the default) and greedy line breaking, which can look better
+            for short paragraphs.
 
             You can also configure whether the formatter should do more than
             formatting and actually replace markup constructs like **bold** with
@@ -692,8 +775,8 @@ class KDocFileFormatterTest {
 
             Gradle Plugin Usage
             -------------------
-            The plugin is not yet distributed, so for now, download the zip file
-            and install it somewhere, then add this to your build.gradle file:
+            The plugin is not yet distributed, so for now, download the zip file and
+            install it somewhere, then add this to your build.gradle file:
             ```
             buildscript {
                 repositories {
@@ -715,8 +798,8 @@ class KDocFileFormatterTest {
             }
             ```
 
-            Here, the [options] property lets you use any of the command line
-            flags from the kdoc-formatter command.
+            Here, the [options] property lets you use any of the command line flags
+            from the kdoc-formatter command.
 
             Building and testing
             --------------------
@@ -766,26 +849,26 @@ class KDocFileFormatterTest {
 
             Support Javadoc?
             ----------------
-            KDoc is pretty similar to javadoc and there's a good chance that most
-            of this functionality would work well. However, I already use
-            [google-java-formatter](https://github.com/google/google-java-format)
-            to format all Java source code, which does a great job reflowing
-            javadoc comments already (along with formatting the rest of the
-            file), so makign this tool support Java is not needed.
+            KDoc is pretty similar to javadoc and there's a good chance that most of
+            this functionality would work well. However, I already use
+            [google-java-formatter](https://github.com/google/google-java-format) to
+            format all Java source code, which does a great job reflowing javadoc
+            comments already (along with formatting the rest of the file), so makign
+            this tool support Java is not needed.
 
             Integrate into ktlint?
             ----------------------
             I use [ktlint](https://github.com/pinterest/ktlint) to format and
             pretty-print my Kotlin source code. However, it does not do comment
-            reformatting, which means I spend time either manually reflowing
-            myself when I edit comments, or worse, leave it unformatted.
+            reformatting, which means I spend time either manually reflowing myself
+            when I edit comments, or worse, leave it unformatted.
 
-            Given that I use ktlint for formatting, the Right Thing would have
-            been for me to figure out how it works, and implement the
-            functionality there. However, I'm busy with a million other things,
-            and this was just a quick weekend -- which unfortunately satisfies my
-            immediate formatting needs -- so I no longer have the same motivation
-            to get ktlint to support it.
+            Given that I use ktlint for formatting, the Right Thing would have been
+            for me to figure out how it works, and implement the functionality
+            there. However, I'm busy with a million other things, and this was just
+            a quick weekend -- which unfortunately satisfies my immediate formatting
+            needs -- so I no longer have the same motivation to get ktlint to
+            support it.
             """.trimIndent(),
             reformatted
         )

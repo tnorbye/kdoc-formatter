@@ -91,6 +91,15 @@ class KDocFormattingOptions(
      */
     var alternate: Boolean = false
 
+    /**
+     * Optional list of parameters associated with this doc; if set, and
+     * if [KDocFormattingOptions.orderDocTags] is set, parameter doc
+     * tags will be sorted to match this order. (The intent is for the
+     * tool invoking KDocFormatter to pass in the parameter names in
+     * signature order here.)
+     */
+    var orderedParameterNames: List<String> = emptyList()
+
     /** Creates a copy of this formatting object. */
     fun copy(): KDocFormattingOptions {
         val copy = KDocFormattingOptions()
@@ -102,6 +111,13 @@ class KDocFormattingOptions(
         copy.tabWidth = tabWidth
         copy.alignTableColumns = alignTableColumns
         copy.orderDocTags = orderDocTags
+        copy.addPunctuation = addPunctuation
+        copy.convertMarkup = convertMarkup
+        copy.nestedListIndent = nestedListIndent
+        copy.optimal = optimal
+        copy.alternate = alternate
+        copy.orderedParameterNames = orderedParameterNames
+
         return copy
     }
 }

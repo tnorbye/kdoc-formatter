@@ -303,9 +303,6 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 newParagraph(i)
             } else if (lineWithoutIndentation.isEmpty()) {
                 newParagraph(i).separate = true
-            } else if (lineWithoutIndentation.isTodo()) {
-                newParagraph(i - 1).hanging = true
-                appendText(lineWithoutIndentation).appendText(" ")
             } else if (lineWithoutIndentation.isDirectiveMarker()) {
                 newParagraph(i - 1)
                 appendText(lineWithoutIndentation)
@@ -472,12 +469,30 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                                 if (r1 != r2) {
                                     return r1 - r2
                                 }
-                                // Within identical tags, preserve current order. In the future we
-                                // could consider sorting parameters to match the order in the
-                                // signature.
-                                // (Not done now because we don't easily have access to it; it would
-                                // require properly parsing Kotlin code, and kdoc-formatter doesn't
-                                // have a dependency on the compiler currently.)
+                                // Within identical tags, preserve current order, except for
+                                // parameter
+                                // names which are sorted by signature order.
+                                val orderedParameterNames = options.orderedParameterNames
+                                if (orderedParameterNames.isNotEmpty()) {
+                                    fun Paragraph.parameterRank(): Int {
+                                        val name = getParamName()
+                                        if (name != null) {
+                                            val index = orderedParameterNames.indexOf(name)
+                                            if (index != -1) {
+                                                return index
+                                            }
+                                        }
+                                        return 1000
+                                    }
+
+                                    val i1 = p1.parameterRank()
+                                    val i2 = p2.parameterRank()
+
+                                    // If the parameter names are not matching, ignore.
+                                    if (i1 != i2) {
+                                        return i1 - i2
+                                    }
+                                }
                             }
                             return o1 - o2
                         }

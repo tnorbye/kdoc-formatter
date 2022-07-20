@@ -17,7 +17,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.7.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
     //id 'com.ncorti.ktfmt.gradle' version '0.8.0'
 }
 
@@ -31,8 +31,8 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.0"
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.10"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 }
 
