@@ -2,6 +2,18 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.5.2]
+- Adds a new option which lets you turn off the concept
+  of a separate maximum comment width from the maximum
+  line width. By default, comments are limited to 72
+  characters wide (or more accurately the configured width
+  for Markdown files), which leads to more readable text.
+  However, if you really want the full line width to be
+  used, uncheck the "Allow max comment width to be separate
+  from line width" setting.
+- Fixes bug to ensure the line width and max comment width
+  are properly read from the IDE environment settings.
+
 ## [1.5.1]
 - Updated formatter with many bug fixes, as well as improved support
   for formatting tables as well as reordering KDoc tags. There are new

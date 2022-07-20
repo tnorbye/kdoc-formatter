@@ -1,6 +1,7 @@
 package kdocformatter.plugin
 
 import com.intellij.application.options.CodeStyle
+import com.intellij.lang.Language
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -26,7 +27,9 @@ import kdocformatter.EditorConfigs
 import kdocformatter.KDocFormatter
 import kdocformatter.KDocFormattingOptions
 import kdocformatter.findSamePosition
+import kotlin.math.min
 import org.jetbrains.annotations.Nullable
+import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.kdoc.psi.api.KDoc
 import org.jetbrains.kotlin.lexer.KtTokens
 
@@ -304,17 +307,37 @@ fun getKDocFormattingOptions(
     alternate: Boolean
 ): KDocFormattingOptions {
   if (EditorConfigs.root == null) {
-    var width = CodeStyle.getLanguageSettings(file, kdoc.language).RIGHT_MARGIN
-    if (width <= 0) {
-      width = KDocFormattingOptions().maxLineWidth
+    var maxLineWidth = CodeStyle.getLanguageSettings(file, kdoc.language).RIGHT_MARGIN
+    if (maxLineWidth <= 0) {
+      maxLineWidth = CodeStyle.getLanguageSettings(file, KotlinLanguage.INSTANCE).RIGHT_MARGIN
+      if (maxLineWidth <= 0) {
+        maxLineWidth =
+            CodeStyle.getLanguageSettings(file, KotlinLanguage.INSTANCE)
+                .rootSettings
+                .defaultRightMargin
+        if (maxLineWidth <= 0) {
+          maxLineWidth = KDocFormattingOptions().maxLineWidth
+        }
+      }
     }
-    val options = KDocFormattingOptions(maxLineWidth = width)
+
+    var maxCommentWidth = 0
+    val md = Language.findLanguageByID("Markdown")
+    if (md != null) {
+      maxCommentWidth = CodeStyle.getLanguageSettings(file, md).RIGHT_MARGIN
+    }
+    if (maxCommentWidth <= 0) {
+      maxCommentWidth = KDocFormattingOptions().maxCommentWidth
+    }
+
+    val options =
+        KDocFormattingOptions(maxLineWidth = maxLineWidth, min(maxCommentWidth, maxLineWidth))
     options.tabWidth = CodeStyle.getIndentOptions(file).TAB_SIZE
     EditorConfigs.root = options
   }
   val virtualFile = file.virtualFile ?: return EditorConfigs.root!!
   val ioFile = VfsUtilCore.virtualToIoFile(virtualFile)
-  val configOptions = EditorConfigs.getOptions(ioFile)
+  val configOptions = EditorConfigs.getOptions(ioFile).copy()
   val state = KDocPluginOptions.instance.globalState
   if (state.collapseSingleLines) {
     // Not unconditionally assigning such that .editorconfig turning
@@ -326,5 +349,8 @@ fun getKDocFormattingOptions(
   configOptions.addPunctuation = state.addPunctuation
   configOptions.alignTableColumns = state.alignTableColumns
   configOptions.orderDocTags = state.reorderDocTags
+  if (!state.maxCommentWidthEnabled) {
+    configOptions.maxCommentWidth = configOptions.maxLineWidth
+  }
   return configOptions
 }
