@@ -1,9 +1,9 @@
 package kdocformatter.cli
 
 import java.io.File
-import java.util.ArrayDeque
 import kdocformatter.EditorConfigs
 import kdocformatter.KDocFormatter
+import kdocformatter.KDocFormattingOptions
 
 /**
  * This class attempts to iterate over an entire Kotlin source file
@@ -31,43 +31,112 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
             return count
         }
 
-        return if (file.path.endsWith(".kt") && file.isFile && options.filter.includes(file) ||
-                options.includeMd && file.path.endsWith(".md") && options.filter.includes(file)
-        ) {
+        val formatter = file.getFormatter() ?: return 0
+        if (file.isFile && options.filter.includes(file)) {
             val original = file.readText()
-            val reformatted = reformatFile(file, original)
+            val reformatted = reformat(file, original, formatter)
             if (reformatted != original) {
                 if (options.dryRun) {
                     println(file.path)
                 } else {
+                    if (options.verbose) {
+                        println(file.path)
+                    }
                     file.writeText(reformatted)
                 }
-                1
-            } else {
-                0
+                return 1
             }
+        }
+        return 0
+    }
+
+    private fun File.getFormatter(): ((String, KDocFormattingOptions, File?) -> String)? {
+        return if (path.endsWith(".kt")) {
+            ::reformatKotlinFile
+        } else if (options.includeMd && (path.endsWith(".md") || path.endsWith(".md.html"))) {
+            ::reformatMarkdownFile
         } else {
-            0
+            null
         }
     }
 
-    fun reformatFile(file: File?, source: String): String {
-        if (file != null && file.path.endsWith(".md")) {
-            val formattingOptions = file.let { EditorConfigs.getOptions(it) }
-            val formatter = KDocFormatter(formattingOptions)
-            return formatter.reformatMarkdown(source)
-        }
+    fun reformatFile(file: File, source: String): String {
+        return reformat(file, source, file.getFormatter())
+    }
 
-        val sb = StringBuilder()
-        val tokens = tokenizeKotlin(source)
+    private fun reformat(
+        file: File?,
+        source: String,
+        reformatter: ((String, KDocFormattingOptions, File?) -> String)? = file?.getFormatter()
+    ): String {
+        reformatter ?: return source
         val formattingOptions =
             file?.let { EditorConfigs.getOptions(it) } ?: options.formattingOptions
+        return reformatter(source, formattingOptions, file)
+    }
+
+    /** Reformats the given Markdown file. */
+    private fun reformatMarkdownFile(
+        source: String,
+        formattingOptions: KDocFormattingOptions,
+        // Here such that this function has signature (String, KDocFormattingOptions, File?)
+        @Suppress("UNUSED_PARAMETER") unused: File? = null
+    ): String {
+        // Just leverage the comment machinery here -- convert the markdown into a
+        // kdoc comment, reformat that, and then uncomment it.
+        // Note that this adds 3 characters to the line requirements (" * " on each line after the
+        // opening "/**")
+        // so we duplicate the options and pre-add 3 to account for this
+        val formatter = KDocFormatter(formattingOptions.copy().apply { maxLineWidth += 3 })
+        val comment =
+            "/**\n" + source.split("\n").joinToString(separator = "\n") { " * $it" } + "\n*/"
+        val reformattedComment =
+            " " +
+                formatter
+                    .reformatComment(comment, "")
+                    .trim()
+                    .removePrefix("/**")
+                    .removeSuffix("*/")
+                    .trim()
+        val reformatted =
+            reformattedComment.split("\n").joinToString(separator = "\n") {
+                if (it.startsWith(" * ")) {
+                    it.substring(3)
+                } else if (it.startsWith(" *")) {
+                    ""
+                } else if (it.startsWith("* ")) {
+                    it.substring(2)
+                } else {
+                    it
+                }
+            }
+        return reformatted
+    }
+
+    /**
+     * Reformats the given Kotlin source file contents using the given
+     * [formattingOptions]. The corresponding [file] can be consulted in
+     * case we want to limit filtering to particular lines (for example
+     * modified git lines)
+     */
+    private fun reformatKotlinFile(
+        source: String,
+        formattingOptions: KDocFormattingOptions,
+        file: File? = null
+    ): String {
+        val sb = StringBuilder()
+        val lexer = KotlinLexer(source)
+        val tokens = lexer.tokenizeKotlin()
         val formatter = KDocFormatter(formattingOptions)
         val filter = options.filter
-        var nextIsComment = false
-        var start = 0
-        for ((end, tokenType) in tokens.entries) {
-            if (nextIsComment && (file == null || filter.overlaps(file, source, start, end))) {
+        var prev = 0
+        for ((start, end) in tokens) {
+            if (file == null || filter.overlaps(file, source, start, end)) {
+                // Include all the non-comments between previous comment end and here
+                val segment = source.substring(prev, start)
+                sb.append(segment)
+                prev = end
+
                 val comment = source.substring(start, end)
                 val originalIndent = getIndent(source, start)
                 val suffix = !originalIndent.all { it.isWhitespace() }
@@ -78,33 +147,38 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
                     } else {
                         originalIndent
                     }
+
                 val formatted =
                     try {
+                        formattingOptions.orderedParameterNames =
+                            lexer.getParameterNames(end) ?: emptyList()
+
                         val formatted = formatter.reformatComment(comment, indent)
 
                         // If it's the suffix of a line, see if it can fit there even when indented
                         // with the previous code
                         var addNewline = false
-                        val reformatted = if (suffix && !formatted.contains("\n")) {
-                            val sameLineFormatted =
-                                formatter.reformatComment(comment, originalIndent)
-                            if (sameLineFormatted.contains('\n')) {
+                        val reformatted =
+                            if (suffix && !formatted.contains("\n")) {
+                                val sameLineFormatted =
+                                    formatter.reformatComment(comment, originalIndent)
+                                if (sameLineFormatted.contains('\n')) {
+                                    addNewline = true
+                                    formatted
+                                } else sameLineFormatted
+                            } else if (suffix) {
                                 addNewline = true
                                 formatted
-                            } else sameLineFormatted
-                        } else if (suffix) {
-                            addNewline = true
-                            formatted
-                        } else {
-                            formatted
-                        }
+                            } else {
+                                formatted
+                            }
                         if (addNewline) {
-                            // Remove trailing whitespace on the line (e.g. separator between code and /** */)
+                            // Remove trailing whitespace on the line (e.g. separator between code
+                            // and /** */)
                             while (sb.isNotEmpty() && sb[sb.length - 1].isWhitespace()) {
                                 sb.setLength(sb.length - 1)
                             }
                             sb.append('\n').append(indent)
-
                         }
                         reformatted
                     } catch (error: Throwable) {
@@ -114,14 +188,9 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
                         throw error
                     }
                 sb.append(formatted)
-            } else {
-                val segment = source.substring(start, end)
-                sb.append(segment)
             }
-            nextIsComment = tokenType == KDOC_COMMENT
-            start = end
         }
-        sb.append(source.substring(start, source.length))
+        sb.append(source.substring(prev, source.length))
 
         return sb.toString()
     }
@@ -132,162 +201,5 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
             i--
         }
         return source.substring(i + 1, start)
-    }
-
-    private fun tokenizeKotlin(source: String): Map<Int, Int> {
-        class NestingContext(var depth: Int, var state: Int)
-
-        val tokens: MutableMap<Int, Int> = LinkedHashMap() // order matters
-        val length = source.length
-        var state = STATE_INITIAL
-        var offset = 0
-        var blockCommentDepth = 0
-        var braceDepth = 0
-        val stack = ArrayDeque<NestingContext>()
-        while (offset < length) {
-            val c = source[offset]
-            when (state) {
-                STATE_INITIAL -> {
-                    if (c == '/') {
-                        state = STATE_SLASH
-                        offset++
-                        continue
-                    } else if (c == '"') {
-                        state = STATE_STRING_DOUBLE_QUOTE
-                        // Look for triple-quoted strings
-                        if (source.startsWith("\"\"\"", offset)) {
-                            state = STATE_STRING_TRIPLE_DOUBLE_QUOTE
-                            offset += 3
-                            continue
-                        }
-                    } else if (c == '\'') {
-                        state = STATE_STRING_SINGLE_QUOTE
-                    } else if (c == '`') {
-                        offset = source.indexOf('`', offset + 1)
-                        if (offset == -1) {
-                            break
-                        }
-                    } else if (c == '{') {
-                        braceDepth++
-                    } else if (c == '}') {
-                        braceDepth--
-                        var last = stack.peekLast()
-                        if (last != null && last.depth == braceDepth) {
-                            last = stack.removeLast()
-                            state = last.state
-                        }
-                    }
-                    offset++
-                    continue
-                }
-                STATE_SLASH -> {
-                    if (c == '/') {
-                        state = STATE_LINE_COMMENT
-                        tokens[offset - 1] = COMMENT
-                    } else if (c == '*') {
-                        state = STATE_BLOCK_COMMENT
-                        blockCommentDepth++
-                        if (offset < source.length - 1 && source[offset + 1] == '*') {
-                            tokens[offset - 1] = KDOC_COMMENT
-                            offset++
-                        } else {
-                            tokens[offset - 1] = COMMENT
-                        }
-                    } else {
-                        state = STATE_INITIAL
-                        continue
-                    }
-                    offset++
-                    continue
-                }
-                STATE_LINE_COMMENT -> {
-                    if (c == '\n') {
-                        state = STATE_INITIAL
-                        tokens[offset] = PLAIN_TEXT
-                    }
-                    offset++
-                    continue
-                }
-                STATE_BLOCK_COMMENT -> {
-                    if (c == '*' && offset < source.length - 1 && source[offset + 1] == '/') {
-                        blockCommentDepth--
-                        if (blockCommentDepth == 0) {
-                            state = STATE_INITIAL
-                            offset += 2
-                            tokens[offset] = PLAIN_TEXT
-                            continue
-                        }
-                    } else if (c == '/' && offset < source.length - 1 && source[offset + 1] == '*'
-                    ) {
-                        offset++
-                        blockCommentDepth++
-                    }
-                    offset++
-                    continue
-                }
-                STATE_STRING_DOUBLE_QUOTE -> {
-                    if (c == '\\') {
-                        offset += 2
-                        continue
-                    } else if (c == '"') {
-                        state = STATE_INITIAL
-                        offset++
-                        continue
-                    } else if (c == '$' && source.startsWith("\${", offset)) {
-                        offset += 2
-                        stack.addLast(NestingContext(braceDepth, STATE_STRING_DOUBLE_QUOTE))
-                        braceDepth++
-                        state = STATE_INITIAL
-                        continue
-                    }
-                    offset++
-                    continue
-                }
-                STATE_STRING_SINGLE_QUOTE -> {
-                    if (c == '\\') {
-                        offset += 2
-                        continue
-                    } else if (c == '\'') {
-                        state = STATE_INITIAL
-                        offset++
-                        continue
-                    }
-                    offset++
-                    continue
-                }
-                STATE_STRING_TRIPLE_DOUBLE_QUOTE -> {
-                    if (c == '"' && source.startsWith("\"\"\"", offset)) {
-                        offset += 3
-                        state = STATE_INITIAL
-                        continue
-                    } else if (c == '$' && source.startsWith("\${", offset)) {
-                        offset += 2
-                        stack.addLast(NestingContext(braceDepth, STATE_STRING_TRIPLE_DOUBLE_QUOTE))
-                        braceDepth++
-                        state = STATE_INITIAL
-                        continue
-                    }
-                    offset++
-                    continue
-                }
-                else -> assert(false) { state }
-            }
-        }
-
-        return tokens
-    }
-
-    companion object {
-        private const val PLAIN_TEXT = 1
-        private const val COMMENT = 2
-        private const val KDOC_COMMENT = 3
-
-        private const val STATE_INITIAL = 1
-        private const val STATE_SLASH = 2
-        private const val STATE_LINE_COMMENT = 3
-        private const val STATE_BLOCK_COMMENT = 4
-        private const val STATE_STRING_DOUBLE_QUOTE = 5
-        private const val STATE_STRING_SINGLE_QUOTE = 6
-        private const val STATE_STRING_TRIPLE_DOUBLE_QUOTE = 7
     }
 }

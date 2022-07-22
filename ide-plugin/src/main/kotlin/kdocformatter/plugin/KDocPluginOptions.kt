@@ -19,6 +19,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import kdocformatter.KDocFormattingOptions
 
 @State(name = "KDocFormatter", storages = [Storage("kdocFormatter.xml")])
 class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentState> {
@@ -40,15 +41,22 @@ class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentSt
   }
 
   class GlobalState {
+    private val defaults = KDocFormattingOptions()
+
+    var collapseSingleLines = defaults.collapseSingleLine
+    var convertMarkup = defaults.convertMarkup
+    var addPunctuation = defaults.addPunctuation
+    var alignTableColumns = defaults.alignTableColumns
+    var reorderDocTags = defaults.orderDocTags
+
+    // IDE plugin specific options
     var alternateActions = false
-    var collapseSingleLines = true
-    var convertMarkup = false
     var lineComments = false
-    var addPunctuation = false
     var formatProcessor = true
-    var alignTableColumns = true
-    var reorderDocTags = true
     var maxCommentWidthEnabled = true
+
+    var overrideLineWidth: Int = 0
+    var overrideCommentWidth: Int = 0
   }
 
   companion object {

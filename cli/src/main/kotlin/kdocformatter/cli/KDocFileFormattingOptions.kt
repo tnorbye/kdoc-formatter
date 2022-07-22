@@ -3,6 +3,7 @@ package kdocformatter.cli
 import java.io.File
 import kdocformatter.KDocFormattingOptions
 import kdocformatter.Version
+import kotlin.system.exitProcess
 
 /**
  * Options for configuring whole files or directories. The
@@ -12,6 +13,7 @@ import kdocformatter.Version
  */
 class KDocFileFormattingOptions {
     var dryRun: Boolean = false
+    var verbose: Boolean = false
     var quiet: Boolean = false
     var gitPath: String = ""
     var filter = RangeFilter() // default accepts all
@@ -75,6 +77,7 @@ class KDocFileFormattingOptions {
                     arg.startsWith("--lines=") -> rangeLines.add(arg.substring("--lines=".length))
                     arg == "--dry-run" || arg == "-n" -> options.dryRun = true
                     arg == "--quiet" || arg == "-q" -> options.quiet = true
+                    arg == "--verbose" || arg == "-v" -> options.verbose = true
                     arg == "--git-path" -> options.gitPath = args[i++]
                     arg.startsWith("--git-path=") ->
                         options.gitPath = arg.substring("--git-path=".length)
@@ -85,9 +88,13 @@ class KDocFileFormattingOptions {
                             if (arg.startsWith("@")) {
                                 val f = File(arg.substring(1))
                                 if (!f.exists()) {
-                                    error("$f does not exist")
+                                    System.err.println("$f does not exist")
+                                    exitProcess(-1)
                                 }
                                 f.readText().split('\n').toList()
+                            } else if (arg.startsWith("-")) {
+                                System.err.println("Unrecognized flag `$arg`")
+                                exitProcess(-1)
                             } else {
                                 listOf(arg)
                             }
