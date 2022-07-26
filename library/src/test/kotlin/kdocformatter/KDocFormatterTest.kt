@@ -3922,7 +3922,6 @@ class KDocFormatterTest {
         )
     }
 
-    @Disabled("Not yet working; we cannot express without <p> that two lists should not be merged")
     @Test
     fun testParagraphRemoval() {
         // Regression test for

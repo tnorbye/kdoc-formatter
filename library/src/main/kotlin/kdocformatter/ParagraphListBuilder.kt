@@ -485,6 +485,18 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
      * example) place blank lines around preformatted text.
      */
     private fun arrange() {
+        if (paragraphs.isEmpty()) {
+            return
+        }
+
+        sortDocTags()
+        adjustParagraphSeparators()
+        adjustIndentation()
+        removeBlankParagraphs()
+        stripTrailingBlankLines()
+    }
+
+    private fun sortDocTags() {
         if (options.orderDocTags && paragraphs.any { it.doc }) {
             val order = paragraphs.mapIndexed { index, paragraph -> paragraph to index }.toMap()
             val comparator =
@@ -570,7 +582,9 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 prev = paragraph
             }
         }
+    }
 
+    private fun adjustParagraphSeparators() {
         var prev: Paragraph? = null
 
         for (paragraph in paragraphs) {
@@ -584,6 +598,8 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         paragraph.separate && (!prev.block || prev.text.isKDocTag() || prev.table)
                     paragraph.separator || prev.separator -> true
                     text.isLine(1) || prev.text.isLine(1) -> false
+                    paragraph.separate && paragraph.text.isListItem() && prev.text.isListItem() ->
+                        false
                     paragraph.separate -> true
                     // Don't separate kdoc tags, except for the first one
                     paragraph.doc -> !prev.doc
@@ -619,11 +635,9 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             }
             prev = paragraph
         }
+    }
 
-        if (prev == null) {
-            return // empty list
-        }
-
+    private fun adjustIndentation() {
         val firstIndent = paragraphs[0].originalIndent
         if (firstIndent > 0) {
             for (paragraph in paragraphs) {
@@ -672,7 +686,9 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 }
             }
         }
+    }
 
+    private fun removeBlankParagraphs() {
         // Remove blank lines between list items and from the end as well as around separators
         for (i in paragraphs.size - 2 downTo 0) {
             if (paragraphs[i].isEmpty() && (!paragraphs[i].preformatted || i == paragraphs.size - 1)
