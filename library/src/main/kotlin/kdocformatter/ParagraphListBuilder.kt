@@ -6,6 +6,8 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
     private val lines =
         if (lineComment) {
             comment.split("\n")
+        } else if (!comment.contains("\n")) {
+            listOf("* ${comment.removePrefix("/**").removeSuffix("*/").trim()}")
         } else {
             comment.removePrefix("/**").removeSuffix("*/").trim().split("\n")
         }
@@ -110,30 +112,51 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
 
     private fun addPreformatted(
         i: Int,
+        includeStart: Boolean = false,
         includeEnd: Boolean = true,
-        until: (String) -> Boolean = { true }
+        expectClose: Boolean = false,
+        until: (String) -> Boolean = { true },
     ): Int {
         newParagraph()
         var j = i
+        var foundClose = false
         while (j < lines.size) {
             val l = lines[j]
             val lineWithIndentation = lineContent(l)
-            if (!includeEnd && j > i && until(lineWithIndentation)) {
-                stripTrailingBlankLines()
-                return j
+            val done = (includeStart || j > i) && until(lineWithIndentation)
+            if (!includeEnd && done) {
+                foundClose = true
+                break
             }
+            j++
+            if (includeEnd && done) {
+                foundClose = true
+                break
+            }
+        }
+
+        // We ran out of lines. This means we had an unterminated preformatted block. This is
+        // unexpected(unless it was an indented block) and most likely a documentation error
+        // (even Dokka will start formatting return value documentation in preformatted text
+        // if you have an opening <pre> without a closing </pre> before a @return comment),
+        // but try to backpedal a bit such that we don't apply full preformatted treatment
+        // everywhere to things line line breaking.
+        if (!foundClose && expectClose) {
+            // Just add a single line as preformatted and then treat the rest in the normal way
+            j = i + 1
+        }
+
+        for (index in i until j) {
+            val l = lines[index]
+            val lineWithIndentation = lineContent(l)
             appendText(lineWithIndentation)
             paragraph.preformatted = true
             paragraph.allowEmpty = true
             newParagraph()
-            if (includeEnd && j > i && until(lineWithIndentation)) {
-                stripTrailingBlankLines()
-                return j + 1
-            }
-            j++
         }
         stripTrailingBlankLines()
         newParagraph()
+
         return j
     }
 
@@ -178,19 +201,23 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         lineWithIndentation.length - lineWithoutIndentation.length >=
                             paragraph.prev!!.originalIndent + 4)
             ) {
-                i = addPreformatted(i - 1, includeEnd = false) { !it.startsWith(" ") }
+                i =
+                    addPreformatted(i - 1, includeEnd = false, expectClose = false) {
+                        !it.startsWith(" ")
+                    }
             } else if (lineWithoutIndentation.startsWith("-") &&
                     lineWithoutIndentation.containsOnly('-', '|', ' ')
             ) {
-                // Horizontal rule or table row (or potentially a line under a header)
-                // ----------------
-                //
-                // cell1 | cell2
-                // ------|------
-                // cell3 | cell4
-                newParagraph(i - 1).block = true
+                val paragraph = newParagraph(i - 1)
                 appendText(lineWithoutIndentation)
                 newParagraph(i).block = true
+                // Dividers must be surrounded by blank lines
+                if (lineWithIndentation.isLine() &&
+                        (i < 2 || lineContent(lines[i - 2]).isBlank()) &&
+                        (i > lines.size - 1 || lineContent(lines[i]).isBlank())
+                ) {
+                    paragraph.separator = true
+                }
             } else if (lineWithoutIndentation.startsWith("=") &&
                     lineWithoutIndentation.containsOnly('=', ' ')
             ) {
@@ -211,13 +238,18 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 // Horizontal rule:
                 // *******
                 // * * *
+                // Unlike --- lines, these aren't required to be preceded by or followed by
+                // blank lines.
                 newParagraph(i - 1).block = true
                 appendText(lineWithoutIndentation)
                 newParagraph(i).block = true
             } else if (lineWithoutIndentation.startsWith("```")) {
-                i = addPreformatted(i - 1) { it.startsWith("```") }
+                i = addPreformatted(i - 1, expectClose = true) { it.trimStart().startsWith("```") }
             } else if (lineWithoutIndentation.startsWith("<pre>", ignoreCase = true)) {
-                i = addPreformatted(i - 1) { it.startsWith("</pre>", ignoreCase = true) }
+                i =
+                    addPreformatted(i - 1, includeStart = true, expectClose = true) {
+                        it.contains("</pre>", ignoreCase = true)
+                    }
             } else if (lineWithoutIndentation.isQuoted()) {
                 i--
                 val paragraph = newParagraph(i)
@@ -284,6 +316,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                                     s.startsWith("```") ||
                                     w.startsWith("<pre>") ||
                                     w.isDirectiveMarker() ||
+                                    w.isLine() ||
                                     w.isHeader() ||
                                     // Not indented by at least two spaces following a blank line?
                                     s.length > 2 &&
@@ -408,7 +441,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         (text.startsWith("<p>", true) || text.startsWith("<p/>", true))
                 ) {
                     paragraph.separate = true
-                    val stripped = text.substring(text.indexOf('>') + 1)
+                    val stripped = text.substring(text.indexOf('>') + 1).trim()
                     appendText(stripped)
                 } else {
                     appendText(text)
@@ -452,15 +485,21 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
      * example) place blank lines around preformatted text.
      */
     private fun arrange() {
-        var prev: Paragraph? = null
-
         if (options.orderDocTags && paragraphs.any { it.doc }) {
             val order = paragraphs.mapIndexed { index, paragraph -> paragraph to index }.toMap()
             val comparator =
-                object : Comparator<Paragraph> {
-                    override fun compare(p1: Paragraph, p2: Paragraph): Int {
+                object : Comparator<List<Paragraph>> {
+                    override fun compare(l1: List<Paragraph>, l2: List<Paragraph>): Int {
+                        val p1 = l1.first()
+                        val p2 = l2.first()
                         val o1 = order[p1]!!
                         val o2 = order[p2]!!
+
+                        // Sort TODOs to the end
+                        if (p1.text.isTodo() != p2.text.isTodo()) {
+                            return if (p1.text.isTodo()) 1 else -1
+                        }
+
                         if (p1.doc == p2.doc) {
                             if (p1.doc) {
                                 // Sort @return after @param etc
@@ -499,8 +538,40 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         return if (p1.doc) 1 else -1
                     }
                 }
-            paragraphs.sortWith(comparator)
+
+            // We don't sort the paragraphs list directly; we have to tie all the paragraphs
+            // following a KDoc parameter to that paragraph (until the next KDoc tag). So
+            // instead we create a list of lists -- consisting of one list for each
+            // paragraph, though with a KDoc parameter it's a list containing first the KDoc
+            // parameter paragraph and then all following parameters.
+            // We then sort by just the first item in this list of list, and then restore the
+            // paragraph list from the result.
+            val units = mutableListOf<List<Paragraph>>()
+            var tag: MutableList<Paragraph>? = null
+            for (paragraph in paragraphs) {
+                if (paragraph.doc) {
+                    tag = mutableListOf()
+                    units.add(tag)
+                }
+                if (tag != null && !paragraph.text.isTodo()) {
+                    tag.add(paragraph)
+                } else {
+                    units.add(listOf(paragraph))
+                }
+            }
+            units.sortWith(comparator)
+
+            var prev: Paragraph? = null
+            paragraphs.clear()
+            for (paragraph in units.flatten()) {
+                paragraphs.add(paragraph)
+                prev?.next = paragraph
+                paragraph.prev = prev
+                prev = paragraph
+            }
         }
+
+        var prev: Paragraph? = null
 
         for (paragraph in paragraphs) {
             paragraph.cleanup()
@@ -511,6 +582,8 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     paragraph.preformatted && prev.preformatted -> false
                     paragraph.table ->
                         paragraph.separate && (!prev.block || prev.text.isKDocTag() || prev.table)
+                    paragraph.separator || prev.separator -> true
+                    text.isLine(1) || prev.text.isLine(1) -> false
                     paragraph.separate -> true
                     // Don't separate kdoc tags, except for the first one
                     paragraph.doc -> !prev.doc
@@ -600,7 +673,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             }
         }
 
-        // Remove blank lines between list items and from the end
+        // Remove blank lines between list items and from the end as well as around separators
         for (i in paragraphs.size - 2 downTo 0) {
             if (paragraphs[i].isEmpty() && (!paragraphs[i].preformatted || i == paragraphs.size - 1)
             ) {

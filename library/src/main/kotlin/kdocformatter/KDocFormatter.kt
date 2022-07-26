@@ -28,7 +28,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
             val trimmed = paragraphs.firstOrNull()?.text?.trim() ?: ""
             // Subtract out space for "/** " and " */" and the indent:
             val width = min(options.maxLineWidth - indentSize - 7, options.maxCommentWidth)
-            if (trimmed.length < width) {
+            if (trimmed.length <= width) {
                 return "/** $trimmed */"
             }
         }

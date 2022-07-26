@@ -88,6 +88,16 @@ fun String.isExpectingMore(): Boolean {
     return last == ':' || last == ','
 }
 
+/**
+ * Does this String represent a divider line? (Markdown also requires
+ * it to be surrounded by empty lines which has to be checked by the
+ * caller)
+ */
+fun String.isLine(minCount: Int = 3): Boolean {
+    return startsWith('-') && containsOnly('-', ' ') && count { it == '-' } >= minCount ||
+        startsWith('_') && containsOnly('_', ' ') && count { it == '_' } >= minCount
+}
+
 fun String.isKDocTag(): Boolean {
     // Not using a hardcoded list here since tags can change over time
     if (startsWith("@")) {

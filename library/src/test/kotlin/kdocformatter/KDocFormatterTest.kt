@@ -492,6 +492,33 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testPreformattedTextIndented() {
+        val source =
+            """
+            /**
+             * Parser for the list of forward socket connection returned by the
+             * `host:forward-list` command.
+             *
+             * Input example
+             *
+             *  ```
+             *
+             * HT75B1A00212 tcp:51222 tcp:5000 HT75B1A00212 tcp:51227 tcp:5001
+             * HT75B1A00212 tcp:51232 tcp:5002 HT75B1A00212 tcp:51239 tcp:5003
+             * HT75B1A00212 tcp:51244 tcp:5004
+             *
+             *  ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72).apply { convertMarkup = true },
+            source,
+            indent = ""
+        )
+    }
+
+    @Test
     fun testPreformattedText() {
         val source =
             """
@@ -996,6 +1023,7 @@ class KDocFormatterTest {
             /**
             * This is a header. Should appear alone.
             * --------------------------------------
+            *
             * This should not be on the same line as the header.
              */
             """.trimIndent(),
@@ -1181,7 +1209,6 @@ class KDocFormatterTest {
              * |-------| | | | t | | | | | |
              * | | | | |--| | | | |
              * ---------------
-             *
              * There are 3 staggered children
              * and 3 pointers, the first is
              * on child 1, the second is
@@ -1275,96 +1302,92 @@ class KDocFormatterTest {
     @Test
     fun testVariousMarkup() {
         val source =
-            "/**\n" +
-                """
-            This document contains a bunch of markup examples
-            that I will use
-            to verify that things are handled
-            correctly via markdown.
-
-            This is a header. Should appear alone.
-            --------------------------------------
-            This should not be on the same line as the header.
-
-            This is a header. Should appear alone.
-            -
-            This should not be on the same line as the header.
-
-            This is a header. Should appear alone.
-            ======================================
-            This should not be on the same line as the header.
-
-            This is a header. Should appear alone.
-            =
-            This should not be on the same line as the header.
-            Note that we don't treat this as a header
-            because it's not on its own line. Instead
-            it's considered a separating line.
-            ---
-            More text. Should not be on the previous line.
-
-            --- This usage of --- where it's not on its own
-            line should not be used as a header or separator line.
-
-            List stuff:
-            1. First item
-            2. Second item
-            3. Third item
-
-            # Text styles #
-            **Bold**, *italics*. \*Not italics\*.
-
-            ## More text styles
-            ~~strikethrough~~, _underlined_.
-
-            ### Blockquotes #
-
-            More:
-            > This whole paragraph should be treated as a block quote.
-            This whole paragraph should be treated as a block quote.
-            This whole paragraph should be treated as a block quote.
-            This whole paragraph should be treated as a block quote.
-
-            ### Lists
-            Plus lists:
-            + First
-            + Second
-            + Third
-
-            Dash lists:
-            - First
-            - Second
-            - Third
-
-            List items with multiple paragraphs:
-
-            * This is my list item. It has
-              text on many lines.
-
-              This is a continuation of the first bullet.
-            * And this is the second.
-
-            ### Code blocks in list items
-
-            Escapes: I should look for cases where I place a number followed
-            by a period (or asterisk) at the beginning of a line and if so,
-            escape it:
-
-            The meaning of life:
-            42\. This doesn't seem to work in IntelliJ's markdown formatter.
-
-            ### Horizontal rules
-            *********
-            ---------
-            ***
-            * * *
-            - - -
             """
-                    .trimIndent()
-                    .split("\n")
-                    .joinToString(separator = "\n") { " * $it".trimEnd() } +
-                "\n */"
-
+            /**
+             * This document contains a bunch of markup examples
+             * that I will use
+             * to verify that things are handled
+             * correctly via markdown.
+             *
+             * This is a header. Should appear alone.
+             * --------------------------------------
+             * This should not be on the same line as the header.
+             *
+             * This is a header. Should appear alone.
+             * -
+             * This should not be on the same line as the header.
+             *
+             * This is a header. Should appear alone.
+             * ======================================
+             * This should not be on the same line as the header.
+             *
+             * This is a header. Should appear alone.
+             * =
+             * This should not be on the same line as the header.
+             * Note that we don't treat this as a header
+             * because it's not on its own line. Instead
+             * it's considered a separating line.
+             * ---
+             * More text. Should not be on the previous line.
+             *
+             * --- This usage of --- where it's not on its own
+             * line should not be used as a header or separator line.
+             *
+             * List stuff:
+             * 1. First item
+             * 2. Second item
+             * 3. Third item
+             *
+             * # Text styles #
+             * **Bold**, *italics*. \*Not italics\*.
+             *
+             * ## More text styles
+             * ~~strikethrough~~, _underlined_.
+             *
+             * ### Blockquotes #
+             *
+             * More:
+             * > This whole paragraph should be treated as a block quote.
+             * This whole paragraph should be treated as a block quote.
+             * This whole paragraph should be treated as a block quote.
+             * This whole paragraph should be treated as a block quote.
+             *
+             * ### Lists
+             * Plus lists:
+             * + First
+             * + Second
+             * + Third
+             *
+             * Dash lists:
+             * - First
+             * - Second
+             * - Third
+             *
+             * List items with multiple paragraphs:
+             *
+             * * This is my list item. It has
+             *   text on many lines.
+             *
+             *   This is a continuation of the first bullet.
+             * * And this is the second.
+             *
+             * ### Code blocks in list items
+             *
+             * Escapes: I should look for cases where I place a number followed
+             * by a period (or asterisk) at the beginning of a line and if so,
+             * escape it:
+             *
+             * The meaning of life:
+             * 42\. This doesn't seem to work in IntelliJ's markdown formatter.
+             *
+             * ### Horizontal rules
+             * *********
+             * ---------
+             * ***
+             * * * *
+             * - - -
+             */
+            """.trimIndent()
         checkFormatter(
             source,
             KDocFormattingOptions(100, 100),
@@ -1444,7 +1467,7 @@ class KDocFormatterTest {
              * * * *
              * - - -
              */
-            """.trimIndent()
+             """.trimIndent()
         )
     }
 
@@ -1630,6 +1653,9 @@ class KDocFormatterTest {
              * and then look at the debugCompileClasspath (or other graph that
              * you want to model).
              *
+             * @param dependencyGraph the graph description
+             * @return this for constructor chaining
+             *
              * TODO: Adds the given dependency graph (the output of the Gradle
              *     dependency task) to be constructed when
              *     mocking a Gradle model for this project.
@@ -1645,9 +1671,6 @@ class KDocFormatterTest {
              *     module if there are resources in it.
              * TODO(myldap): Cover filter usage. Eg: Look for a framework
              *     resource by enabling its filter.
-             *
-             * @param dependencyGraph the graph description
-             * @return this for constructor chaining
              */
             """.trimIndent(),
             // We indent TO-DO text deliberately, though this changes the structure to make
@@ -3622,13 +3645,13 @@ class KDocFormatterTest {
             /**
              * This is my code
              *
+             * @author Me And here's. Another. Thing.
+             *
              * | my     | table  |
              * |--------|--------|
              * | item 1 | item 2 |
              * | item 3 |        |
              * | item 4 | item 5 |
-             *
-             * @author Me And here's. Another. Thing.
              */
             """.trimIndent(),
             indent = ""
@@ -3668,6 +3691,313 @@ class KDocFormatterTest {
              * item 1|item 2
              * item 3|
              * item 4|item 5
+             */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testBulletsUnderParamTags() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/56
+        val source =
+            """
+            /**
+             * This supports bullets
+             * - one
+             * - two
+             *
+             * @param thisDoesNot
+             * Here's some parameter text.
+             * - a
+             * - b
+             * Here's some more text
+             *
+             * And here's even more parameter doc text.
+             *
+             * @param another paragraph
+             * * With some bulleted items
+             *   * Even nested ones
+             * ```
+             * and some preformatted text
+             * ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72).apply { orderDocTags = false },
+            """
+            /**
+             * This supports bullets
+             * - one
+             * - two
+             *
+             * @param thisDoesNot Here's some parameter text.
+             * - a
+             * - b Here's some more text
+             *
+             * And here's even more parameter doc text.
+             *
+             * @param another paragraph
+             * * With some bulleted items
+             *    * Even nested ones
+             *
+             * ```
+             * and some preformatted text
+             * ```
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testLineBreaking() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/57
+        val source = """
+            /** aa aa aa aa a */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 20, maxCommentWidth = 20).apply {
+                optimal = false
+            },
+            """
+            /** aa aa aa aa a */
+            """.trimIndent(),
+            indent = ""
+        )
+    }
+
+    @Test
+    fun testPreTag() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/58
+        val source =
+            """
+            /**
+             * This tag messes things up.
+             * <pre>
+             * This is pre.
+             *
+             * @return some correct
+             * value
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * This tag messes things up.
+             * <pre>
+             *
+             * This is pre.
+             *
+             * @return some correct value
+             */
+            """.trimIndent(),
+            verifyDokka = false // this triggers a bug in the diff lookup; TODO investigate
+        )
+    }
+
+    @Test
+    fun testPreTag2() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/58
+        val source =
+            """
+            /**
+             * Even if it's closed.
+             * <pre>My Pre</pre>
+             *
+             * @return some correct
+             * value
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * Even if it's closed.
+             * <pre>My Pre</pre>
+             *
+             * @return some correct value
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testCaseSensitiveMarkup() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/59
+        val source =
+            """
+            /** <A> to <B> should remain intact, not <b>bolded</b> */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /** <A> to <B> should remain intact, not **bolded** */
+            """.trimIndent(),
+            // This is a broken comment (unterminated <B> etc) so the behaviors differ
+            verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testAsteriskRemoval() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/60
+        val source = """
+            /** *** Testing */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /** *** Testing */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testParagraphTagRemoval() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/61
+        val source =
+            """
+            /**
+             * Ptag removal should remove extra space
+             *
+             * <p> Some paragraph
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * Ptag removal should remove extra space
+             *
+             * Some paragraph
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testDashedLineIndentation() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/62
+        val source =
+            """
+            /**
+             * Some summary.
+             *
+             * - Some bullet.
+             *
+             * ------------------------------------------------------------------------------
+             *
+             * Some paragraph.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * Some summary.
+             * - Some bullet.
+             *
+             * ------------------------------------------------------------------------------
+             *
+             * Some paragraph.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Disabled("Not yet working; we cannot express without <p> that two lists should not be merged")
+    @Test
+    fun testParagraphRemoval() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/63
+        val source =
+            """
+            /**
+             * 1. Test
+             *
+             * <p>2. Test
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * 1. Test
+             * 2. Test
+             */
+             """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testAtBreak2() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/64
+        // This behavior is deliberate: we cannot put @aa at the beginning of a new line;
+        // if so KDoc will treat it as a doc and silently drop it because it isn't a known
+        // custom tag.
+        val source =
+            """
+            /**
+             * aa aa aa aa aa @aa
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 20, maxCommentWidth = 20),
+            """
+            /**
+             * aa aa aa aa
+             * aa @aa
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testNoBreakAfterAt() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/65
+        val source =
+            """
+            /**
+             * Weird break
+             *
+             * alink aaaaaaa
+             *
+             * @param a aaaaaa
+             * @link aaaaaaa
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 20, maxCommentWidth = 20),
+            """
+            /**
+             * Weird break
+             *
+             * alink aaaaaaa
+             *
+             * @param a aaaaaa
+             * @link aaaaaaa
              */
             """.trimIndent(),
             indent = ""

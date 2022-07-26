@@ -695,7 +695,6 @@ class KDocFileFormatterTest {
 
             Command Usage
             -------------
-
             ```
             ${'$'} kdoc-formatter
             Usage: kdoc-formatter [options] file(s)
