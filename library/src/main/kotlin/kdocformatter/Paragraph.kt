@@ -49,6 +49,9 @@ class Paragraph(private val options: KDocFormattingOptions) {
     /** Is this line part of a table? */
     var table = false
 
+    /** Is this a separator line? */
+    var separator = false
+
     /**
      * Should this paragraph use a hanging indent? (Implies [block] as
      * well).
@@ -102,27 +105,28 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 sb.append(c)
                 continue
             } else if (c == '<') {
-                if (s.startsWith("b>", i, true) || s.startsWith("/b>", i, true)) {
+                if (s.startsWith("b>", i, false) || s.startsWith("/b>", i, false)) {
                     // "<b>" or </b> -> "**"
                     sb.append('*').append('*')
                     if (s[i] == '/') i++
                     i += 2
                     continue
                 }
-                if (s.startsWith("i>", i, true) || s.startsWith("/i>", i, true)) {
+                if (s.startsWith("i>", i, false) || s.startsWith("/i>", i, false)) {
                     // "<i>" or </i> -> "*"
                     sb.append('*')
                     if (s[i] == '/') i++
                     i += 2
                     continue
                 }
-                if (s.startsWith("em>", i, true) || s.startsWith("/em>", i, true)) {
+                if (s.startsWith("em>", i, false) || s.startsWith("/em>", i, false)) {
                     // "<em>" or </em> -> "_"
                     sb.append('_')
                     if (s[i] == '/') i++
                     i += 3
                     continue
                 }
+                // TODO: Convert <pre> tags too?
             } else if (c == '&') {
                 if (s.startsWith("lt;", i, true)) { // "&lt;" -> "<"
                     sb.append('<')
@@ -229,11 +233,6 @@ class Paragraph(private val options: KDocFormattingOptions) {
         // See divide & conquer algorithm listed here: https://xxyxyz.org/line-breaking/
         if (words.size == 1) {
             return listOf(words[0])
-        } else if (words.size == 2 && (quoted || hanging)) {
-            // For list items, quoted lines, TODO items etc, don't split the list item bullet (or
-            // quote etc)
-            // from a potentially long word on the next line.
-            return words
         }
         val lines = reflowOptimal(lineWidth, words)
         if (lines.size <= 2 || options.alternate || !options.optimal) {
@@ -517,6 +516,6 @@ class Paragraph(private val options: KDocFormattingOptions) {
     }
 
     override fun toString(): String {
-        return "$content, separate=$separate, block=$block, hanging=$hanging, preformatted=$preformatted, quoted=$quoted, continuation=$continuation, allowempty=$allowEmpty"
+        return "$content, separate=$separate, block=$block, hanging=$hanging, preformatted=$preformatted, quoted=$quoted, continuation=$continuation, allowempty=$allowEmpty, separator=$separator"
     }
 }

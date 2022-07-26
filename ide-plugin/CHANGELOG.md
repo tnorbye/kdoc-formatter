@@ -2,6 +2,9 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.5.4]
+- Fix ~8 bugs filed by the ktfmt project.
+
 ## [1.5.3]
 - @param tags are reordered to match the parameter order in the
   corresponding method signature.

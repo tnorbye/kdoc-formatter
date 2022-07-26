@@ -63,9 +63,7 @@ class KDocFormattingOptions(
      */
     var tabWidth: Int = 8
 
-    /**
-     * Whether to perform optimal line breaking instead of greeding.
-     */
+    /** Whether to perform optimal line breaking instead of greeding. */
     var optimal: Boolean = true
 
     /**
