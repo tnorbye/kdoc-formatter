@@ -14,7 +14,11 @@ class KotlinLexer(private val source: String) {
     /**
      * Returns a list of (start,end) offsets of KDocs in the document.
      */
-    fun tokenizeKotlin(): List<Pair<Int, Int>> {
+    fun findComments(
+        includeDocComments: Boolean,
+        includeBlockComments: Boolean,
+        includeLineComments: Boolean
+    ): List<Pair<Int, Int>> {
         val tokens: MutableMap<Int, Int> = LinkedHashMap() // order matters
         val length = source.length
         var state = STATE_INITIAL
@@ -22,7 +26,7 @@ class KotlinLexer(private val source: String) {
         var blockCommentDepth = 0
         var braceDepth = 0
         val stack = ArrayDeque<NestingContext>()
-        while (offset < length) {
+        loop@ while (offset < length) {
             val c = source[offset]
             when (state) {
                 STATE_INITIAL -> {
@@ -61,7 +65,7 @@ class KotlinLexer(private val source: String) {
                 STATE_SLASH -> {
                     if (c == '/') {
                         state = STATE_LINE_COMMENT
-                        tokens[offset - 1] = COMMENT
+                        tokens[offset - 1] = LINE_COMMENT
                     } else if (c == '*') {
                         state = STATE_BLOCK_COMMENT
                         blockCommentDepth++
@@ -69,7 +73,7 @@ class KotlinLexer(private val source: String) {
                             tokens[offset - 1] = KDOC_COMMENT
                             offset++
                         } else {
-                            tokens[offset - 1] = COMMENT
+                            tokens[offset - 1] = BLOCK_COMMENT
                         }
                     } else {
                         state = STATE_INITIAL
@@ -80,6 +84,24 @@ class KotlinLexer(private val source: String) {
                 }
                 STATE_LINE_COMMENT -> {
                     if (c == '\n') {
+                        // Scan ahead to see if there are more line comments following.
+                        // We want to treat a block of line comments as a coherent unit
+                        // flowing together.
+                        var peek = offset + 1
+                        while (peek < length) {
+                            val d = source[peek]
+                            if (d == '\n') {
+                                break
+                            } else if (!d.isWhitespace()) {
+                                if (d == '/' && peek < length - 1 && source[peek + 1] == '/') {
+                                    offset = peek + 2
+                                    continue@loop
+                                }
+                                break
+                            }
+                            peek++
+                        }
+
                         state = STATE_INITIAL
                         tokens[offset] = PLAIN_TEXT
                     }
@@ -159,7 +181,10 @@ class KotlinLexer(private val source: String) {
             if (nextIsComment) {
                 regions.add(Pair(start, end))
             }
-            nextIsComment = tokenType == KDOC_COMMENT
+            nextIsComment =
+                includeDocComments && tokenType == KDOC_COMMENT ||
+                    includeBlockComments && tokenType == BLOCK_COMMENT ||
+                    includeLineComments && tokenType == LINE_COMMENT
             start = end
         }
 
@@ -176,16 +201,16 @@ class KotlinLexer(private val source: String) {
      * when kdoc-formatter runs from within the IDE, it's using the
      * real compiler's AST to populate the parameter map (and when
      * kdoc-formatter is integrated in other formatting tools with a
-     * full AST that could be used instead). This code errs on the side
-     * of caution, but does try to handle a variety of scenarios:
+     * full AST that could be used instead). This code errs on the
+     * side of caution, but does try to handle a variety of scenarios:
      * * Block and line comments within the signature
      * * Annotations (potentially with values such as strings which are
-     *   ignored (though here, if you're using complex
-     *   string substitution it could get confused)
+     *   ignored (though here, if you're using complex string
+     *   substitution it could get confused)
      * * Types including type wildcards, default values including
-     *   function pointers etc -- basically strings that can
-     *   contain commas and parentheses etc that could potentially
-     *   confuse the code trying to pick out the signatures
+     *   function pointers etc -- basically strings that can contain
+     *   commas and parentheses etc that could potentially confuse the
+     *   code trying to pick out the signatures
      * * Name literals (using back ticks)
      */
     fun getParameterNames(start: Int): List<String>? {
@@ -372,8 +397,9 @@ class KotlinLexer(private val source: String) {
 
     companion object {
         private const val PLAIN_TEXT = 1
-        private const val COMMENT = 2
-        private const val KDOC_COMMENT = 3
+        private const val LINE_COMMENT = 2
+        private const val BLOCK_COMMENT = 3
+        private const val KDOC_COMMENT = 4
 
         private const val STATE_INITIAL = 1
         private const val STATE_SLASH = 2

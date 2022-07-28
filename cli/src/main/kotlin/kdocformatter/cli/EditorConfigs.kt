@@ -1,9 +1,8 @@
-package kdocformatter
+package kdocformatter.cli
 
 import java.io.File
-import java.util.Locale
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
+import java.util.*
+import kdocformatter.KDocFormattingOptions
 
 /**
  * Basic support for [.editorconfig] files
@@ -168,7 +167,11 @@ object EditorConfigs {
                 }
             }
 
-            getValue("kdoc_formatter_doc_do_not_wrap_if_one_line", "*.kt")?.let { stringValue ->
+            val oneline =
+                getValue("kdoc_formatter_doc_do_not_wrap_if_one_line", "*.kt")
+                    ?: getValue("ij_kotlin_doc_do_not_wrap_if_one_line", "*.kt")
+                        ?: getValue("ij_java_doc_do_not_wrap_if_one_line", "*.java")
+            oneline?.let { stringValue ->
                 if (stringValue == "unset") {
                     EditorConfigs.root?.collapseSingleLine?.let { options.collapseSingleLine = it }
                 } else {
@@ -209,7 +212,13 @@ object EditorConfigs {
                                 .removeSuffix("}")
                                 .split(",")
 
-                        if (globs.any { it == "*" || it == "*.kt" || it == "*.kts" || it == "*.md" }
+                        if (globs.any {
+                                it == "*" ||
+                                    it == "*.kt" ||
+                                    it == "*.kts" ||
+                                    it == "*.md" ||
+                                    it == "*.java"
+                            }
                         ) {
                             map = HashMap()
                             section = SectionMap(line, map)
@@ -232,9 +241,7 @@ object EditorConfigs {
                                 "indent_size",
                                 "tab_width",
                                 "kdoc_formatter_doc_do_not_wrap_if_one_line",
-                                "ij_continuation_indent_size",
-                                "ij_java_doc_do_not_wrap_if_one_line",
-                                "ij_kotlin_align_multiline_parameters" ->
+                                "ij_java_doc_do_not_wrap_if_one_line" ->
                                     if (section != null) {
                                         val value = line.substring(eq + 1).trim()
                                         map[key] = value

@@ -22,13 +22,13 @@ too long or too short:
 Features
 --------
 * Reflow using optimal instead of greedy algorithm (though in the IDE
-  plugin you can turn on alternate formatting and invoking
-  the action repeatedly alternates between the two modes.)
+  plugin you can turn on alternate formatting and invoking the action
+  repeatedly alternates between the two modes.)
 * Command line script which can recursively format a whole source
   folder.
 * IDE plugin to format selected files or current comment. Preserves
-  caret position in the current comment.
-  Also hooks into the IDE formatting action.
+  caret position in the current comment. Also hooks into the IDE
+  formatting action.
 * Gradle plugin to format the source folders in the current project.
 * Block tags (like @param) are separated out from the main text, and
   subsequent lines are indented. Blank spaces between doc tags are
@@ -45,74 +45,82 @@ Features
 * Realigns table columns in Markdown tables and adds padding.
 * Reorders KDoc tags into a canonical order (for example placing
 * Can optionally convert various remaining HTML tags in the comments to
-  the corresponding KDoc/markdown text. For example, \*\*bold**
-  is converted into **bold**, \<p> is converted to a blank line,
+  the corresponding KDoc/markdown text. For example, \*\*bold** is
+  converted into **bold**, \<p> is converted to a blank line,
   \<h1>Heading\</h1> is converted into # Heading, and so on.
 * Support for .editorconfig configuration files to automatically pick up
-  line widths. It will normally use the line width configured for
-  Kotlin files, but, if Markdown (.md) files are also configured, it
-  will use that width as the maximum comment width. This allows you
-  to have code line widths of for example 140 but limit comments to
-  70 characters (possibly indented). For code, avoiding line breaking
-  is helpful, but for text, shorter lines are better for reading.
+  line widths. It will normally use the line width configured for Kotlin
+  files, but, if Markdown (.md) files are also configured, it will use
+  that width as the maximum comment width. This allows you to have code
+  line widths of for example 140 but limit comments to 70 characters
+  (possibly indented). For code, avoiding line breaking is helpful, but
+  for text, shorter lines are better for reading.
 
 Command Usage
 -------------
-
 ```
 $ kdoc-formatter
 Usage: kdoc-formatter [options] file(s)
 
 Options:
-  --max-line-width=<n>
-    Sets the length of lines. Defaults to 72.
-  --max-comment-width=<n>
+--max-line-width=<n>
+     Sets the length of lines. Defaults to 72.
+--max-comment-width=<n>
     Sets the maximum width of comments. This is helpful in a codebase
-    with large line lengths, such as 140 in the IntelliJ codebase. Here,
-    you don't want to limit the formatter maximum line width since
-    indented code still needs to be properly formatted, but you also
-    don't want comments to span 100+ characters, since that's less
+    with large line lengths, such as 140 in the IntelliJ codebase.
+    Here, you don't want to limit the formatter maximum line width
+    since indented code still needs to be properly formatted, but you
+    also don't want comments to span 100+ characters, since that's less
     readable. Defaults to 72 (or max-line-width, if set lower than 72.)
-  --hanging-indent=<n>
+--hanging-indent=<n>
     Sets the number of spaces to use for hanging indents, e.g. second
     and subsequent lines in a bulleted list or kdoc blog tag.
-  --convert-markup
-    Convert unnecessary HTML tags like &lt; and &gt; into < and >
-  --single-line-comments=<collapse | expand>
+--convert-markup
+     Convert unnecessary HTML tags like < and > into < and >.
+--no-convert-markup
+     Do not convert HTML markup into equivalent KDoc markup.
+--add-punctuation
+    Add missing punctuation, such as a period at the end of a
+    capitalized paragraph.
+--single-line-comments=<collapse | expand>
     With `collapse`, turns multi-line comments into a single line if it
     fits, and with `expand` it will always format commands with /** and
     */ on their own lines. The default is `collapse`.
-  --align-table-columns
-    Reformat tables such that the |column|separators| line up
-  --no-align-table-columns
-    Do not adjust formatting within table cells
-  --order-doc-tags
+--align-table-columns
+     Reformat tables such that the |column|separators| line up
+--no-align-table-columns
+     Do not adjust formatting within table cells
+--order-doc-tags
     Move KDoc tags to the end of comments, and order them in a canonical
     order (@param before @return, and so on)
-  --no-order-doc-tags
-    Do not move or reorder KDoc tagså
-  --overlaps-git-changes=<HEAD | staged>
+--no-order-doc-tags
+     Do not move or reorder KDoc tags
+--overlaps-git-changes=<HEAD | staged>
     If git is on the path, and the command is invoked in a git
-    repository, kdoc-formatter will invoke git to find the changes either
-    in the HEAD commit or in the staged files, and will format only the
-    KDoc comments that overlap these changes.
-  --lines <start:end>, --line <start>
+    repository, kdoc-formatter will invoke git to find the changes
+    either in the HEAD commit or in the staged files, and will format
+    only the KDoc comments that overlap these changes.
+--lines <start:end>, --line <start>
     Line range(s) to format, like 5:10 (1-based; default is all). Can be
     specified multiple times.
-  --greedy
-    Instead of the optimal line breaking normally used by kdoc-formatter,
-    do greedy line breaking instead
-  --dry-run, -n
+--include-md-files
+     Format markdown (*.md) files
+--greedy
+    Instead of the optimal line breaking normally used by
+    kdoc-formatter, do greedy line breaking instead
+--dry-run, -n
     Prints the paths of the files whose contents would change if the
     formatter were run normally.
-  --quiet, -q
-    Quiet mode
-  --help, -help, -h
-    Print this usage statement.
-  @<filename>
-    Read filenames from file.
+--quiet, -q
+     Quiet mode
+--verbose, -v
+     Verbose mode
+--help, -help, -h
+     Print this usage statement.
+@<filename>
+     Read filenames from file.
 
-kdoc-formatter: Version 1.5.4
+kdoc-formatter: Version 1.5.5
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -151,8 +159,8 @@ will be reformatted along with the IDE's other code formatting.
 You can disable this in options, and instead explicitly invoke the
 formatter using Code > Reformat KDoc. You can configure a keyboard
 shortcut if you perform this action frequently (go to Preferences,
-search for Keymap, and then in the Keymap search field look for "KDoc",
-and then double click and choose Add Keyboard Shortcut.
+search for Keymap, and then in the Keymap search field look for
+"KDoc", and then double click and choose Add Keyboard Shortcut.
 
 ![Screenshot](screenshot.png)
 
@@ -169,7 +177,7 @@ buildscript {
         maven { url '/path/to/m2' }
     }
     dependencies {
-        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.5.4"
+        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.5.5"
         // (Sorry about the vanity URL --
         // I tried to get kdoc-formatter:kdoc-formatter:1.3.2 but that
         // didn't meet the naming requirements for publishing:

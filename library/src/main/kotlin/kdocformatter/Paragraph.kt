@@ -2,7 +2,9 @@ package kdocformatter
 
 import kotlin.math.min
 
-class Paragraph(private val options: KDocFormattingOptions) {
+class Paragraph(private val task: FormattingTask) {
+    private val options: KDocFormattingOptions
+        get() = task.options
     var content = StringBuilder()
     val text
         get() = content.toString()
@@ -75,11 +77,66 @@ class Paragraph(private val options: KDocFormattingOptions) {
         return content.isEmpty()
     }
 
+    private fun hasClosingPre(): Boolean {
+        return content.contains("</pre>", ignoreCase = false) || next?.hasClosingPre() ?: false
+    }
+
     fun cleanup() {
-        if (preformatted || !options.convertMarkup) return
-        val cleaned = convertTags(text)
-        content.clear()
-        content.append(cleaned)
+        val original = text
+
+        if (preformatted) {
+            return
+        }
+
+        var s = original
+        if (options.convertMarkup) {
+            s = convertTags(text)
+        }
+        if (!options.allowParamBrackets) {
+            s = rewriteParams(s)
+        }
+
+        if (s != original) {
+            content.clear()
+            content.append(s)
+        }
+    }
+
+    private fun rewriteParams(s: String): String {
+        var start = 0
+        val length = s.length
+        while (start < length && s[start].isWhitespace()) {
+            start++
+        }
+        if (s.startsWith("@param", start)) {
+            start += "@param".length
+            while (start < length && s[start].isWhitespace()) {
+                start++
+            }
+            if (start < length && s[start++] == '[') {
+                while (start < length && s[start].isWhitespace()) {
+                    start++
+                }
+                var end = start
+                while (end < length && s[end].isJavaIdentifierPart()) {
+                    end++
+                }
+                if (end > start) {
+                    val name = s.substring(start, end)
+                    while (end < length && s[end].isWhitespace()) {
+                        end++
+                    }
+                    if (end < length && s[end++] == ']') {
+                        while (end < length && s[end].isWhitespace()) {
+                            end++
+                        }
+                        return "@param $name ${s.substring(end)}"
+                    }
+                }
+            }
+        }
+
+        return s
     }
 
     private fun convertTags(s: String): String {
@@ -89,6 +146,7 @@ class Paragraph(private val options: KDocFormattingOptions) {
         var i = 0
         val n = s.length
         var code = false
+        var brackets = 0
         while (i < n) {
             val c = s[i++]
             if (c == '\\') {
@@ -101,7 +159,15 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 code = !code
                 sb.append(c)
                 continue
-            } else if (code) {
+            } else if (c == '[') {
+                brackets++
+                sb.append(c)
+                continue
+            } else if (c == ']') {
+                brackets--
+                sb.append(c)
+                continue
+            } else if (code || brackets > 0) {
                 sb.append(c)
                 continue
             } else if (c == '<') {
@@ -126,7 +192,9 @@ class Paragraph(private val options: KDocFormattingOptions) {
                     i += 3
                     continue
                 }
-                // TODO: Convert <pre> tags too?
+                // (We don't convert <pre> here because those tags appear in paragraphs
+                // marked preformatted, and preformatted paragraphs are never passed to
+                // convertTags)
             } else if (c == '&') {
                 if (s.startsWith("lt;", i, true)) { // "&lt;" -> "<"
                     sb.append('<')
@@ -187,62 +255,73 @@ class Paragraph(private val options: KDocFormattingOptions) {
         return sb.toString()
     }
 
-    /**
-     * If this paragraph represents a KDoc `@param` tag, returns the
-     * corresponding parameter name, otherwise null.
-     */
-    fun getParamName(): String? {
-        val s = text
-        var start = 0
-        while (start < s.length && s[start].isWhitespace()) {
-            start++
-        }
-        if (!text.startsWith("@param", start)) {
-            return null
-        }
-
-        start += 6
-        if (!s[start++].isWhitespace()) {
-            return null
-        }
-
-        var end = start
-        while (end < s.length) {
-            if (!s[end].isJavaIdentifierPart()) {
-                break
-            }
-            end++
-        }
-
-        if (end > start) {
-            return s.substring(start, end)
-        }
-
-        return null
-    }
-
-    fun reflow(maxLineWidth: Int, options: KDocFormattingOptions): List<String> {
+    fun reflow(firstLineMaxWidth: Int, maxLineWidth: Int): List<String> {
         val lineWidth = maxLineWidth - getIndentSize(indent, options)
         val hangingIndentSize = getIndentSize(hangingIndent, options) - if (quoted) 2 else 0 // "> "
-        if (text.length < (lineWidth - hangingIndentSize)) {
+        if (text.length < (firstLineMaxWidth - hangingIndentSize)) {
             return listOf(text.collapseSpaces())
         }
         // Split text into words
-        val words = computeWords()
+        val words: List<String> = computeWords()
 
         // See divide & conquer algorithm listed here: https://xxyxyz.org/line-breaking/
         if (words.size == 1) {
             return listOf(words[0])
         }
-        val lines = reflowOptimal(lineWidth, words)
-        if (lines.size <= 2 || options.alternate || !options.optimal) {
-            // Just 2 lines? We prefer long+short instead of half+half:
+
+        if (firstLineMaxWidth < maxLineWidth) {
+            // We have ragged text. We'll just greedily place the first
+            // words on the first line, and then optimize the rest.
+            val line = StringBuilder()
+            val firstLineWidth = firstLineMaxWidth - getIndentSize(indent, options)
+            for (i in words.indices) {
+                val word = words[i]
+                if (line.isEmpty()) {
+                    if (word.length + task.type.lineOverhead() > firstLineMaxWidth) {
+                        // can't fit anything on the first line: just flow to
+                        // full width and caller will need to insert comment on
+                        // the next line.
+                        return reflow(words, lineWidth, hangingIndentSize)
+                    }
+                    line.append(word)
+                } else if (line.length + word.length + 1 <= firstLineWidth) {
+                    line.append(' ')
+                    line.append(word)
+                } else {
+                    // Break the rest
+                    val remainingWords = words.subList(i, words.size)
+                    val reflownRemaining = reflow(remainingWords, lineWidth, hangingIndentSize)
+                    return listOf(line.toString()) + reflownRemaining
+                }
+            }
+            // We fit everything on the first line
+            return listOf(line.toString())
+        }
+
+        return reflow(words, lineWidth, hangingIndentSize)
+    }
+
+    fun reflow(words: List<String>, lineWidth: Int, hangingIndentSize: Int): List<String> {
+        if (options.alternate || !options.optimal || hanging && hangingIndentSize > 0) {
+            // Switch to greedy if explicitly turned on, and for hanging indent
+            // paragraphs, since the current implementation doesn't have support
+            // for a different maximum length on the first line from the rest
+            // and there were various cases where this ended up with bad results.
+            // This is typically used in list items (and kdoc sections) which tend
+            // to be short -- and for 2-3 lines the gains of optimal line breaking
+            // isn't worth the cases where we have really unbalanced looking text
+            return reflowGreedy(lineWidth, options, words)
+        }
+
+        val lines = reflowOptimal(lineWidth - hangingIndentSize, words)
+        if (lines.size <= 2) {
+            // Just 2 lines? We prefer long+short instead of half+half.
             return reflowGreedy(lineWidth, options, words)
         } else {
             // We could just return [lines] here, but the straightforward algorithm
-            // doesn't do a great job with short paragraphs where the last line
-            // is short; it over-corrects and shortens everything else in order
-            // to balance out the last line.
+            // doesn't do a great job with short paragraphs where the last line is
+            // short; it over-corrects and shortens everything else in order to balance
+            // out the last line.
 
             val maxLine: (String) -> Int = {
                 // Ignore lines that are unbreakable
@@ -253,41 +332,24 @@ class Paragraph(private val options: KDocFormattingOptions) {
                 }
             }
             val longestLine = lines.maxOf(maxLine)
-            if (hangingIndentSize > 0 && words[0].length < lineWidth) {
-                // Fill first line greedily since it's wider, then reflow the rest optimally
-                var i = 0
-                val firstLine = StringBuilder()
-                while (i < words.size) {
-                    val word = words[i]
-                    val newEnd = firstLine.length + word.length
-                    if (newEnd == lineWidth) {
-                        firstLine.append(word)
-                        i++
-                        break
-                    } else if (newEnd > lineWidth) {
-                        break
-                    }
-                    firstLine.append(word).append(' ')
-                    i++
-                }
-                if (i > 0) {
-                    val remainingWords = words.subList(i, words.size)
-                    val remainingLines =
-                        reflowOptimal(lineWidth - hangingIndentSize, remainingWords)
-                    return listOf(firstLine.toString().trim()) + remainingLines
-                }
-
-                return reflowOptimal(lineWidth - hangingIndentSize, words)
-            }
             var lastWord = words.size - 1
-            while (true) {
-                // We can afford to do this because we're only repeating it for a single line's
-                // worth of words and because comments tend to be relatively short anyway
-                val newLines = reflowOptimal(lineWidth, words.subList(0, lastWord))
+            while (lastWord > 0) {
+                // We can afford to do this because we're only repeating it for a single
+                // line's worth of words and because comments tend to be relatively short
+                // anyway
+                val newLines =
+                    reflowOptimal(lineWidth - hangingIndentSize, words.subList(0, lastWord))
                 if (newLines.size < lines.size) {
                     val newLongestLine = newLines.maxOf(maxLine)
-                    if (newLongestLine > longestLine) {
-                        return newLines + words.subList(lastWord, words.size).joinToString(" ")
+                    if (newLongestLine > longestLine &&
+                            newLines.subList(0, newLines.size - 1).any { it.length > longestLine }
+                    ) {
+                        return newLines +
+                            reflowGreedy(
+                                lineWidth - hangingIndentSize,
+                                options,
+                                words.subList(lastWord, words.size)
+                            )
                     }
                     break
                 }
@@ -308,8 +370,8 @@ class Paragraph(private val options: KDocFormattingOptions) {
      * that would change the documentation.
      */
     private fun canBreakAt(word: String): Boolean {
-        // Can we start a new line with this without interpreting it
-        // in a special way?
+        // Can we start a new line with this without interpreting it in a special
+        // way?
 
         if (word.startsWith("#") ||
                 word.startsWith("```") ||
@@ -336,14 +398,21 @@ class Paragraph(private val options: KDocFormattingOptions) {
             return words
         }
 
-        // See if any of the words should never be broken up. We do that for list separators
-        // and a few others.
-        // We never want to put "1." at the beginning of a line as an overflow.
+        if (task.type != CommentType.KDOC) {
+            // In block comments and line comments we feel free to break anywhere
+            // between words; there isn't a special meaning assigned to certain words
+            // if they appear first on a line like there is in KDoc/Markdown.
+            return words
+        }
+
+        // See if any of the words should never be broken up. We do that for list
+        // separators and a few others. We never want to put "1." at the beginning
+        // of a line as an overflow.
 
         val combined = ArrayList<String>(words.size)
 
-        // If this paragraph is a list item or a quoted line, merge the first word with this
-        // item such that we never split them apart.
+        // If this paragraph is a list item or a quoted line, merge the first word
+        // with this item such that we never split them apart.
         var start = 0
         var first = words[start++]
         if (quoted || hanging && !text.isKDocTag()) {
@@ -356,16 +425,16 @@ class Paragraph(private val options: KDocFormattingOptions) {
         for (i in start until words.size) {
             val word = words[i]
 
-            // We also cannot break up a URL text across lines, which will alter
-            // the rendering of the docs.
+            // We also cannot break up a URL text across lines, which will alter the
+            // rendering of the docs.
             if (prev.startsWith("[")) insideSquareBrackets = true
             if (prev.contains("]")) insideSquareBrackets = false
 
-            // Can we start a new line with this without interpreting it
-            // in a special way?
+            // Can we start a new line with this without interpreting it in a special
+            // way?
             if (!canBreakAt(word) || insideSquareBrackets) {
-                // Combine with previous word with a single space; the line breaking algorithm
-                // won't know that it's more than one word.
+                // Combine with previous word with a single space; the line breaking
+                // algorithm won't know that it's more than one word.
                 val joined = "$prev $word"
                 combined.removeLast()
                 combined.add(joined)

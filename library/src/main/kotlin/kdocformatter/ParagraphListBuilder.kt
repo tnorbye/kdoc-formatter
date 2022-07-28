@@ -1,15 +1,21 @@
 package kdocformatter
 
-class ParagraphListBuilder(comment: String, private val options: KDocFormattingOptions) {
-    private val lineComment: Boolean = comment.startsWith("//")
+class ParagraphListBuilder(
+    comment: String,
+    private val options: KDocFormattingOptions,
+    private val task: FormattingTask
+) {
+    private val lineComment: Boolean = comment.isLineComment()
+    private val commentPrefix: String =
+        if (lineComment) "//" else if (comment.isKDocComment()) "/**" else "/*"
     private val paragraphs: MutableList<Paragraph> = mutableListOf()
     private val lines =
         if (lineComment) {
-            comment.split("\n")
+            comment.split("\n").map { it.trimStart() }
         } else if (!comment.contains("\n")) {
-            listOf("* ${comment.removePrefix("/**").removeSuffix("*/").trim()}")
+            listOf("* ${comment.removePrefix(commentPrefix).removeSuffix("*/").trim()}")
         } else {
-            comment.removePrefix("/**").removeSuffix("*/").trim().split("\n")
+            comment.removePrefix(commentPrefix).removeSuffix("*/").trim().split("\n")
         }
 
     private fun lineContent(line: String): String {
@@ -48,13 +54,13 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
     private fun newParagraph(): Paragraph {
         closeParagraph()
         val prev = paragraph
-        paragraph = Paragraph(options)
+        paragraph = Paragraph(task)
         prev.next = paragraph
         paragraph.prev = prev
         return paragraph
     }
 
-    private var paragraph = Paragraph(options)
+    private var paragraph = Paragraph(task)
 
     private fun appendText(s: String): ParagraphListBuilder {
         paragraph.content.append(s)
@@ -83,8 +89,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             }
 
             if (shouldBreak(lineWithoutIndentation, lineWithIndentation)) {
-                val p = newParagraph()
-                customize(j, p)
+                newParagraph()
             }
 
             if (lineWithIndentation.isQuoted()) {
@@ -115,6 +120,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
         includeStart: Boolean = false,
         includeEnd: Boolean = true,
         expectClose: Boolean = false,
+        customize: (Int, Paragraph) -> Unit = { _, _ -> },
         until: (String) -> Boolean = { true },
     ): Int {
         newParagraph()
@@ -135,14 +141,16 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             }
         }
 
-        // We ran out of lines. This means we had an unterminated preformatted block. This is
-        // unexpected(unless it was an indented block) and most likely a documentation error
-        // (even Dokka will start formatting return value documentation in preformatted text
-        // if you have an opening <pre> without a closing </pre> before a @return comment),
-        // but try to backpedal a bit such that we don't apply full preformatted treatment
-        // everywhere to things line line breaking.
+        // We ran out of lines. This means we had an unterminated preformatted
+        // block. This is unexpected(unless it was an indented block) and most
+        // likely a documentation error (even Dokka will start formatting return
+        // value documentation in preformatted text if you have an opening <pre>
+        // without a closing </pre> before a @return comment), but try to backpedal
+        // a bit such that we don't apply full preformatted treatment everywhere to
+        // things like line breaking.
         if (!foundClose && expectClose) {
-            // Just add a single line as preformatted and then treat the rest in the normal way
+            // Just add a single line as preformatted and then treat the rest in the
+            // normal way
             j = i + 1
         }
 
@@ -152,6 +160,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
             appendText(lineWithIndentation)
             paragraph.preformatted = true
             paragraph.allowEmpty = true
+            customize(index, paragraph)
             newParagraph()
         }
         stripTrailingBlankLines()
@@ -247,9 +256,55 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                 i = addPreformatted(i - 1, expectClose = true) { it.trimStart().startsWith("```") }
             } else if (lineWithoutIndentation.startsWith("<pre>", ignoreCase = true)) {
                 i =
-                    addPreformatted(i - 1, includeStart = true, expectClose = true) {
-                        it.contains("</pre>", ignoreCase = true)
-                    }
+                    addPreformatted(
+                        i - 1,
+                        includeStart = true,
+                        expectClose = true,
+                        customize = { _, _ ->
+                            if (options.convertMarkup) {
+                                fun handleTag(tag: String) {
+                                    val text = paragraph.text
+                                    val trimmed = text.trim()
+
+                                    val index = text.indexOf(tag, ignoreCase = true)
+                                    if (index == -1) {
+                                        return
+                                    }
+                                    paragraph.content.clear()
+                                    if (trimmed.equals(tag, ignoreCase = true)) {
+                                        paragraph.content.append("```")
+                                        return
+                                    }
+
+                                    // Split paragraphs; these things have to be on their own line
+                                    // in the ``` form (unless both are in the middle)
+                                    val before =
+                                        text.substring(0, index).replace("</code>", "", true).trim()
+                                    if (before.isNotBlank()) {
+                                        paragraph.content.append(before)
+                                        newParagraph()
+                                        paragraph.preformatted = true
+                                        paragraph.allowEmpty = true
+                                    }
+                                    appendText("```")
+                                    val after =
+                                        text.substring(index + tag.length)
+                                            .replace("<code>", "", true)
+                                            .trim()
+                                    if (after.isNotBlank()) {
+                                        newParagraph()
+                                        appendText(after)
+                                        paragraph.preformatted = true
+                                        paragraph.allowEmpty = true
+                                    }
+                                }
+
+                                handleTag("<pre>")
+                                handleTag("</pre>")
+                            }
+                        },
+                        until = { it.contains("</pre>", ignoreCase = true) }
+                    )
             } else if (lineWithoutIndentation.isQuoted()) {
                 i--
                 val paragraph = newParagraph(i)
@@ -290,7 +345,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     )
                 newParagraph(i)
             } else if (lineWithoutIndentation.isListItem() ||
-                    lineWithoutIndentation.isKDocTag() ||
+                    lineWithoutIndentation.isKDocTag() && task.type == CommentType.KDOC ||
                     lineWithoutIndentation.isTodo()
             ) {
                 i--
@@ -351,10 +406,9 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         val content =
                             if (options.alignTableColumns) {
                                 // Only considering maxLineWidth here, not maxCommentWidth; we
-                                // cannot break table lines, only adjust tabbing, and a padded
-                                // table seems more readable
-                                // (maxCommentWidth < maxLineWidth is there to prevent long lines
-                                // for readability)
+                                // cannot break table lines, only adjust tabbing, and a padded table
+                                // seems more readable (maxCommentWidth < maxLineWidth is there to
+                                // prevent long lines for readability)
                                 table.format(options.maxLineWidth - indentSize - 3)
                             } else {
                                 table.original()
@@ -387,7 +441,6 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                             lineWithoutIndentation.startsWith("<td", true) ||
                             lineWithoutIndentation.startsWith("<div", true))
                 ) {
-                    val prevEmpty = i > 1 && lineContent(lines[i - 2]).isBlank()
                     newParagraph(i - 1).block = true
                     if (lineWithoutIndentation.equals("<p>", true) ||
                             lineWithoutIndentation.equals("<p/>", true) ||
@@ -395,9 +448,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     ) {
                         if (options.convertMarkup) {
                             // Replace <p> with a blank line
-                            if (!prevEmpty) {
-                                paragraph.separate = true
-                            }
+                            paragraph.separate = true
                         } else {
                             appendText(lineWithoutIndentation)
                             newParagraph(i).block = true
@@ -434,19 +485,8 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         continue
                     }
                 }
-                val text =
-                    if (options.collapseSpaces) lineWithoutIndentation.collapseSpaces()
-                    else lineWithoutIndentation
-                if (options.convertMarkup &&
-                        (text.startsWith("<p>", true) || text.startsWith("<p/>", true))
-                ) {
-                    paragraph.separate = true
-                    val stripped = text.substring(text.indexOf('>') + 1).trim()
-                    appendText(stripped)
-                } else {
-                    appendText(text)
-                }
-                appendText(" ")
+
+                i = addPlainText(i, lineWithoutIndentation)
             }
         }
 
@@ -457,6 +497,42 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
         }
 
         return ParagraphList(paragraphs)
+    }
+
+    private fun addPlainText(i: Int, text: String, braceBalance: Int = 0): Int {
+        val s =
+            if (options.convertMarkup &&
+                        (text.startsWith("<p>", true) || text.startsWith("<p/>", true))
+                ) {
+                    paragraph.separate = true
+                    text.substring(text.indexOf('>') + 1).trim()
+                } else {
+                    text
+                }
+                .let { if (options.collapseSpaces) it.collapseSpaces() else it }
+
+        appendText(s)
+        appendText(" ")
+
+        if (braceBalance > 0) {
+            val end = s.indexOf('}')
+            if (end == -1 && i < lines.size) {
+                val next = lineContent(lines[i]).trim()
+                return addPlainText(i + 1, next, 1)
+            }
+        }
+
+        val index = s.indexOf("{@")
+        if (index != -1) {
+            // find end
+            val end = s.indexOf('}', index)
+            if (end == -1 && i < lines.size) {
+                val next = lineContent(lines[i]).trim()
+                return addPlainText(i + 1, next, 1)
+            }
+        }
+
+        return i
     }
 
     private fun docTagRank(tag: String): Int {
@@ -521,12 +597,11 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                                     return r1 - r2
                                 }
                                 // Within identical tags, preserve current order, except for
-                                // parameter
-                                // names which are sorted by signature order.
-                                val orderedParameterNames = options.orderedParameterNames
+                                // parameter names which are sorted by signature order.
+                                val orderedParameterNames = task.orderedParameterNames
                                 if (orderedParameterNames.isNotEmpty()) {
                                     fun Paragraph.parameterRank(): Int {
-                                        val name = getParamName()
+                                        val name = text.getParamName()
                                         if (name != null) {
                                             val index = orderedParameterNames.indexOf(name)
                                             if (index != -1) {
@@ -551,13 +626,13 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                     }
                 }
 
-            // We don't sort the paragraphs list directly; we have to tie all the paragraphs
-            // following a KDoc parameter to that paragraph (until the next KDoc tag). So
-            // instead we create a list of lists -- consisting of one list for each
-            // paragraph, though with a KDoc parameter it's a list containing first the KDoc
-            // parameter paragraph and then all following parameters.
-            // We then sort by just the first item in this list of list, and then restore the
-            // paragraph list from the result.
+            // We don't sort the paragraphs list directly; we have to tie all the
+            // paragraphs following a KDoc parameter to that paragraph (until the
+            // next KDoc tag). So instead we create a list of lists -- consisting of
+            // one list for each paragraph, though with a KDoc parameter it's a list
+            // containing first the KDoc parameter paragraph and then all following
+            // parameters. We then sort by just the first item in this list of list,
+            // and then restore the paragraph list from the result.
             val units = mutableListOf<List<Paragraph>>()
             var tag: MutableList<Paragraph>? = null
             for (paragraph in paragraphs) {
@@ -598,8 +673,7 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
                         paragraph.separate && (!prev.block || prev.text.isKDocTag() || prev.table)
                     paragraph.separator || prev.separator -> true
                     text.isLine(1) || prev.text.isLine(1) -> false
-                    paragraph.separate && paragraph.text.isListItem() && prev.text.isListItem() ->
-                        false
+                    paragraph.separate && paragraph.text.isListItem() -> false
                     paragraph.separate -> true
                     // Don't separate kdoc tags, except for the first one
                     paragraph.doc -> !prev.doc
@@ -689,7 +763,8 @@ class ParagraphListBuilder(comment: String, private val options: KDocFormattingO
     }
 
     private fun removeBlankParagraphs() {
-        // Remove blank lines between list items and from the end as well as around separators
+        // Remove blank lines between list items and from the end as well as around
+        // separators
         for (i in paragraphs.size - 2 downTo 0) {
             if (paragraphs[i].isEmpty() && (!paragraphs[i].preformatted || i == paragraphs.size - 1)
             ) {

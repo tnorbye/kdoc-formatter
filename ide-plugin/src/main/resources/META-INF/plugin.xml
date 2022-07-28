@@ -24,10 +24,15 @@
       <add-to-group group-id="CodeFormatGroup" anchor="first"/>
     </action>
 
+    <!-- This adds the formatting action to the file menu. However, this somehow seems to break
+         plugin unloading - see https://github.com/tnorbye/kdoc-formatter/issues/71 - and the custom
+         action is arguably not very useful anymore now that the plugin integrates into the basic
+         formatting machinery of the IDE.
     <group>
     <add-to-group group-id="ProjectViewPopupMenuModifyGroup" anchor="after" relative-to-action="ReformatCode" />
       <reference ref="ReflowKDoc"/>
     </group>
+    -->
   </actions>
 
 </idea-plugin>
