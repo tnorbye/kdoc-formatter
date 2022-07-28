@@ -10,27 +10,33 @@ import com.intellij.ui.layout.enableIf
 import com.intellij.ui.layout.panel
 import com.intellij.ui.layout.selected
 import com.intellij.util.ui.UIUtil
-import org.jetbrains.annotations.Nls
 import javax.swing.JSeparator
+import org.jetbrains.annotations.Nls
 
 class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
   @Nls override fun getDisplayName() = "KDoc Formatting"
 
   @Suppress("SpellCheckingInspection") override fun getId() = "kdocformatter.options"
-  private val formatProcessorCheckBox = JBCheckBox("Participate in IDE formatting operations, such as Code > Reformat Code")
+  private val formatProcessorCheckBox =
+      JBCheckBox("Participate in IDE formatting operations, such as Code > Reformat Code")
   private val alternateCheckBox =
-      JBCheckBox("Alternate line breaking algorithms when invoked repeatedly (between greedy and optimal)")
+      JBCheckBox(
+          "Alternate line breaking algorithms when invoked repeatedly (between greedy and optimal)")
   private val collapseLinesCheckBox =
       JBCheckBox("Collapse short comments that fit on a single line")
   private val convertMarkupCheckBox = JBCheckBox("Convert markup like <b>bold</b> into **bold**")
-  private val addPunctuationCheckBox = JBCheckBox("Add missing punctuation, such as a period at the end of a capitalized paragraph")
-  private val lineCommentsCheckBox = JBCheckBox("Allow formatting line comments interactively")
-  private val alignTableColumnsCheckBox = JBCheckBox("Align table columns, ensuring that | separators line up")
-  private val reorderKDocTagsCheckBox = JBCheckBox("Move and reorder KDoc tags to match signature order")
+  private val addPunctuationCheckBox =
+      JBCheckBox("Add missing punctuation, such as a period at the end of a capitalized paragraph")
+  private val lineCommentsCheckBox =
+      JBCheckBox("Allow formatting line comments and block comments interactively")
+  private val alignTableColumnsCheckBox =
+      JBCheckBox("Align table columns, ensuring that | separators line up")
+  private val reorderKDocTagsCheckBox =
+      JBCheckBox("Move and reorder KDoc tags to match signature order")
   private val maxCommentWidthEnabledCheckBox =
-    JBCheckBox("Allow max comment width to be separate from line width")
-  private val overrideLineWidthField = JBTextField("0",4)
-  private val overrideCommentWidthField = JBTextField("0",4)
+      JBCheckBox("Allow max comment width to be separate from line width")
+  private val overrideLineWidthField = JBTextField("0", 4)
+  private val overrideCommentWidthField = JBTextField("0", 4)
 
   private val state = KDocPluginOptions.instance.globalState
 
@@ -54,14 +60,16 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
     }
     separator()
     row {
-      label("Override line widths (if blank or 0, the code style line width or .editorconfig is used) :")
+      label(
+          "Override line widths (if blank or 0, the code style line width or .editorconfig is used) :")
     }
     row("Line Width") {
       component(overrideLineWidthField).withValidationOnInput { validateWidth(it) }
     }
     row("Comment Width") {
-      component(overrideCommentWidthField).withValidationOnInput { validateWidth(it) }
-    }.enableIf(maxCommentWidthEnabledCheckBox.selected)
+          component(overrideCommentWidthField).withValidationOnInput { validateWidth(it) }
+        }
+        .enableIf(maxCommentWidthEnabledCheckBox.selected)
   }
 
   private fun LayoutBuilder.separator() {

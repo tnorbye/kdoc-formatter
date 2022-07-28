@@ -7,10 +7,6 @@ import org.junit.jupiter.api.Test
 class UtilitiesTest {
     @Test
     fun testFindSamePosition() {
-        fun addCaret(s: String, caret: Int): String {
-            return s.substring(0, caret) + "|" + s.substring(caret)
-        }
-
         fun check(newWithCaret: String, oldWithCaret: String) {
             val oldCaretIndex = oldWithCaret.indexOf('|')
             val newCaretIndex = newWithCaret.indexOf('|')
@@ -78,5 +74,16 @@ class UtilitiesTest {
         check("/** Test End |*/", "/** Test2 End |*/")
         check("/** Test End *|/", "/** Test2 End *|/")
         check("/** Test End */|", "/** Test2 End */|")
+    }
+
+    @Test
+    fun testGetParamName() {
+        assertEquals("foo", "@param foo".getParamName())
+        assertEquals("foo", "@param foo bar".getParamName())
+        assertEquals("foo", "@param foo;".getParamName())
+        assertEquals("foo", "  \t@param\t   foo  bar.".getParamName())
+        assertEquals("foo", "@param[foo]".getParamName())
+        assertEquals("foo", "@param  [foo]".getParamName())
+        assertEquals(null, "@param ".getParamName())
     }
 }

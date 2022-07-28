@@ -6,26 +6,34 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-// The formatter is mostly tested by KDocFormatterTest. This tests the part
-// where we (1) find the comments and format them, and (2) process the code
-// outside the comments and stitch it all together with the right indentation
-// etc.
+// The formatter is mostly tested by KDocFormatterTest. This tests the
+// part where we (1) find the comments and format them, and (2) process
+// the code outside the comments and stitch it all together with the right
+// indentation etc.
 class KDocFileFormatterTest {
     private fun reformatFile(
         source: String,
         options: KDocFormattingOptions,
-        markdown: Boolean = false
+        fileOptions: KDocFileFormattingOptions = KDocFileFormattingOptions(),
+        markdown: Boolean = false,
     ): String {
-        val fileOptions =
-            KDocFileFormattingOptions().apply {
-                formattingOptions = options
-                includeMd = markdown
-            }
+        fileOptions.apply {
+            formattingOptions = options
+            includeMd = markdown
+        }
         val formatter = KDocFileFormatter(fileOptions)
         val file = if (markdown) File("test.md") else File("test.kt")
         val reformatted = formatter.reformatFile(file, source.trim())
-        // Make sure that formatting is stable -- format again and make sure it's the same
-        assertEquals(reformatted, formatter.reformatFile(file, reformatted.trim()))
+        // Make sure that formatting is stable -- format again and make sure it's
+        // the same
+        val reformattedAgain = formatter.reformatFile(file, reformatted.trim())
+        if (reformatted != reformattedAgain) {
+            assertEquals(
+                "Formatting is not stable; reformatting breaks it",
+                reformatted,
+                reformattedAgain
+            )
+        }
         return reformatted
     }
 
@@ -87,6 +95,161 @@ class KDocFileFormatterTest {
                      a comment to reformat, it's
                    in a string   */
                 ""\"
+            }
+            """.trimIndent(),
+            reformatted
+        )
+    }
+
+    @Test
+    fun testBlockComment() {
+        val source =
+            """
+            @file:JvmName("Constraints")
+
+            /* Copyright notice.
+             We don't touch this.
+             */
+            class Test {
+                /*
+                * Returns whether lint should check all warnings,
+                 * including those off by default, or null if
+                 *not configured in this configuration. This is a really really really long sentence which needs to be broken up.
+                 *
+                 * Separate paragraph.
+                 */
+                 // We're not
+                 //  reformatting
+                 // line comments in this test
+            }
+            """.trimIndent()
+
+        val reformatted =
+            reformatFile(
+                source,
+                KDocFormattingOptions(50),
+                KDocFileFormattingOptions().apply { blockComments = true }
+            )
+        assertEquals(
+            """
+            @file:JvmName("Constraints")
+
+            /* Copyright notice.
+             We don't touch this.
+             */
+            class Test {
+                /*
+                Returns whether lint should check all
+                warnings, including those off by default, or
+                null if not configured in this configuration.
+                This is a really really really long
+                sentence which needs to be broken up.
+
+                Separate paragraph.
+                */
+                 // We're not
+                 //  reformatting
+                 // line comments in this test
+            }
+            """.trimIndent(),
+            reformatted
+        )
+    }
+
+    @Test
+    fun testFit() {
+        val source =
+            """
+            class Test {
+               ...
+                                ":app:writeDebugSigningConfigVersions", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask] */
+
+                                ":feature1:checkDebugAarMetadata",
+            }
+            """.trimIndent()
+        val reformatted = reformatFile(source, KDocFormattingOptions(72))
+        assertEquals(
+            """
+            class Test {
+               ...
+                                ":app:writeDebugSigningConfigVersions",
+                                /**
+                                 * Intentionally not cacheable. See
+                                 * [com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask]
+                                 */
+
+                                ":feature1:checkDebugAarMetadata",
+            }
+            """.trimIndent(),
+            reformatted
+        )
+    }
+
+    @Test
+    fun testLineComment() {
+        val source =
+            """
+            class Test {
+                /*
+                *  we're not reformatting
+                *   block comments
+                 * in this test
+                 */
+                 // We *ARE*
+                 //  reformatting
+                 // line comments in this test
+                 var x: String = 0; // Some
+                 //  more comments here that won't fit on @the same line.
+                 var y: String = 0; // Some
+                                    //  more comments here that won't fit [on
+                                    // the   same
+                                    // line].
+
+                 // This is separate
+
+                 fun test() {
+                    if (lineWithIndentation.startsWith("    ") && // markdown preformatted text
+                        (i == 1 || lineContent(lines[i - 2]).isBlank()) && // we've already ++'ed i above.
+                            // Make sure it's not just deeply indented inside a different block
+                            (paragraph.prev == null)
+                 }
+            }
+            """.trimIndent()
+
+        val reformatted =
+            reformatFile(
+                source,
+                KDocFormattingOptions(50),
+                KDocFileFormattingOptions().apply { lineComments = true }
+            )
+        assertEquals(
+            """
+            class Test {
+                /*
+                *  we're not reformatting
+                *   block comments
+                 * in this test
+                 */
+                 // We *ARE* reformatting line comments in
+                 // this test
+                 var x: String = 0; // Some more comments here
+                 // that won't fit on @the same line.
+                 var y: String = 0; // Some more comments here
+                                    // that won't fit [on the
+                                    // same line].
+
+                 // This is separate
+
+                 fun test() {
+                    if (lineWithIndentation.startsWith("    ") &&
+                        // markdown preformatted text
+                        (i == 1 || lineContent(lines[i - 2]).isBlank()) &&
+                            // we've already ++'ed i above.
+                            // Make sure it's not just deeply
+                            // indented inside a different
+                            // block
+                            (paragraph.prev == null)
+                 }
             }
             """.trimIndent(),
             reformatted
@@ -177,28 +340,41 @@ class KDocFileFormatterTest {
 
     @Test
     fun testLineWidth() {
-        // Perform in KDocFileFormatter test too to make sure we properly account for indent!
+        // Perform in KDocFileFormatter test too to make sure we properly account
+        // for indent!
         val source =
             """
             //3456789012345678901234567890 <- 30
             /**
              * This should fit on a single
+             *
              * And this should also fit!!
+             *
              * And this should not!!!!!!!!!
              */
             """.trimIndent()
-        val reformatted = reformatFile(source, KDocFormattingOptions(30))
-        assertEquals(
+
+        val reformatted =
             """
             //3456789012345678901234567890 <- 30
             /**
-             * This should fit on a
-             * single And this should
-             * also fit!! And this should
+             * This should fit on a single
+             *
+             * And this should also fit!!
+             *
+             * And this should
              * not!!!!!!!!!
              */
-            """.trimIndent(),
-            reformatted
+            """.trimIndent()
+
+        assertEquals(
+            reformatted,
+            reformatFile(source, KDocFormattingOptions(30).apply { optimal = true })
+        )
+
+        assertEquals(
+            reformatted,
+            reformatFile(source, KDocFormattingOptions(30).apply { optimal = false })
         )
     }
 
@@ -332,6 +508,39 @@ class KDocFileFormatterTest {
                 KDocFormattingOptions(100, 72).apply { collapseSingleLine = false }
             )
         )
+    }
+
+    @Test
+    fun testIssue42() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/42
+        val source =
+            """
+            @Suppress("SpellCheckingInspection")
+            /**
+             * Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+             */
+            fun KDocFormatterTest() {
+            }
+            """.trimIndent()
+
+        assertEquals(source, reformatFile(source, KDocFormattingOptions(60, 60)))
+    }
+
+    @Test
+    fun testGreedyVsOptimal() {
+        val source =
+            """
+            # KDoc Formatter Plugin Changelog
+
+            ## [1.5.5]
+            - Improved support for .editorconfig files; these settings will now be
+              reflected immediately (in prior versions you had to restart the IDE
+              because they were improperly cached)
+            - Fixed a copy/paste bug which prevented the "Collapse short comments
+              that fit on a single line" option from working.
+            """.trimIndent()
+
+        assertEquals(source, reformatFile(source, KDocFormattingOptions(72), markdown = true))
     }
 
     @Test

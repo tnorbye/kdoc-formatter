@@ -90,13 +90,12 @@ class KDocFormattingOptions(
     var alternate: Boolean = false
 
     /**
-     * Optional list of parameters associated with this doc; if set, and
-     * if [KDocFormattingOptions.orderDocTags] is set, parameter doc
-     * tags will be sorted to match this order. (The intent is for the
-     * tool invoking KDocFormatter to pass in the parameter names in
-     * signature order here.)
+     * KDoc allows param tag to be specified using an alternate bracket
+     * syntax. KDoc formatter ties to unify the format of comments, so
+     * it will rewrite them into the canonical syntax unless this option
+     * is true.
      */
-    var orderedParameterNames: List<String> = emptyList()
+    var allowParamBrackets: Boolean = false
 
     /** Creates a copy of this formatting object. */
     fun copy(): KDocFormattingOptions {
@@ -114,7 +113,6 @@ class KDocFormattingOptions(
         copy.nestedListIndent = nestedListIndent
         copy.optimal = optimal
         copy.alternate = alternate
-        copy.orderedParameterNames = orderedParameterNames
 
         return copy
     }

@@ -1,9 +1,14 @@
 package kdocformatter.cli
 
 import java.io.File
-import kdocformatter.EditorConfigs
+import kdocformatter.CommentType
+import kdocformatter.FormattingTask
 import kdocformatter.KDocFormatter
 import kdocformatter.KDocFormattingOptions
+import kdocformatter.computeIndents
+import kdocformatter.getIndentSize
+import kdocformatter.isBlockComment
+import kotlin.math.min
 
 /**
  * This class attempts to iterate over an entire Kotlin source file
@@ -64,6 +69,12 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
         return reformat(file, source, file.getFormatter())
     }
 
+    fun reformatSource(source: String, extension: String): String {
+        val name = "path${if (extension.startsWith('.')) "" else "."}$extension"
+        val file = File(name)
+        return reformat(file, source, file.getFormatter())
+    }
+
     private fun reformat(
         file: File?,
         source: String,
@@ -71,7 +82,10 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     ): String {
         reformatter ?: return source
         val formattingOptions =
-            file?.let { EditorConfigs.getOptions(it) } ?: options.formattingOptions
+            (file?.let { EditorConfigs.getOptions(it) } ?: options.formattingOptions).copy()
+        // Override editor config with any options explicitly passed on the command
+        // line
+        options.overrideOptions(formattingOptions)
         return reformatter(source, formattingOptions, file)
     }
 
@@ -82,11 +96,11 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
         // Here such that this function has signature (String, KDocFormattingOptions, File?)
         @Suppress("UNUSED_PARAMETER") unused: File? = null
     ): String {
-        // Just leverage the comment machinery here -- convert the markdown into a
-        // kdoc comment, reformat that, and then uncomment it.
-        // Note that this adds 3 characters to the line requirements (" * " on each line after the
-        // opening "/**")
-        // so we duplicate the options and pre-add 3 to account for this
+        // Just leverage the comment machinery here -- convert the markdown into
+        // a kdoc comment, reformat that, and then uncomment it. Note that this
+        // adds 3 characters to the line requirements (" * " on each line after the
+        // opening "/**") so we duplicate the options and pre-add 3 to account for
+        // this
         val formatter = KDocFormatter(formattingOptions.copy().apply { maxLineWidth += 3 })
         val comment =
             "/**\n" + source.split("\n").joinToString(separator = "\n") { " * $it" } + "\n*/"
@@ -126,73 +140,125 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     ): String {
         val sb = StringBuilder()
         val lexer = KotlinLexer(source)
-        val tokens = lexer.tokenizeKotlin()
+        val tokens =
+            lexer.findComments(options.kdocComments, options.blockComments, options.lineComments)
         val formatter = KDocFormatter(formattingOptions)
         val filter = options.filter
         var prev = 0
         for ((start, end) in tokens) {
             if (file == null || filter.overlaps(file, source, start, end)) {
+                val comment = source.substring(start, end)
+                if (skipComment(prev, comment)) {
+                    continue
+                }
+
                 // Include all the non-comments between previous comment end and here
                 val segment = source.substring(prev, start)
                 sb.append(segment)
                 prev = end
 
-                val comment = source.substring(start, end)
-                val originalIndent = getIndent(source, start)
-                val suffix = !originalIndent.all { it.isWhitespace() }
-                val indent =
-                    if (suffix) {
-                        val endIndex = originalIndent.indexOfFirst { !it.isWhitespace() }
-                        originalIndent.substring(0, endIndex)
-                    } else {
-                        originalIndent
-                    }
-
                 val formatted =
-                    try {
-                        formattingOptions.orderedParameterNames =
-                            lexer.getParameterNames(end) ?: emptyList()
-
-                        val formatted = formatter.reformatComment(comment, indent)
-
-                        // If it's the suffix of a line, see if it can fit there even when indented
-                        // with the previous code
-                        var addNewline = false
-                        val reformatted =
-                            if (suffix && !formatted.contains("\n")) {
-                                val sameLineFormatted =
-                                    formatter.reformatComment(comment, originalIndent)
-                                if (sameLineFormatted.contains('\n')) {
-                                    addNewline = true
-                                    formatted
-                                } else sameLineFormatted
-                            } else if (suffix) {
-                                addNewline = true
-                                formatted
-                            } else {
-                                formatted
-                            }
-                        if (addNewline) {
-                            // Remove trailing whitespace on the line (e.g. separator between code
-                            // and /** */)
-                            while (sb.isNotEmpty() && sb[sb.length - 1].isWhitespace()) {
-                                sb.setLength(sb.length - 1)
-                            }
-                            sb.append('\n').append(indent)
-                        }
-                        reformatted
-                    } catch (error: Throwable) {
-                        System.err.println(
-                            "Failed formatting comment in $file:\n\"\"\"\n$comment\n\"\"\""
-                        )
-                        throw error
-                    }
+                    format(
+                        sb,
+                        file,
+                        source,
+                        start,
+                        end,
+                        comment,
+                        lexer,
+                        formatter,
+                        formattingOptions
+                    )
                 sb.append(formatted)
             }
         }
         sb.append(source.substring(prev, source.length))
 
         return sb.toString()
+    }
+
+    private fun skipComment(prev: Int, comment: String): Boolean {
+        // Let's leave license notices alone.
+        if (prev == 0 &&
+                comment.isBlockComment() &&
+                (comment.contains("license", ignoreCase = true) ||
+                    comment.contains("copyright", ignoreCase = true))
+        ) {
+            return true
+        }
+
+        // Leave IntelliJ suppression comments alone
+        if (comment.startsWith("//noinspection ")) {
+            return true
+        }
+
+        return false
+    }
+
+    private fun format(
+        sb: StringBuilder,
+        file: File?,
+        source: String,
+        start: Int,
+        end: Int,
+        comment: String,
+        lexer: KotlinLexer,
+        formatter: KDocFormatter,
+        formattingOptions: KDocFormattingOptions
+    ): String {
+        val originalIndent = getIndent(source, start)
+        val suffix = !originalIndent.all { it.isWhitespace() }
+        val (indent, secondaryIndent) =
+            computeIndents(start, { offset -> source[offset] }, source.length)
+
+        val formatted =
+            try {
+                val task = FormattingTask(formattingOptions, comment, indent, secondaryIndent)
+                if (task.type == CommentType.KDOC) {
+                    task.orderedParameterNames = lexer.getParameterNames(end) ?: emptyList()
+                }
+                val formatted = formatter.reformatComment(task)
+
+                // If it's the suffix of a line, see if it can fit there even when indented
+                // with the previous code
+                var addNewline = false
+                val firstLineRemaining =
+                    min(
+                        formattingOptions.maxCommentWidth,
+                        formattingOptions.maxLineWidth -
+                            getIndentSize(task.initialIndent, formattingOptions)
+                    )
+                val firstLine =
+                    formatted.substring(
+                        0,
+                        formatted.indexOf('\n').let { if (it == -1) formatted.length else it }
+                    )
+                val reformatted =
+                    if (suffix && task.type == CommentType.KDOC && formatted.contains("\n")) {
+                        addNewline = true
+                        formatted
+                    } else if (suffix && firstLineRemaining >= firstLine.length) {
+                        formatted
+                    } else if (suffix) {
+                        addNewline = true
+                        formatted
+                    } else {
+                        formatted
+                    }
+                if (addNewline) {
+                    // Remove trailing whitespace on the line (e.g. separator between code and
+                    // /** */)
+                    while (sb.isNotEmpty() && sb[sb.length - 1].isWhitespace()) {
+                        sb.setLength(sb.length - 1)
+                    }
+                    sb.append('\n').append(secondaryIndent)
+                }
+                reformatted
+            } catch (error: Throwable) {
+                System.err.println("Failed formatting comment in $file:\n\"\"\"\n$comment\n\"\"\"")
+                throw error
+            }
+        return formatted
     }
 
     private fun getIndent(source: String, start: Int): String {

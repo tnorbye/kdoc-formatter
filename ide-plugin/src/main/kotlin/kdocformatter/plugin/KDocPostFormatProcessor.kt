@@ -6,7 +6,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleSettings
 import com.intellij.psi.impl.source.codeStyle.PostFormatProcessor
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.refactoring.suggested.startOffset
 import kdocformatter.KDocFormatter
 import org.jetbrains.kotlin.kdoc.psi.api.KDoc
 import org.jetbrains.kotlin.psi.KtPsiFactory
@@ -19,12 +18,13 @@ class KDocPostFormatProcessor : PostFormatProcessor {
 
     val kdoc = source as? KDoc ?: return source
 
-    // TODO: Consult options to see whether we want this to participate in formatting
+    // TODO: Consult options to see whether we want this to participate in
+    //     formatting
     val file = source.containingFile
-    val indent = getIndent(file, kdoc.startOffset)
     val original = kdoc.text
-    val options = getKDocFormattingOptions(file, source, false)
-    val formatted = KDocFormatter(options).reformatComment(original, indent)
+    val options = createFormattingOptions(file, source, false)
+    val task = createFormattingTask(source, original, options)
+    val formatted = KDocFormatter(options).reformatComment(task)
     return if (formatted != original) {
       val newComment = KtPsiFactory(source.project).createComment(formatted)
       return source.replace(newComment)

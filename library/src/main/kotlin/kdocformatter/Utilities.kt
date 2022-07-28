@@ -76,7 +76,7 @@ fun String.isQuoted(): Boolean {
 }
 
 fun String.isDirectiveMarker(): Boolean {
-    return startsWith("<!---") || startsWith("-->")
+    return startsWith("<!--") || startsWith("-->")
 }
 
 /**
@@ -84,7 +84,7 @@ fun String.isDirectiveMarker(): Boolean {
  * is coming, e.g. ":" or ","
  */
 fun String.isExpectingMore(): Boolean {
-    val last = lastOrNull() { !it.isWhitespace() } ?: return false
+    val last = lastOrNull { !it.isWhitespace() } ?: return false
     return last == ':' || last == ','
 }
 
@@ -106,12 +106,140 @@ fun String.isKDocTag(): Boolean {
             if (c.isWhitespace()) {
                 return i > 2
             } else if (!c.isLetter() || !c.isLowerCase()) {
+                if (c == '[' && startsWith("@param")) {
+                    // @param is allowed to use brackets -- see
+                    // https://kotlinlang.org/docs/kotlin-doc.html#param-name
+                    // Example: @param[foo] The description of foo
+                    return true
+                }
                 return false
             }
         }
         return true
     }
     return false
+}
+
+/**
+ * If this String represents a KDoc `@param` tag, returns the
+ * corresponding parameter name, otherwise null.
+ */
+fun String.getParamName(): String? {
+    val length = this.length
+    var start = 0
+    while (start < length && this[start].isWhitespace()) {
+        start++
+    }
+    if (!this.startsWith("@param", start)) {
+        return null
+    }
+    start += "@param".length
+
+    while (start < length) {
+        if (this[start].isWhitespace()) {
+            start++
+        } else {
+            break
+        }
+    }
+
+    if (start < length && this[start] == '[') {
+        start++
+        while (start < length) {
+            if (this[start].isWhitespace()) {
+                start++
+            } else {
+                break
+            }
+        }
+    }
+
+    var end = start
+    while (end < length) {
+        if (!this[end].isJavaIdentifierPart()) {
+            break
+        }
+        end++
+    }
+
+    if (end > start) {
+        return this.substring(start, end)
+    }
+
+    return null
+}
+
+private fun getIndent(start: Int, lookup: (Int) -> Char): String {
+    var i = start - 1
+    while (i >= 0 && lookup(i) != '\n') {
+        i--
+    }
+    val sb = StringBuilder()
+    for (j in i + 1 until start) {
+        sb.append(lookup(j))
+    }
+    return sb.toString()
+}
+
+/**
+ * Given a character [lookup] function in a document of [max]
+ * characters, for a comment starting at offset [start], compute
+ * the effective indent on the first line and on subsequent lines.
+ *
+ * For a comment starting on its own line, the two will be the same.
+ * But for a comment that is at the end of a line containing code, the
+ * first line indent will not be the indentation of the earlier code, it
+ * will be the full indent as if all the code characters were whitespace
+ * characters (which lets the formatter figure out how much space is
+ * available on the first line).
+ */
+fun computeIndents(start: Int, lookup: (Int) -> Char, max: Int): Pair<String, String> {
+    val originalIndent = getIndent(start, lookup)
+    val suffix = !originalIndent.all { it.isWhitespace() }
+    val indent =
+        if (suffix) {
+            originalIndent.map { if (it.isWhitespace()) it else ' ' }.joinToString(separator = "")
+        } else {
+            originalIndent
+        }
+
+    val secondaryIndent =
+        if (suffix) {
+            // We don't have great heuristics to figure out what the indent should be
+            // following a source line -- e.g. it can be implied by things like whether
+            // the line ends with '{' or an operator, but it's more complicated than
+            // that. So we'll cheat and just look to see what the existing code does!
+            var offset = start
+            while (offset < max && lookup(offset) != '\n') {
+                offset++
+            }
+            offset++
+            val sb = StringBuilder()
+            while (offset < max) {
+                if (lookup(offset) == '\n') {
+                    sb.clear()
+                } else {
+                    val c = lookup(offset)
+                    if (c.isWhitespace()) {
+                        sb.append(c)
+                    } else {
+                        if (c == '*') {
+                            // in a comment, the * is often one space indented
+                            // to line up with the first * in the opening /** and
+                            // the actual indent should be aligned with the /
+                            sb.setLength(sb.length - 1)
+                        }
+                        break
+                    }
+                }
+                offset++
+            }
+            sb.toString()
+        } else {
+            originalIndent
+        }
+
+    return Pair(indent, secondaryIndent)
 }
 
 /**
@@ -147,8 +275,8 @@ fun findSamePosition(comment: String, delta: Int, reformattedComment: String): I
 
     fun isSignificantChar(c: Char): Boolean = c.isWhitespace() || c == '*'
 
-    // Finally it's somewhere in the middle; search by character skipping
-    // over insignificant characters (space, *, etc)
+    // Finally it's somewhere in the middle; search by character skipping over
+    // insignificant characters (space, *, etc)
     fun nextSignificantChar(s: String, from: Int): Int {
         var curr = from
         while (curr < s.length) {

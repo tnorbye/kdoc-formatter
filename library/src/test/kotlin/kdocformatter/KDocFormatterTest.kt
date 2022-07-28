@@ -11,14 +11,16 @@ class KDocFormatterTest {
     @field:TempDir lateinit var tempDir: File
 
     private fun checkFormatter(
-        source: String,
-        options: KDocFormattingOptions,
+        task: FormattingTask,
         expected: String,
-        indent: String = "    ",
         verify: Boolean = true,
-        verifyDokka: Boolean = true
+        verifyDokka: Boolean = false,
     ) {
-        val reformatted = reformatComment(source, options, indent)
+        val reformatted = reformatComment(task)
+
+        val indent = task.initialIndent
+        val options = task.options
+        val source = task.comment
 
         // Because .trimIndent() will remove it:
         val indentedExpected = expected.split("\n").joinToString("\n") { indent + it }
@@ -31,7 +33,15 @@ class KDocFormatterTest {
 
         // Make sure that formatting is stable -- format again and make sure it's the same
         if (verify) {
-            val formattedAgain = reformatComment(reformatted.trim(), options, indent)
+            val again =
+                FormattingTask(
+                    options,
+                    reformatted.trim(),
+                    task.initialIndent,
+                    task.secondaryIndent,
+                    task.orderedParameterNames
+                )
+            val formattedAgain = reformatComment(again)
             if (reformatted != formattedAgain) {
                 assertEquals(
                     "$indent// FORMATTED ONCE\n\n$reformatted",
@@ -42,14 +52,22 @@ class KDocFormatterTest {
         }
     }
 
-    private fun reformatComment(
+    private fun checkFormatter(
         source: String,
         options: KDocFormattingOptions,
-        indent: String = "    "
-    ): String {
-        val formatter = KDocFormatter(options)
-        val formatted = formatter.reformatComment(source.trim(), indent)
-        return indent + formatted
+        expected: String,
+        indent: String = "    ",
+        verify: Boolean = true,
+        verifyDokka: Boolean = false
+    ) {
+        val task = FormattingTask(options, source.trim(), indent)
+        checkFormatter(task, expected, verify, verifyDokka)
+    }
+
+    private fun reformatComment(task: FormattingTask): String {
+        val formatter = KDocFormatter(task.options)
+        val formatted = formatter.reformatComment(task)
+        return task.initialIndent + formatted
     }
 
     @Test
@@ -106,9 +124,8 @@ class KDocFormatterTest {
 
     @Test
     fun testWordBreaking() {
-        // Without special handling, the "-" in the below would
-        // be placed at the beginning of line 2, which then
-        // implies a list item.
+        // Without special handling, the "-" in the below would be placed at the
+        // beginning of line 2, which then implies a list item.
         val source =
             """
             /** Returns whether lint should check all warnings,
@@ -259,8 +276,79 @@ class KDocFormatterTest {
     }
 
     @Test
+    fun testBracketParam() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/72
+        val source =
+            """
+            /**
+             * Summary
+             * @param [ param1  ] some value
+             * @param[param2] another value
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * Summary
+             *
+             * @param param1 some value
+             * @param param2 another value
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testMultiLineLink() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/70
+        val source =
+            """
+            /**
+             * Single line is converted {@link foo}
+             *
+             * Multi line is converted {@link
+             * foo}
+             *
+             * Single line with hash is converted {@link #foo}
+             *
+             * Multi line with has is converted {@link
+             * #foo}
+             *
+             * Don't interpret {@code
+             * # This is not a header
+             * * this is
+             *   * not a nested list
+             * }
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * Single line is converted [foo]
+             *
+             * Multi line is converted [foo]
+             *
+             * Single line with hash is converted [foo]
+             *
+             * Multi line with has is converted [foo]
+             *
+             * Don't interpret {@code # This is not a header * this is * not a
+             * nested list }
+             */
+             """.trimIndent(),
+            // {@link} text is not rendered by dokka when it cannot resolve the symbols
+            verifyDokka = false
+        )
+    }
+
+    @Test
     fun testLineWidth1() {
-        // Perform in KDocFileFormatter test too to make sure we properly account for indent!
+        // Perform in KDocFileFormatter test too to make sure we properly account
+        // for indent!
         val source =
             """
             /**
@@ -349,15 +437,15 @@ class KDocFormatterTest {
              * specific set of files within it.
              *
              * @param client the client to
-             *       report errors to and
-             *       to use to read files
+             *       report errors to and to use
+             *       to read files
              * @param classFiles the specific
              *       set of class files to look
              *       for
              * @param classFolders the list of
-             *       class folders to look
-             *       in (to determine
-             *       the package root)
+             *       class folders to look in
+             *       (to determine the package
+             *       root)
              * @param sort if true, sort the
              *       results
              * @return the list of class
@@ -412,8 +500,8 @@ class KDocFormatterTest {
             """
             /**
              * @param client the client to
-             *     report errors to and
-             *     to use to read files
+             *     report errors to and to use
+             *     to read files
              */
             """.trimIndent()
         )
@@ -601,15 +689,18 @@ class KDocFormatterTest {
             """
             /**
              * Code sample:
-             * <PRE>
+             * ```
              *     val s = "hello, and   this is code so should not be line broken at all, it should stay on one line";
              *     println(s);
-             * </pre>
+             * ```
+             *
              * This is not preformatted and
              * can be combined into multiple
              * sentences again.
              */
-            """.trimIndent()
+            """.trimIndent(),
+            // <pre> and ``` are rendered differently; this is an intentional diff
+            verifyDokka = false
         )
     }
 
@@ -714,7 +805,8 @@ class KDocFormatterTest {
 
     @Test
     fun testSeparateParagraphMarkers1() {
-        // If the markup still contains HTML paragraph separators, separate paragraphs
+        // If the markup still contains HTML paragraph separators, separate
+        // paragraphs
         val source =
             """
             /**
@@ -778,7 +870,8 @@ class KDocFormatterTest {
 
     @Test
     fun testConvertMarkup() {
-        // If the markup still contains HTML paragraph separators, separate paragraphs
+        // If the markup still contains HTML paragraph separators, separate
+        // paragraphs
         val source =
             """
             /**
@@ -836,8 +929,8 @@ class KDocFormatterTest {
             /**
              * 1. This is a numbered list.
              * 2. This is another item. We
-             *    should be wrapping extra
-             *    text under the same item.
+             *    should be wrapping extra text
+             *    under the same item.
              * 3. This is the third item.
              *
              * Unordered list:
@@ -915,13 +1008,13 @@ class KDocFormatterTest {
              * 2. Create a project environment
              *    via [UastEnvironment.create].
              *    You can create multiple
-             *    environments in the
-             *    same process (one
-             *    for each "module").
+             *    environments in the same
+             *    process (one for each
+             *    "module").
              * 3. Call [analyzeFiles] to
-             *    initialize PSI machinery
-             *    and precompute
-             *    resolve information.
+             *    initialize PSI machinery and
+             *    precompute resolve
+             *    information.
              */
             """.trimIndent()
         )
@@ -943,9 +1036,9 @@ class KDocFormatterTest {
             """
             /**
              * @param configuration the
-             *     configuration to
-             *     look up which issues
-             *     are enabled etc from
+             *     configuration to look up
+             *     which issues are enabled etc
+             *     from
              * @param platforms the platforms
              *     applying to this analysis
              */
@@ -1254,9 +1347,9 @@ class KDocFormatterTest {
             KDocFormattingOptions(maxLineWidth = 100, 100),
             """
             /**
-             * ___________________________ | grandparent | | _____________________ | | | parent | | | |
-             * _______________ | | ____________ | | | focusedItem | | | | nextItem | | | |______________| |
-             * | |___________| | |____________________| | |__________________________|
+             * ___________________________ | grandparent | | _____________________ | | | parent
+             * | | | | _______________ | | ____________ | | | focusedItem | | | | nextItem | | |
+             * |______________| | | |___________| | |____________________| | |__________________________|
              *
              *      __________________________
              *     |  grandparent            |
@@ -1433,8 +1526,8 @@ class KDocFormatterTest {
              *
              * More:
              * > This whole paragraph should be treated as a block quote. This whole paragraph should be
-             * > treated as a block quote. This whole paragraph should be treated as a block quote. This
-             * > whole paragraph should be treated as a block quote.
+             * > treated as a block quote. This whole paragraph should be treated as a block quote. This whole
+             * > paragraph should be treated as a block quote.
              *
              * ### Lists
              * Plus lists:
@@ -1647,9 +1740,11 @@ class KDocFormatterTest {
              * for this project.
              *
              * To generate this, run for example
-             * <pre>
+             *
+             * ```
              *     ./gradlew :app:dependencies
-             * </pre>
+             * ```
+             *
              * and then look at the debugCompileClasspath (or other graph that
              * you want to model).
              *
@@ -1657,25 +1752,25 @@ class KDocFormatterTest {
              * @return this for constructor chaining
              *
              * TODO: Adds the given dependency graph (the output of the Gradle
-             *     dependency task) to be constructed when
-             *     mocking a Gradle model for this project.
+             *     dependency task) to be constructed when mocking a Gradle
+             *     model for this project.
              * TODO: More stuff to do here
              * TODO: Consider looking at the localization="suggested" attribute
              *     in the platform attrs.xml to catch future recommended
              *     attributes.
              * TODO: Also adds the given dependency graph (the output of the
-             *     Gradle dependency task) to be constructed
-             *     when mocking a Gradle model for this project.
+             *     Gradle dependency task) to be constructed when mocking a
+             *     Gradle model for this project.
              * TODO(b/144576310): Cover multi-module search. Searching in the
-             *     search bar should show an option to change
-             *     module if there are resources in it.
+             *     search bar should show an option to change module if there
+             *     are resources in it.
              * TODO(myldap): Cover filter usage. Eg: Look for a framework
              *     resource by enabling its filter.
              */
             """.trimIndent(),
-            // We indent TO-DO text deliberately, though this changes the structure to make
-            // each item have its own paragraph which doesn't happen by default. Working as
-            // intended.
+            // We indent TO-DO text deliberately, though this changes the structure to
+            // make each item have its own paragraph which doesn't happen by default.
+            // Working as intended.
             verifyDokka = false
         )
     }
@@ -1694,14 +1789,18 @@ class KDocFormatterTest {
              * [Location.file] for more information on what the file
              * represents)
              *
-             * @param start the starting position, or null
              * @param end the ending position, or null
+             * @param[ start ]   the starting position, or null
              * @see More
              */
             """.trimIndent()
         checkFormatter(
-            source,
-            KDocFormattingOptions(72),
+            FormattingTask(
+                KDocFormattingOptions(72),
+                source,
+                "    ",
+                orderedParameterNames = listOf("file", "start", "end")
+            ),
             // Note how this places the "#" in column 0 which will then
             // be re-interpreted as a header next time we format it!
             // Idea: @{link #} should become {@link#} or with a nbsp;
@@ -1719,7 +1818,7 @@ class KDocFormatterTest {
              * @sample Other
              * @see More
              */
-            """.trimIndent()
+            """.trimIndent(),
         )
     }
 
@@ -1776,9 +1875,9 @@ class KDocFormatterTest {
 
     @Test
     fun testHtml() {
-        // Comment from lint's SourceCodeScanner class doc. Tests a number of things --
-        // markup conversion (<h2> to ##, <p> to blank lines), list item indentation,
-        // trimming blank lines from the end, etc.
+        // Comment from lint's SourceCodeScanner class doc. Tests a number of
+        // things -- markup conversion (<h2> to ##, <p> to blank lines), list item
+        // indentation, trimming blank lines from the end, etc.
         val source =
             """
              /**
@@ -2047,10 +2146,10 @@ class KDocFormatterTest {
              * <li> Extending a given class or implementing a given interface. For this, see [applicableSuperClasses] and
              *     [visitClass]</li>
              * <li> More complicated scenarios: perform a general AST traversal with a visitor. In this case, first tell lint
-             *     which AST node types you're interested in with the [getApplicableUastTypes] method, and then
-             *     provide a [UElementHandler] from the [createUastHandler] where you override the various applicable
-             *     handler methods. This is done rather than a general visitor from the root node to avoid having to
-             *     have every single lint detector (there are hundreds) do a full tree traversal on its own.</li>
+             *     which AST node types you're interested in with the [getApplicableUastTypes] method, and then provide a
+             *     [UElementHandler] from the [createUastHandler] where you override the various applicable handler methods.
+             *     This is done rather than a general visitor from the root node to avoid having to have every single lint
+             *     detector (there are hundreds) do a full tree traversal on its own.</li>
              * </ul>
              *
              * {@linkplain SourceCodeScanner} exposes the UAST API to lint checks. UAST is short for "Universal AST" and is an
@@ -2143,64 +2242,67 @@ class KDocFormatterTest {
              * work for example when dealing with Kotlin methods. Normally lint passes you the {@linkplain UMethod} which you
              * should be procesing instead. But if for some reason you need to look up the UAST method body from a {@linkplain
              * PsiMethod}, use this:
-             * <pre>
+             * ```
              *     UastContext context = UastUtils.getUastContext(element);
              *     UExpression body = context.getMethodBody(method);
-             * </pre>
+             * ```
+             *
              * Similarly if you have a [PsiField] and you want to look up its field initializer, use this:
-             * <pre>
+             * ```
              *     UastContext context = UastUtils.getUastContext(element);
              *     UExpression initializer = context.getInitializerBody(field);
-             * </pre>
+             * ```
              *
              * ### Call names
              * In PSI, a call was represented by a PsiCallExpression, and to get to things like the method called or to the
              * operand/qualifier, you'd first need to get the "method expression". In UAST there is no method expression and
              * this information is available directly on the {@linkplain UCallExpression} element. Therefore, here's how you'd
              * change the code:
-             * <pre>
+             * ```
              * &lt;    call.getMethodExpression().getReferenceName();
              * ---
              * &gt;    call.getMethodName()
-             * </pre>
+             * ```
              *
              * ### Call qualifiers
              * Similarly,
-             * <pre>
+             * ```
              * &lt;    call.getMethodExpression().getQualifierExpression();
              * ---
              * &gt;    call.getReceiver()
-             * </pre>
+             * ```
              *
              * ### Call arguments
              * PSI had a separate PsiArgumentList element you had to look up before you could get to the actual arguments, as an
              * array. In UAST these are available directly on the call, and are represented as a list instead of an array.
-             * <pre>
+             *
+             * ```
              * &lt;    PsiExpression[] args = call.getArgumentList().getExpressions();
              * ---
              * &gt;    List<UExpression> args = call.getValueArguments();
-             * </pre>
+             * ```
+             *
              * Typically you also need to go through your code and replace array access, arg\[i], with list access, {@code
              * arg.get(i)}. Or in Kotlin, just arg\[i]...
              *
              * ### Instanceof
              * You may have code which does something like "parent instanceof PsiAssignmentExpression" to see if
-             * something is an assignment. Instead, use one of the many utilities in [UastExpressionUtils] - such as
-             * [UastExpressionUtils.isAssignment]. Take a look at all the methods there now - there are methods for checking
-             * whether a call is a constructor, whether an expression is an array initializer, etc etc.
+             * something is an assignment. Instead, use one of the many utilities in [UastExpressionUtils] - such
+             * as [UastExpressionUtils.isAssignment]. Take a look at all the methods there now - there are methods
+             * for checking whether a call is a constructor, whether an expression is an array initializer, etc etc.
              *
              * ### Android Resources
              * Don't do your own AST lookup to figure out if something is a reference to an Android resource (e.g. see if the
              * class refers to an inner class of a class named "R" etc.) There is now a new utility class which handles this:
              * [ResourceReference]. Here's an example of code which has a [UExpression] and wants to know it's referencing a
              * R.styleable resource:
-             * <pre>
+             * ```
              *        ResourceReference reference = ResourceReference.get(expression);
              *        if (reference == null || reference.getType() != ResourceType.STYLEABLE) {
              *            return;
              *        }
              *        ...
-             * </pre>
+             * ```
              *
              * ### Binary Expressions
              * If you had been using [PsiBinaryExpression] for things like checking comparator operators or arithmetic
@@ -2543,9 +2645,8 @@ class KDocFormatterTest {
     @Test
     fun test193246766() {
         val source =
-        // Nonsensical text derived from the original using the lorem() method and replacing
-        // same-length &
-        // same capitalization words from lorem ipsum
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
         """
             /**
              * * Do do occaecat sunt in culpa:
@@ -2616,9 +2717,8 @@ class KDocFormatterTest {
     fun test209435082() {
         // b/209435082
         val source =
-        // Nonsensical text derived from the original using the lorem() method and replacing
-        // same-length &
-        // same capitalization words from lorem ipsum
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
         """
             /**
              * eiusmod.com
@@ -2679,9 +2779,8 @@ class KDocFormatterTest {
     @Test
     fun test236743270() {
         val source =
-        // Nonsensical text derived from the original using the lorem() method and replacing
-        // same-length &
-        // same capitalization words from lorem ipsum
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
         """
             /**
              * @return Amet do non adipiscing sed consequat duis non Officia ID (amet sed consequat non
@@ -2706,9 +2805,8 @@ class KDocFormatterTest {
     @Test
     fun test238279769() {
         val source =
-        // Nonsensical text derived from the original using the lorem() method and replacing
-        // same-length &
-        // same capitalization words from lorem ipsum
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
         """
             /**
              * @property dataItemOrderRandomizer sit tempor enim pariatur non culpa id [Pariatur]z in qui anim.
@@ -2727,14 +2825,14 @@ class KDocFormatterTest {
             """
             /**
              * @property dataItemOrderRandomizer sit tempor enim pariatur non
-             *     culpa id [Pariatur]z in qui anim. Anim
-             *     id-lorem sit magna [Consectetur] pariatur.
+             *     culpa id [Pariatur]z in qui anim. Anim id-lorem sit magna
+             *     [Consectetur] pariatur.
              * @property randomBytesProvider non mollit anim pariatur non culpa
-             *     qui qui `mollit` lorem amet consectetur
-             *     [Pariatur]z in IssuerSignedItem culpa.
+             *     qui qui `mollit` lorem amet consectetur [Pariatur]z in
+             *     IssuerSignedItem culpa.
              * @property preserveMapOrder officia id pariatur non culpa id lorem
-             *     pariatur culpa culpa id o est amet
-             *     consectetur sed sed do ENIM minim.
+             *     pariatur culpa culpa id o est amet consectetur sed sed do
+             *     ENIM minim.
              * @property reprehenderit p esse cillum officia est do enim enim
              *     nostrud nisi d non sunt mollit id est tempor enim.
              */
@@ -2900,8 +2998,8 @@ class KDocFormatterTest {
              * ```
              *
              * That's it! Now you can call
-             * `CustomBundle.message("sample.text.key")` to fetch the text
-             * value.
+             * `CustomBundle.message("sample.text.key")`
+             * to fetch the text value.
              */
             """.trimIndent()
         )
@@ -2909,9 +3007,9 @@ class KDocFormatterTest {
 
     @Test
     fun testQuotedBug() {
-        // Reproduced a bug which was mishandling quoted strings: when you have *separate* but
-        // adjacent
-        // quoted lists, make sure we preserve line break between them
+        // Reproduced a bug which was mishandling quoted strings: when you have
+        // *separate* but adjacent quoted lists, make sure we preserve line break
+        // between them
         val source =
             """
             /**
@@ -2940,11 +3038,10 @@ class KDocFormatterTest {
 
     @Test
     fun testListBreaking() {
-        // If we have, in a list, "* very-long-word", we cannot break this line with a bullet on its
-        // line
-        // by itself. In the below, prior to the bug fix, the "- spec:width..." would get split into
-        // "-"
-        // and "spec:width..." on its own hanging indent line.
+        // If we have, in a list, "* very-long-word", we cannot break this line
+        // with a bullet on its line by itself. In the below, prior to the bug fix,
+        // the "- spec:width..." would get split into "-" and "spec:width..." on
+        // its own hanging indent line.
         val source =
             """
             /**
@@ -3107,14 +3204,14 @@ class KDocFormatterTest {
              *    parent to `Theme.SplashScreen` or
              *    `Theme.SplashScreen.IconBackground`
              * 2. In your manifest, set the `theme` attribute of the whole
-             *    `<application>` or just the starting
-             *    `<activity>` to `Theme.App.Starting`
+             *    `<application>` or just the starting `<activity>` to
+             *    `Theme.App.Starting`
              * 3. In the `onCreate` method the starting activity, call
-             *    [installSplashScreen] just before `super.onCreate()`.
-             *    You also need to make sure that `postSplashScreenTheme`
-             *    is set to the application's theme. Alternatively,
-             *    this call can be replaced by [Activity#setTheme]
-             *    if a [SplashScreen] instance isn't needed.
+             *    [installSplashScreen] just before `super.onCreate()`. You also
+             *    need to make sure that `postSplashScreenTheme` is set to the
+             *    application's theme. Alternatively, this call can be replaced
+             *    by [Activity#setTheme] if a [SplashScreen] instance isn't
+             *    needed.
              *
              * ## Themes
              *
@@ -3149,17 +3246,17 @@ class KDocFormatterTest {
              *
              * **Known incompatibilities:**
              * - On API < 31, `windowSplashScreenAnimatedIcon` cannot be
-             *   animated. If you want to provide an animated icon
-             *   for API 31+ and a still icon for API <31, you
-             *   can do so by overriding the still icon with an
-             *   animated vector drawable in `res/drawable-v31`.
+             *   animated. If you want to provide an animated icon for API 31+
+             *   and a still icon for API <31, you can do so by overriding the
+             *   still icon with an animated vector drawable in
+             *   `res/drawable-v31`.
              * - On API < 31, if the value of `windowSplashScreenAnimatedIcon`
              *   is an
              *   [adaptive icon](http://developer.android.com/guide/practices/ui_guidelines/icon_design_adaptive)
              *   , it will be cropped and scaled. The workaround is to
              *   respectively assign `windowSplashScreenAnimatedIcon` and
-             *   `windowSplashScreenIconBackgroundColor` to the values
-             *   of the adaptive icon `foreground` and `background`.
+             *   `windowSplashScreenIconBackgroundColor` to the values of the
+             *   adaptive icon `foreground` and `background`.
              * - On API 21-22, The icon isn't displayed until the application
              *   starts, only the background is visible.
              *
@@ -3339,9 +3436,9 @@ class KDocFormatterTest {
 
     @Test
     fun testTableExtraCells() {
-        // If there are extra columns in a row (after the header and divider), preserve these
-        // (though Dokka will drop them from the rendering); don't widen the table to accommodate
-        // it.
+        // If there are extra columns in a row (after the header and divider),
+        // preserve these (though Dokka will drop them from the rendering); don't
+        // widen the table to accommodate it.
         val source =
             """
             /**
@@ -3791,7 +3888,8 @@ class KDocFormatterTest {
             """
             /**
              * This tag messes things up.
-             * <pre>
+             *
+             * ```
              *
              * This is pre.
              *
@@ -3822,11 +3920,81 @@ class KDocFormatterTest {
             """
             /**
              * Even if it's closed.
-             * <pre>My Pre</pre>
+             *
+             * ```
+             * My Pre
+             * ```
              *
              * @return some correct value
              */
+            """.trimIndent(),
+            // <pre> and ``` are rendered differently; this is an intentional diff
+            verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testPreTag3() {
+        // From Studio's
+        // build-system/builder-model/src/main/java/com/android/builder/model/DataBindingOptions.kt
+        val source =
+            """
+            /**
+             * Whether we want tests to be able to use data binding as well.
+             *
+             * <p>
+             * Data Binding classes generated from the application can always be
+             * accessed in the test code but test itself cannot introduce new
+             * Data Binding layouts, bindables etc unless this flag is turned
+             * on.
+             *
+             * <p>
+             * This settings help with an issue in older devices where class
+             * verifier throws an exception when the application class is
+             * overwritten by the test class. It also makes it easier to run
+             * proguarded tests.
+             */
             """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * Whether we want tests to be able to use data binding as well.
+             *
+             * Data Binding classes generated from the application can always be
+             * accessed in the test code but test itself cannot introduce new
+             * Data Binding layouts, bindables etc unless this flag is turned
+             * on.
+             *
+             * This settings help with an issue in older devices where class
+             * verifier throws an exception when the application class is
+             * overwritten by the test class. It also makes it easier to run
+             * proguarded tests.
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testNoConversionInReferences() {
+        val source =
+            """
+            /**
+             * A thread safe in-memory cache of [Key&lt;T&gt;][Key] to `T` values whose lifetime is tied
+             * to a [CoroutineScope].
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * A thread safe in-memory cache of [Key&lt;T&gt;][Key] to `T` values
+             * whose lifetime is tied to a [CoroutineScope].
+             */
+            """.trimIndent(),
+            indent = ""
         )
     }
 
@@ -3942,7 +4110,37 @@ class KDocFormatterTest {
              * 1. Test
              * 2. Test
              */
-             """.trimIndent()
+             """.trimIndent(),
+            // We deliberately allow list items to jump up across blank lines
+            verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testParagraphRemoval2() {
+        // Regression test for
+        // https://github.com/tnorbye/kdoc-formatter/issues/69
+        val source =
+            """
+            /**
+             * Some title
+             *
+             * <p>1. Test
+             * 2. Test
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * Some title
+             * 1. Test
+             * 2. Test
+             */
+             """.trimIndent(),
+            // We deliberately allow list items to jump up across blank lines
+            verifyDokka = false
         )
     }
 
@@ -4000,6 +4198,96 @@ class KDocFormatterTest {
              */
             """.trimIndent(),
             indent = ""
+        )
+    }
+
+    @Test
+    fun testPreCodeConversion() {
+        val source =
+            """
+            /**
+             * <pre><code>
+             * More sample code.
+             * </code></pre>
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * ```
+             * More sample code.
+             * ```
+             */
+            """.trimIndent(),
+            indent = "        ",
+            // <pre> and ``` are rendered differently; this is an intentional diff
+            verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testPreConversion2() {
+        // From AndroidX and Studio methods
+        val source =
+            """
+        /**
+         * Checks if any of the GL calls since the last time this method was called set an error
+         * condition. Call this method immediately after calling a GL method. Pass the name of the GL
+         * operation. For example:
+         *
+         * <pre>
+         * mColorHandle = GLES20.glGetUniformLocation(mProgram, "uColor");
+         * MyGLRenderer.checkGlError("glGetUniformLocation");</pre>
+         *
+         * If the operation is not successful, the check throws an exception.
+         *
+         * <pre>public performItemClick(T item) {
+         *   ...
+         *   sendEventForVirtualView(item.id, AccessibilityEvent.TYPE_VIEW_CLICKED)
+         * }
+         * </pre>
+         * *Note* This is quite slow so it's best to use it sparingly in production builds.
+         * Injector to load associated file. It will create code like:
+         * <pre>file = FileUtil.loadLabels(extractor.getAssociatedFile(fileName))</pre>
+         */
+        """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(maxLineWidth = 72),
+            """
+            /**
+             * Checks if any of the GL calls since the last time this
+             * method was called set an error condition. Call this method
+             * immediately after calling a GL method. Pass the name of the
+             * GL operation. For example:
+             * ```
+             * mColorHandle = GLES20.glGetUniformLocation(mProgram, "uColor");
+             * MyGLRenderer.checkGlError("glGetUniformLocation");
+             * ```
+             *
+             * If the operation is not successful, the check throws an
+             * exception.
+             *
+             * ```
+             * public performItemClick(T item) {
+             *   ...
+             *   sendEventForVirtualView(item.id, AccessibilityEvent.TYPE_VIEW_CLICKED)
+             * }
+             * ```
+             *
+             * *Note* This is quite slow so it's best to use it sparingly in
+             * production builds. Injector to load associated file. It will
+             * create code like:
+             * ```
+             * file = FileUtil.loadLabels(extractor.getAssociatedFile(fileName))
+             * ```
+             */
+            """.trimIndent(),
+            indent = "        ",
+            // <pre> and ``` are rendered differently; this is an intentional diff
+            verifyDokka = false
         )
     }
 

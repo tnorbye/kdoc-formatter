@@ -1,6 +1,7 @@
-package kdocformatter
+package kdocformatter.cli
 
 import java.io.File
+import kdocformatter.KDocFormattingOptions
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
