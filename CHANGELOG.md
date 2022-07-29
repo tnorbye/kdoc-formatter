@@ -2,6 +2,9 @@
 
 # KDoc Formatter Changelog
 
+## [1.5.6]
+- Bugfix: the IDE plugin override line width setting was not working
+
 ## [1.5.5]
 - Fixed the following bugs:
    - #53: The collapse-single-line setting does not work in the IDE
