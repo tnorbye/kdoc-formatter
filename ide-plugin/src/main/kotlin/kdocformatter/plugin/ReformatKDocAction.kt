@@ -357,10 +357,9 @@ fun createFormattingOptions(
     kdoc: PsiComment,
     alternate: Boolean
 ): KDocFormattingOptions {
-  var maxLineWidth = getLineWidth(file, kdoc)
-  var maxCommentWidth = getCommentWidth(file)
-
-  val configOptions = KDocFormattingOptions(maxLineWidth, min(maxCommentWidth, maxLineWidth))
+  val lineWidth = getLineWidth(file, kdoc)
+  val commentWidth = getCommentWidth(file)
+  val configOptions = KDocFormattingOptions(lineWidth, min(commentWidth, lineWidth))
 
   val state = KDocPluginOptions.instance.globalState
   with(configOptions) {
@@ -378,7 +377,7 @@ fun createFormattingOptions(
       maxCommentWidth = state.overrideCommentWidth
     }
     if (!state.maxCommentWidthEnabled) {
-      maxCommentWidth = configOptions.maxLineWidth
+      maxCommentWidth = maxLineWidth
     }
   }
   return configOptions
