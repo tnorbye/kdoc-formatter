@@ -2,6 +2,9 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.5.6]
+- Bugfix: the override line width setting was not working
+
 ## [1.5.5]
 - The plugin can now be upgraded without restarting the IDE
 - Improved support for .editorconfig files; these settings will now be
