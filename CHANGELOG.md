@@ -2,6 +2,13 @@
 
 # KDoc Formatter Changelog
 
+## [1.5.7]
+- Fixed the following bugs:
+   - #76: Preserve newline style (CRLF on Windows)
+   - #77: Preformatting error
+   - #78: Preformatting stability
+   - #79: Replace `{@param name}` with `[name]`
+
 ## [1.5.6]
 - Bugfix: the IDE plugin override line width setting was not working
 

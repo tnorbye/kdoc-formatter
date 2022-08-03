@@ -148,10 +148,12 @@ class ParagraphListBuilder(
         // without a closing </pre> before a @return comment), but try to backpedal
         // a bit such that we don't apply full preformatted treatment everywhere to
         // things like line breaking.
+        var customize = true
         if (!foundClose && expectClose) {
             // Just add a single line as preformatted and then treat the rest in the
             // normal way
-            j = i + 1
+            customize = false
+            j = lines.size
         }
 
         for (index in i until j) {
@@ -160,7 +162,9 @@ class ParagraphListBuilder(
             appendText(lineWithIndentation)
             paragraph.preformatted = true
             paragraph.allowEmpty = true
-            customize(index, paragraph)
+            if (customize) {
+                customize(index, paragraph)
+            }
             newParagraph()
         }
         stripTrailingBlankLines()
@@ -518,6 +522,9 @@ class ParagraphListBuilder(
             val end = s.indexOf('}')
             if (end == -1 && i < lines.size) {
                 val next = lineContent(lines[i]).trim()
+                if (breakOutOfTag(next)) {
+                    return i
+                }
                 return addPlainText(i + 1, next, 1)
             }
         }
@@ -528,11 +535,26 @@ class ParagraphListBuilder(
             val end = s.indexOf('}', index)
             if (end == -1 && i < lines.size) {
                 val next = lineContent(lines[i]).trim()
+                if (breakOutOfTag(next)) {
+                    return i
+                }
                 return addPlainText(i + 1, next, 1)
             }
         }
 
         return i
+    }
+
+    private fun breakOutOfTag(next: String): Boolean {
+        if (next.isBlank() || next.startsWith("```")) {
+            // See https://github.com/tnorbye/kdoc-formatter/issues/77
+            // There may be comments which look unusual from a formatting
+            // perspective where it looks like you have embedded markup
+            // or blank lines; if so, just give up on trying to turn
+            // this into paragraph text
+            return true
+        }
+        return false
     }
 
     private fun docTagRank(tag: String): Int {

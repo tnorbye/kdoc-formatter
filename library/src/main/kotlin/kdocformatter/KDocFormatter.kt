@@ -122,12 +122,21 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
             sb.removeSuffix(lineSeparator)
         }
 
-        return if (lineComment) {
-            sb.trim().removeSuffix("//").trim().toString()
-        } else if (blockComment) {
-            sb.toString().replace(lineSeparator + "\n", "\n\n")
+        val formatted =
+            if (lineComment) {
+                sb.trim().removeSuffix("//").trim().toString()
+            } else if (blockComment) {
+                sb.toString().replace(lineSeparator + "\n", "\n\n")
+            } else {
+                sb.toString()
+            }
+
+        val separatorIndex = comment.indexOf('\n')
+        return if (separatorIndex > 0 && comment[separatorIndex - 1] == '\r') {
+            // CRLF separator
+            formatted.replace("\n", "\r\n")
         } else {
-            sb.toString()
+            formatted
         }
     }
 
