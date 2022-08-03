@@ -90,7 +90,7 @@ class Paragraph(private val task: FormattingTask) {
 
         var s = original
         if (options.convertMarkup) {
-            s = convertTags(text)
+            s = convertMarkup(text)
         }
         if (!options.allowParamBrackets) {
             s = rewriteParams(s)
@@ -139,7 +139,7 @@ class Paragraph(private val task: FormattingTask) {
         return s
     }
 
-    private fun convertTags(s: String): String {
+    private fun convertMarkup(s: String): String {
         if (s.none { it == '<' || it == '&' || it == '{' }) return s
 
         val sb = StringBuilder(s.length)
@@ -207,7 +207,18 @@ class Paragraph(private val task: FormattingTask) {
                     continue
                 }
             } else if (c == '{') {
-                if (s.startsWith("@link", i, true)
+                if (s.startsWith("@param", i, true)) {
+                    val curr = i + 6
+                    var end = s.indexOf('}', curr)
+                    if (end == -1) {
+                        end = n
+                    }
+                    sb.append('[')
+                    sb.append(s.substring(curr, end).trim())
+                    sb.append(']')
+                    i = end + 1
+                    continue
+                } else if (s.startsWith("@link", i, true)
                     // @linkplain is similar to @link, but kdoc does *not* render a [symbol]
                     // into a {@linkplain} in HTML, so converting these would change the output.
                     && !s.startsWith("@linkplain", i, true)

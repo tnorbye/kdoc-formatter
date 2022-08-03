@@ -186,6 +186,23 @@ class KDocFileFormatterTest {
     }
 
     @Test
+    fun testCrLf() {
+        // https://github.com/tnorbye/kdoc-formatter/issues/76
+        val source =
+            """
+            /**
+             * Sample summary.
+             *
+             * More summary.
+             */
+            """
+                .trimIndent()
+                .replace("\n", "\r\n")
+        val reformatted = reformatFile(source, KDocFormattingOptions(72))
+        assertEquals(source, reformatted)
+    }
+
+    @Test
     fun testLineComment() {
         val source =
             """
