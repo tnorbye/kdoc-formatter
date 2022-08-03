@@ -14,7 +14,7 @@ class KDocFormatterTest {
         task: FormattingTask,
         expected: String,
         verify: Boolean = true,
-        verifyDokka: Boolean = false,
+        verifyDokka: Boolean = true,
     ) {
         val reformatted = reformatComment(task)
 
@@ -58,7 +58,7 @@ class KDocFormatterTest {
         expected: String,
         indent: String = "    ",
         verify: Boolean = true,
-        verifyDokka: Boolean = false
+        verifyDokka: Boolean = true
     ) {
         val task = FormattingTask(options, source.trim(), indent)
         checkFormatter(task, expected, verify, verifyDokka)
@@ -341,6 +341,133 @@ class KDocFormatterTest {
              */
              """.trimIndent(),
             // {@link} text is not rendered by dokka when it cannot resolve the symbols
+            verifyDokka = false
+        )
+    }
+
+    @Test
+    fun testPreformattedWithinCode() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/77
+        val source =
+            """
+            /**
+             * Some summary.
+             *  {@code
+             *
+             * foo < bar?}
+             *  Done.
+             *
+             *
+             * {@code
+             * ```
+             *    Some code.
+             * ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * Some summary. {@code
+             *
+             * foo < bar?} Done.
+             *
+             * {@code
+             *
+             * ```
+             *    Some code.
+             * ```
+             */
+             """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreStability() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/78
+        val source =
+            """
+            /**
+             * Some summary
+             *
+             * <pre>
+             * line one
+             * ```
+             *     line two
+             * ```
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * Some summary
+             * <pre>
+             * line one
+             * ```
+             *     line two
+             * ```
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testPreStability2() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/78
+        // (second scenario
+        val source =
+            """
+            /**
+             * Some summary
+             *
+             * <pre>
+             * ```
+             *     code
+             * ```
+             * </pre>
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * Some summary
+             * <pre>
+             * ```
+             *     code
+             * ```
+             * </pre>
+             */
+            """.trimIndent()
+        )
+    }
+
+    @Test
+    fun testConvertParamReference() {
+        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/79
+        val source =
+            """
+            /**
+             * Some summary.
+             *
+             * Another summary about {@param someParam}.
+             */
+            """.trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72),
+            """
+            /**
+             * Some summary.
+             *
+             * Another summary about [someParam].
+             */
+            """.trimIndent(),
+            // {@param reference} text is not rendered by dokka when it cannot resolve the symbols
             verifyDokka = false
         )
     }
@@ -3888,12 +4015,11 @@ class KDocFormatterTest {
             """
             /**
              * This tag messes things up.
-             *
-             * ```
-             *
+             * <pre>
              * This is pre.
              *
-             * @return some correct value
+             * @return some correct
+             * value
              */
             """.trimIndent(),
             verifyDokka = false // this triggers a bug in the diff lookup; TODO investigate

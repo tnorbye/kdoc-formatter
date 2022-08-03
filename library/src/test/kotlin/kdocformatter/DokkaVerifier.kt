@@ -38,7 +38,7 @@ class DokkaVerifier(private val tempFolder: File) {
     private val PANDOC: String? = null
 
     // JDK install
-    private val JAVA_HOME: String? = System.getenv("JAVA_HOME")
+    private val JAVA_HOME: String? = System.getenv("JAVA_HOME") ?: System.getProperty("java.home")
 
     fun verify(before: String, after: String) {
         JAVA_HOME ?: return
