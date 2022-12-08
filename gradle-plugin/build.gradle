@@ -60,10 +60,6 @@ compileKotlin {
     }
 }
 
-//ktfmt {
-//    kotlinLangStyle()
-//}
-
 gradlePlugin {
     plugins {
         kdocformatter {

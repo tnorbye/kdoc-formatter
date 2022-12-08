@@ -111,10 +111,6 @@ lint {
     baseline = file("lint-baseline.xml")
 }
 
-//ktfmt {
-//    kotlinLangStyle()
-//}
-
 dependencies {
     implementation(project(":library"))
 }

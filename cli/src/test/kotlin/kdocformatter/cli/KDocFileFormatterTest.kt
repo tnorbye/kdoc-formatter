@@ -27,38 +27,35 @@ import org.junit.jupiter.api.Test
 // the code outside the comments and stitch it all together with the right
 // indentation etc.
 class KDocFileFormatterTest {
-    private fun reformatFile(
-        source: String,
-        options: KDocFormattingOptions,
-        fileOptions: KDocFileFormattingOptions = KDocFileFormattingOptions(),
-        markdown: Boolean = false,
-    ): String {
-        fileOptions.apply {
-            formattingOptions = options
-            includeMd = markdown
-        }
-        val formatter = KDocFileFormatter(fileOptions)
-        val file = if (markdown) File("test.md") else File("test.kt")
-        val reformatted = formatter.reformatFile(file, source.trim())
-        // Make sure that formatting is stable -- format again and make sure it's
-        // the same
-        val reformattedAgain = formatter.reformatFile(file, reformatted.trim())
-        if (reformatted != reformattedAgain) {
-            assertEquals(
-                "Formatting is not stable; reformatting breaks it",
-                reformatted,
-                reformattedAgain
-            )
-        }
-        return reformatted
+  private fun reformatFile(
+      source: String,
+      options: KDocFormattingOptions,
+      fileOptions: KDocFileFormattingOptions = KDocFileFormattingOptions(),
+      markdown: Boolean = false,
+  ): String {
+    fileOptions.apply {
+      formattingOptions = options
+      includeMd = markdown
     }
+    val formatter = KDocFileFormatter(fileOptions)
+    val file = if (markdown) File("test.md") else File("test.kt")
+    val reformatted = formatter.reformatFile(file, source.trim())
+    // Make sure that formatting is stable -- format again and make sure it's
+    // the same
+    val reformattedAgain = formatter.reformatFile(file, reformatted.trim())
+    if (reformatted != reformattedAgain) {
+      assertEquals(
+          "Formatting is not stable; reformatting breaks it", reformatted, reformattedAgain)
+    }
+    return reformatted
+  }
 
-    // TODO: Test driver --reading filenames from @-file etc
+  // TODO: Test driver --reading filenames from @-file etc
 
-    @Test
-    fun test() {
-        val source =
-            """
+  @Test
+  fun test() {
+    val source =
+        """
             class Test {
                 /**
                 * Returns whether lint should check all warnings,
@@ -82,11 +79,12 @@ class KDocFileFormatterTest {
                    in a string   */
                 ""\"
             }
-            """.trimIndent()
-
-        val reformatted = reformatFile(source, KDocFormattingOptions(72))
-        assertEquals(
             """
+            .trimIndent()
+
+    val reformatted = reformatFile(source, KDocFormattingOptions(72))
+    assertEquals(
+        """
             class Test {
                 /**
                  * Returns whether lint should check all warnings, including
@@ -112,15 +110,15 @@ class KDocFileFormatterTest {
                    in a string   */
                 ""\"
             }
-            """.trimIndent(),
-            reformatted
-        )
-    }
-
-    @Test
-    fun testBlockComment() {
-        val source =
             """
+            .trimIndent(),
+        reformatted)
+  }
+
+  @Test
+  fun testBlockComment() {
+    val source =
+        """
             @file:JvmName("Constraints")
 
             /* Copyright notice.
@@ -138,16 +136,16 @@ class KDocFileFormatterTest {
                  //  reformatting
                  // line comments in this test
             }
-            """.trimIndent()
-
-        val reformatted =
-            reformatFile(
-                source,
-                KDocFormattingOptions(50),
-                KDocFileFormattingOptions().apply { blockComments = true }
-            )
-        assertEquals(
             """
+            .trimIndent()
+
+    val reformatted =
+        reformatFile(
+            source,
+            KDocFormattingOptions(50),
+            KDocFileFormattingOptions().apply { blockComments = true })
+    assertEquals(
+        """
             @file:JvmName("Constraints")
 
             /* Copyright notice.
@@ -167,25 +165,26 @@ class KDocFileFormatterTest {
                  //  reformatting
                  // line comments in this test
             }
-            """.trimIndent(),
-            reformatted
-        )
-    }
-
-    @Test
-    fun testFit() {
-        val source =
             """
+            .trimIndent(),
+        reformatted)
+  }
+
+  @Test
+  fun testFit() {
+    val source =
+        """
             class Test {
                ...
                                 ":app:writeDebugSigningConfigVersions", /** Intentionally not cacheable. See [com.android.build.gradle.internal.tasks.SigningConfigVersionsWriterTask] */
 
                                 ":feature1:checkDebugAarMetadata",
             }
-            """.trimIndent()
-        val reformatted = reformatFile(source, KDocFormattingOptions(72))
-        assertEquals(
             """
+            .trimIndent()
+    val reformatted = reformatFile(source, KDocFormattingOptions(72))
+    assertEquals(
+        """
             class Test {
                ...
                                 ":app:writeDebugSigningConfigVersions",
@@ -196,32 +195,32 @@ class KDocFileFormatterTest {
 
                                 ":feature1:checkDebugAarMetadata",
             }
-            """.trimIndent(),
-            reformatted
-        )
-    }
-
-    @Test
-    fun testCrLf() {
-        // https://github.com/tnorbye/kdoc-formatter/issues/76
-        val source =
             """
+            .trimIndent(),
+        reformatted)
+  }
+
+  @Test
+  fun testCrLf() {
+    // https://github.com/tnorbye/kdoc-formatter/issues/76
+    val source =
+        """
             /**
              * Sample summary.
              *
              * More summary.
              */
             """
-                .trimIndent()
-                .replace("\n", "\r\n")
-        val reformatted = reformatFile(source, KDocFormattingOptions(72))
-        assertEquals(source, reformatted)
-    }
+            .trimIndent()
+            .replace("\n", "\r\n")
+    val reformatted = reformatFile(source, KDocFormattingOptions(72))
+    assertEquals(source, reformatted)
+  }
 
-    @Test
-    fun testLineComment() {
-        val source =
-            """
+  @Test
+  fun testLineComment() {
+    val source =
+        """
             class Test {
                 /*
                 *  we're not reformatting
@@ -247,16 +246,16 @@ class KDocFileFormatterTest {
                             (paragraph.prev == null)
                  }
             }
-            """.trimIndent()
-
-        val reformatted =
-            reformatFile(
-                source,
-                KDocFormattingOptions(50),
-                KDocFileFormattingOptions().apply { lineComments = true }
-            )
-        assertEquals(
             """
+            .trimIndent()
+
+    val reformatted =
+        reformatFile(
+            source,
+            KDocFormattingOptions(50),
+            KDocFileFormattingOptions().apply { lineComments = true })
+    assertEquals(
+        """
             class Test {
                 /*
                 *  we're not reformatting
@@ -284,15 +283,15 @@ class KDocFileFormatterTest {
                             (paragraph.prev == null)
                  }
             }
-            """.trimIndent(),
-            reformatted
-        )
-    }
-
-    @Test
-    fun testReorderParameters() {
-        val source =
             """
+            .trimIndent(),
+        reformatted)
+  }
+
+  @Test
+  fun testReorderParameters() {
+    val source =
+        """
             class Test {
                 /** My comment
                  * @param third Description of third parameter
@@ -325,11 +324,11 @@ class KDocFileFormatterTest {
                 fun test2(foo: String, bar: String) {
                 }
             }
-            """.trimIndent()
-        val reformatted =
-            reformatFile(source, KDocFormattingOptions(72).apply { orderDocTags = true })
-        assertEquals(
             """
+            .trimIndent()
+    val reformatted = reformatFile(source, KDocFormattingOptions(72).apply { orderDocTags = true })
+    assertEquals(
+        """
             class Test {
                 /**
                  * My comment
@@ -366,17 +365,17 @@ class KDocFileFormatterTest {
                 fun test2(foo: String, bar: String) {
                 }
             }
-            """.trimIndent(),
-            reformatted.trim()
-        )
-    }
-
-    @Test
-    fun testLineWidth() {
-        // Perform in KDocFileFormatter test too to make sure we properly account
-        // for indent!
-        val source =
             """
+            .trimIndent(),
+        reformatted.trim())
+  }
+
+  @Test
+  fun testLineWidth() {
+    // Perform in KDocFileFormatter test too to make sure we properly account
+    // for indent!
+    val source =
+        """
             //3456789012345678901234567890 <- 30
             /**
              * This should fit on a single
@@ -385,10 +384,11 @@ class KDocFileFormatterTest {
              *
              * And this should not!!!!!!!!!
              */
-            """.trimIndent()
-
-        val reformatted =
             """
+            .trimIndent()
+
+    val reformatted =
+        """
             //3456789012345678901234567890 <- 30
             /**
              * This should fit on a single
@@ -398,87 +398,83 @@ class KDocFileFormatterTest {
              * And this should
              * not!!!!!!!!!
              */
-            """.trimIndent()
-
-        assertEquals(
-            reformatted,
-            reformatFile(source, KDocFormattingOptions(30).apply { optimal = true })
-        )
-
-        assertEquals(
-            reformatted,
-            reformatFile(source, KDocFormattingOptions(30).apply { optimal = false })
-        )
-    }
-
-    @Test
-    fun testGreedyIndent() {
-        val source =
-            "" +
-                "class FormatterTest {\n" +
-                "  /**\n" +
-                "   * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`\n" +
-                "   *\n" +
-                "   * This is by far the most complicated part of this formatter. We start by breaking the expression\n" +
-                "   * to the steps it is executed in (which are in the opposite order of how the syntax tree is\n" +
-                "   * built).\n" +
-                "   *\n" +
-                "   * We then calculate information to know which parts need to be groups, and finally go part by\n" +
-                "   * part, emitting it to the [builder] while closing and opening groups.\n" +
-                "   */\n" +
-                "  private fun emitQualifiedExpression(expression: Any) {\n" +
-                "  }\n" +
-                "}"
-        val reformatted =
-            reformatFile(source, KDocFormattingOptions(100, 100).apply { optimal = false })
-        assertEquals(source, reformatted)
-    }
-
-    @Test
-    fun testStringInterpolation() {
-        val source =
-            "val t = \"\"\"This is a raw string! \${'\"'.minus(50) /**  KDoc  comment */ }string\"\"\""
-        val reformatted = reformatFile(source, KDocFormattingOptions(100, 72))
-        assertEquals(
-            "val t = \"\"\"This is a raw string! \${'\"'.minus(50) /** KDoc comment */ }string\"\"\"",
-            reformatted
-        )
-    }
-
-    @Test
-    fun testLexer() {
-        val source =
-            "" +
-                "class Test {\n" +
-                "  @Test\n" +
-                "  fun `There's something going on`() {}\n" +
-                "  fun test2() =\n" +
-                "      test(\n" +
-                "          \"\"\"\n" +
-                "      |// Comment 1\n" +
-                "      |// There's something else going on.\n" +
-                "      |\"\"\")\n" +
-                "\n" +
-                "  fun test3() {\n" +
-                "    val s =\n" +
-                "        \"\"\"\n" +
-                "          |/**\n" +
-                "          | * @throws Exception\n" +
-                "          | * @exception Exception\n" +
-                "          | * @param unused [Param]\n" +
-                "          | */\n" +
-                "          |class Sample\n" +
-                "          |\"\"\"\n" +
-                "  }\n" +
-                "}"
-        val reformatted = reformatFile(source, KDocFormattingOptions(100, 72))
-        assertEquals(source, reformatted)
-    }
-
-    @Test
-    fun testLineSuffixFits() {
-        val source =
             """
+            .trimIndent()
+
+    assertEquals(
+        reformatted, reformatFile(source, KDocFormattingOptions(30).apply { optimal = true }))
+
+    assertEquals(
+        reformatted, reformatFile(source, KDocFormattingOptions(30).apply { optimal = false }))
+  }
+
+  @Test
+  fun testGreedyIndent() {
+    val source =
+        "" +
+            "class FormatterTest {\n" +
+            "  /**\n" +
+            "   * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`\n" +
+            "   *\n" +
+            "   * This is by far the most complicated part of this formatter. We start by breaking the expression\n" +
+            "   * to the steps it is executed in (which are in the opposite order of how the syntax tree is\n" +
+            "   * built).\n" +
+            "   *\n" +
+            "   * We then calculate information to know which parts need to be groups, and finally go part by\n" +
+            "   * part, emitting it to the [builder] while closing and opening groups.\n" +
+            "   */\n" +
+            "  private fun emitQualifiedExpression(expression: Any) {\n" +
+            "  }\n" +
+            "}"
+    val reformatted =
+        reformatFile(source, KDocFormattingOptions(100, 100).apply { optimal = false })
+    assertEquals(source, reformatted)
+  }
+
+  @Test
+  fun testStringInterpolation() {
+    val source =
+        "val t = \"\"\"This is a raw string! \${'\"'.minus(50) /**  KDoc  comment */ }string\"\"\""
+    val reformatted = reformatFile(source, KDocFormattingOptions(100, 72))
+    assertEquals(
+        "val t = \"\"\"This is a raw string! \${'\"'.minus(50) /** KDoc comment */ }string\"\"\"",
+        reformatted)
+  }
+
+  @Test
+  fun testLexer() {
+    val source =
+        "" +
+            "class Test {\n" +
+            "  @Test\n" +
+            "  fun `There's something going on`() {}\n" +
+            "  fun test2() =\n" +
+            "      test(\n" +
+            "          \"\"\"\n" +
+            "      |// Comment 1\n" +
+            "      |// There's something else going on.\n" +
+            "      |\"\"\")\n" +
+            "\n" +
+            "  fun test3() {\n" +
+            "    val s =\n" +
+            "        \"\"\"\n" +
+            "          |/**\n" +
+            "          | * @throws Exception\n" +
+            "          | * @exception Exception\n" +
+            "          | * @param unused [Param]\n" +
+            "          | */\n" +
+            "          |class Sample\n" +
+            "          |\"\"\"\n" +
+            "  }\n" +
+            "}"
+    val reformatted = reformatFile(source, KDocFormattingOptions(100, 72))
+    assertEquals(source, reformatted)
+  }
+
+  @Test
+  fun testLineSuffixFits() {
+    val source =
+        """
             class ComposeIssueNotificationAction(
               private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
               : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {  /**
@@ -486,24 +482,25 @@ class KDocFileFormatterTest {
                */
               private val popupAlarm = Alarm()
             }
-            """.trimIndent()
-        val reformatted = reformatFile(source, KDocFormattingOptions(1000, 1000))
-        assertEquals(
             """
+            .trimIndent()
+    val reformatted = reformatFile(source, KDocFormattingOptions(1000, 1000))
+    assertEquals(
+        """
             class ComposeIssueNotificationAction(
               private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
               : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {  /** [Alarm] used to trigger the popup as a hint. */
               private val popupAlarm = Alarm()
             }
-            """.trimIndent(),
-            reformatted
-        )
-    }
-
-    @Test
-    fun testLineSuffixDoesNotFit() {
-        val source =
             """
+            .trimIndent(),
+        reformatted)
+  }
+
+  @Test
+  fun testLineSuffixDoesNotFit() {
+    val source =
+        """
             class ComposeIssueNotificationAction(
               private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
               : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {  /**
@@ -511,22 +508,23 @@ class KDocFileFormatterTest {
                */
               private val popupAlarm = Alarm()
             }
-            """.trimIndent()
-
-        assertEquals(
             """
+            .trimIndent()
+
+    assertEquals(
+        """
             class ComposeIssueNotificationAction(
               private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
               : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {
               /** [Alarm] used to trigger the popup as a hint. */
               private val popupAlarm = Alarm()
             }
-            """.trimIndent(),
-            reformatFile(source, KDocFormattingOptions(60, 60))
-        )
-
-        assertEquals(
             """
+            .trimIndent(),
+        reformatFile(source, KDocFormattingOptions(60, 60)))
+
+    assertEquals(
+        """
             class ComposeIssueNotificationAction(
               private val createInformationPopup: (Project, ComposePreviewManager, DataContext) -> InformationPopup = ::defaultCreateInformationPopup)
               : AnAction(), RightAlignedToolbarAction, CustomComponentAction, Disposable {
@@ -535,34 +533,32 @@ class KDocFileFormatterTest {
                */
               private val popupAlarm = Alarm()
             }
-            """.trimIndent(),
-            reformatFile(
-                source,
-                KDocFormattingOptions(100, 72).apply { collapseSingleLine = false }
-            )
-        )
-    }
-
-    @Test
-    fun testIssue42() {
-        // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/42
-        val source =
             """
+            .trimIndent(),
+        reformatFile(source, KDocFormattingOptions(100, 72).apply { collapseSingleLine = false }))
+  }
+
+  @Test
+  fun testIssue42() {
+    // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/42
+    val source =
+        """
             @Suppress("SpellCheckingInspection")
             /**
              * Lorem ipsum dolor sit amet, consectetur adipiscing elit.
              */
             fun KDocFormatterTest() {
             }
-            """.trimIndent()
-
-        assertEquals(source, reformatFile(source, KDocFormattingOptions(60, 60)))
-    }
-
-    @Test
-    fun testGreedyVsOptimal() {
-        val source =
             """
+            .trimIndent()
+
+    assertEquals(source, reformatFile(source, KDocFormattingOptions(60, 60)))
+  }
+
+  @Test
+  fun testGreedyVsOptimal() {
+    val source =
+        """
             # KDoc Formatter Plugin Changelog
 
             ## [1.5.5]
@@ -571,15 +567,16 @@ class KDocFileFormatterTest {
               because they were improperly cached)
             - Fixed a copy/paste bug which prevented the "Collapse short comments
               that fit on a single line" option from working.
-            """.trimIndent()
-
-        assertEquals(source, reformatFile(source, KDocFormattingOptions(72), markdown = true))
-    }
-
-    @Test
-    fun testGitRanges() {
-        val source =
             """
+            .trimIndent()
+
+    assertEquals(source, reformatFile(source, KDocFormattingOptions(72), markdown = true))
+  }
+
+  @Test
+  fun testGitRanges() {
+    val source =
+        """
             class Test {
                 /**
                 * Returns whether lint should check all warnings,
@@ -597,10 +594,11 @@ class KDocFileFormatterTest {
                  * including those off by default */  // additional
                 private var ignoreAll: Boolean? = null
             }
-            """.trimIndent()
-
-        val diff =
             """
+            .trimIndent()
+
+    val diff =
+        """
             diff --git a/README.md b/README.md
             index c26815b..30a8dbb 100644
             --- README.md
@@ -620,18 +618,19 @@ class KDocFileFormatterTest {
             +++ README.md
             @@ -31,25 +31,29 @@ ${'$'} kdoc-formatter
              Usage: kdoc-formatter [options] file(s)
-            """.trimIndent()
-
-        val fileOptions = KDocFileFormattingOptions()
-        val root = File("").canonicalFile
-        val file = File(root, "Test.kt")
-        fileOptions.filter = GitRangeFilter.create(root, diff)
-        assertTrue(fileOptions.filter.includes(file))
-        val reformatted = KDocFileFormatter(fileOptions).reformatFile(file, source.trim())
-
-        // Only the second comment should be formatted:
-        assertEquals(
             """
+            .trimIndent()
+
+    val fileOptions = KDocFileFormattingOptions()
+    val root = File("").canonicalFile
+    val file = File(root, "Test.kt")
+    fileOptions.filter = GitRangeFilter.create(root, diff)
+    assertTrue(fileOptions.filter.includes(file))
+    val reformatted = KDocFileFormatter(fileOptions).reformatFile(file, source.trim())
+
+    // Only the second comment should be formatted:
+    assertEquals(
+        """
             class Test {
                 /**
                 * Returns whether lint should check all warnings,
@@ -651,15 +650,15 @@ class KDocFileFormatterTest {
                  */  // additional
                 private var ignoreAll: Boolean? = null
             }
-            """.trimIndent(),
-            reformatted
-        )
-    }
-
-    @Test
-    fun testFormatMd() {
-        val source =
             """
+            .trimIndent(),
+        reformatted)
+  }
+
+  @Test
+  fun testFormatMd() {
+    val source =
+        """
             KDoc Formatter
             ==============
 
@@ -885,12 +884,13 @@ class KDocFileFormatterTest {
             and this was just a quick weekend -- which unfortunately satisfies my
             immediate formatting needs -- so I no longer have the same motivation
             to get ktlint to support it.
-            """.trimIndent()
-
-        val options = KDocFormattingOptions(72).apply { optimal = false }
-        val reformatted = reformatFile(source, options, markdown = true)
-        assertEquals(
             """
+            .trimIndent()
+
+    val options = KDocFormattingOptions(72).apply { optimal = false }
+    val reformatted = reformatFile(source, options, markdown = true)
+    assertEquals(
+        """
             KDoc Formatter
             ==============
 
@@ -1110,8 +1110,8 @@ class KDocFileFormatterTest {
             a quick weekend -- which unfortunately satisfies my immediate formatting
             needs -- so I no longer have the same motivation to get ktlint to
             support it.
-            """.trimIndent(),
-            reformatted
-        )
-    }
+            """
+            .trimIndent(),
+        reformatted)
+  }
 }
