@@ -179,7 +179,10 @@ class KDocFileFormattingOptions {
         lineWidth?.let { o.maxLineWidth = it }
         commentWidth?.let { o.maxCommentWidth = it }
         collapseSingleLine?.let { o.collapseSingleLine = it }
-        hangingIndent?.let { o.hangingIndent = it }
+        hangingIndent?.let {
+          o.hangingIndent = it
+          if (it >= 3) o.nestedListIndent = it
+        }
         alignTableColumns?.let { o.alignTableColumns = it }
         convertMarkup?.let { o.convertMarkup = it }
         addPunctuation?.let { o.addPunctuation = it }

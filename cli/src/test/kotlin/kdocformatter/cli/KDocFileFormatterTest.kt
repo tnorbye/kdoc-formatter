@@ -87,10 +87,10 @@ class KDocFileFormatterTest {
         """
             class Test {
                 /**
-                 * Returns whether lint should check all warnings, including
-                 * those off by default, or null if not configured in
-                 * this configuration. This is a really really really
-                 * long sentence which needs to be broken up. And
+                 * Returns whether lint should check all warnings, including those
+                 * off by default, or null if not configured in this configuration.
+                 * This is a really really really long sentence which needs to be
+                 * broken up. And
                  * ThisIsALongSentenceWhichCannotBeBrokenUpAndMustBeIncludedAsAWholeWithoutNewlinesInTheMiddle.
                  *
                  * This is a separate section which should be flowed together with
