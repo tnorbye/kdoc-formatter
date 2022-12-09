@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/version.gradle"
 
     ext {
-        gradlePluginVersion = '7.4.0-alpha08'
+        gradlePluginVersion = '8.0.0-alpha09'
     }
 
     repositories {
@@ -17,8 +17,15 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.7.10'
-    //id 'com.ncorti.ktfmt.gradle' version '0.8.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.22'
+    // Formatting is commented out in library/, cli/ and ide-plugin
+    // because it reformats comments  with the old formatter; this
+    // breaks the "check" target because it/ tries to format.
+    //
+    // To manually format, uncomment these, then run
+    //   ./gradlew ktfmtFormat and then run
+    //   kdoc-formatter --max-line-width=72 --add-punctuation --convert-markup --hanging-indent=2 .
+    id 'com.ncorti.ktfmt.gradle' version '0.11.0'
 }
 
 group 'kdocformatter'
@@ -39,27 +46,6 @@ dependencies {
 test {
     useJUnitPlatform()
 }
-
-configurations {
-    ktlint
-}
-
-dependencies {
-    ktlint "com.pinterest:ktlint:0.46.0"
-}
-
-task format(type: JavaExec, group: "verification") {
-    description = "Format lint Kotlin files"
-    classpath = configurations.ktlint
-    main = "com.pinterest.ktlint.Main"
-    args "-F", "--disabled_rules=import-ordering", "**/*.kt"
-}
-
-//ktfmt {
-//    // To format, run ./gradlew ktfmtFormat and then run
-//    // kdoc-formatter --max-line-width=72 --add-punctuation --convert-markup .
-//    kotlinLangStyle()
-//}
 
 task lint {
     dependsOn ':library:lint', ':cli:lint', ':ide-plugin:lint'

@@ -2,12 +2,29 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.5.8]
+- Fixed a number of bugs:
+  - #84: Line overrun when using closed-open interval notation
+  - More gracefully handle unterminated [] references (for example when
+    comment is using it in things like [closed, open) intervals)
+  - Recognize and convert accidentally capitalized kdoc tags like @See
+  - If you have a [ref] which spans a line such that the # ends up as a
+    new line, don't treat this as a "# heading".
+  - If you're using optimal line breaking and there's a really long,
+    unbreakable word in the paragraph, switch that paragraph over to
+    greedy line breaking (to make the paragraph better balanced since
+    the really long word throws the algorithm off.)
+  - Fix a few scenarios where markup conversion from <p> and </p>
+    wasn't converting everything.
+  - Allow @property[name], not just @param[name]
+- Some minor code cleanup.
+
 ## [1.5.7]
 - Fixed the following bugs:
-  - #76: Preserve newline style (CRLF on Windows)
-  - #77: Preformatting error
-  - #78: Preformatting stability
-  - #79: Replace `{@param name}` with `[name]`
+   - #76: Preserve newline style (CRLF on Windows)
+   - #77: Preformatting error
+   - #78: Preformatting stability
+   - #79: Replace `{@param name}` with `[name]`
 
 ## [1.5.6]
 - Bugfix: the override line width setting was not working

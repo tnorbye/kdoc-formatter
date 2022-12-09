@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/../version.gradle"
 
     ext {
-        gradlePluginVersion = '7.3.0-alpha03'
+        gradlePluginVersion = '8.0.0-alpha09'
     }
 
     repositories {
@@ -17,7 +17,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.10'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.22'
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'com.gradle.plugin-publish' version '0.9.10'
@@ -59,10 +59,6 @@ compileKotlin {
         jvmTarget = "11"
     }
 }
-
-//ktfmt {
-//    kotlinLangStyle()
-//}
 
 gradlePlugin {
     plugins {

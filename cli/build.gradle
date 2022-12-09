@@ -32,10 +32,6 @@ lint {
     textReport true
 }
 
-//ktfmt {
-//    kotlinLangStyle()
-//}
-
 test {
     useJUnitPlatform()
 }
