@@ -406,6 +406,7 @@ class Paragraph(private val task: FormattingTask) {
         word.startsWith("```") ||
         word.isDirectiveMarker() ||
         word.startsWith("@") || // interpreted as a tag
+        word.isTodo() ||
         word.startsWith(">")) {
       return false
     }

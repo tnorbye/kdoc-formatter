@@ -2623,6 +2623,34 @@ class KDocFormatterTest {
             .trimIndent())
   }
 
+    @Test
+    fun testEarlyBreakForTodo() {
+        // Don't break before a TODO
+        val source =
+            """
+            /**
+             * This is a long line that will break a little early to breaking at TODO:
+             *
+             * This is a long line that wont break a little early to breaking at DODO:
+             */
+            """
+                .trimIndent()
+        checkFormatter(
+            source,
+            KDocFormattingOptions(72, 72).apply { optimal = false },
+            """
+            /**
+             * This is a long line that will break a little early to breaking
+             * at TODO:
+             *
+             * This is a long line that wont break a little early to breaking at
+             * DODO:
+             */
+            """
+                .trimIndent()
+        )
+    }
+
   @Test
   fun testPreformat() {
     // Don't join preformatted text with previous TODO comment
