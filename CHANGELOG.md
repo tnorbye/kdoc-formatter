@@ -2,6 +2,9 @@
 
 # KDoc Formatter Changelog
 
+## [1.5.9]
+- Compatibility with IntelliJ 2023.1
+
 ## [1.5.8]
 - Fixed a number of bugs:
    - #84: Line overrun when using closed-open interval notation
