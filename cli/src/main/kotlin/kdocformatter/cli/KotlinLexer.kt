@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,12 +19,10 @@ package kdocformatter.cli
 import java.util.ArrayDeque
 
 /**
- * Simple lexer which analyzes Kotlin source code and finds the KDoc
- * comments within it. It basically looks for "/**" and "*/", but is
- * also aware of strings, quoted strings, function name literals,
- * block comments and nested block comments etc such that it doesn't
- * accidentally pick up strings, comments or function names that look
- * like comments but aren't.
+ * Simple lexer which analyzes Kotlin source code and finds the KDoc comments within it. It
+ * basically looks for "/**" and "*/", but is also aware of strings, quoted strings, function name
+ * literals, block comments and nested block comments etc such that it doesn't accidentally pick up
+ * strings, comments or function names that look like comments but aren't.
  */
 class KotlinLexer(private val source: String) {
   /** Returns a list of (start,end) offsets of KDocs in the document. */
@@ -205,25 +203,20 @@ class KotlinLexer(private val source: String) {
   }
 
   /**
-   * Attempts to compute the parameter names for the Kotlin function
-   * following a comment. If it's followed by something else (e.g
-   * a class, a property, a parameter, etc) it will return null.
+   * Attempts to compute the parameter names for the Kotlin function following a comment. If it's
+   * followed by something else (e.g a class, a property, a parameter, etc) it will return null.
    *
-   * Note that this is based on some simple string analysis of
-   * the source code so it might not always be correct. However,
-   * when kdoc-formatter runs from within the IDE, it's using the
-   * real compiler's AST to populate the parameter map (and when
-   * kdoc-formatter is integrated in other formatting tools with a full
-   * AST that could be used instead). This code errs on the side of
+   * Note that this is based on some simple string analysis of the source code so it might not
+   * always be correct. However, when kdoc-formatter runs from within the IDE, it's using the real
+   * compiler's AST to populate the parameter map (and when kdoc-formatter is integrated in other
+   * formatting tools with a full AST that could be used instead). This code errs on the side of
    * caution, but does try to handle a variety of scenarios:
    * * Block and line comments within the signature
-   * * Annotations (potentially with values such as strings which are
-   *   ignored (though here, if you're using complex string substitution
-   *   it could get confused)
-   * * Types including type wildcards, default values including function
-   *   pointers etc -- basically strings that can contain commas and
-   *   parentheses etc that could potentially confuse the code trying to
-   *   pick out the signatures
+   * * Annotations (potentially with values such as strings which are ignored (though here, if
+   *   you're using complex string substitution it could get confused)
+   * * Types including type wildcards, default values including function pointers etc -- basically
+   *   strings that can contain commas and parentheses etc that could potentially confuse the code
+   *   trying to pick out the signatures
    * * Name literals (using back ticks)
    */
   fun getParameterNames(start: Int): List<String>? {

@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
 import kotlin.math.min
 
 class Paragraph(private val task: FormattingTask) {
   private val options: KDocFormattingOptions
     get() = task.options
+
   var content = StringBuilder()
   val text
     get() = content.toString()
+
   var prev: Paragraph? = null
   var next: Paragraph? = null
 
@@ -31,35 +33,31 @@ class Paragraph(private val task: FormattingTask) {
   var separate = false
 
   /**
-   * If true, this paragraph is a continuation of the previous paragraph
-   * (so should be indented with the hanging indent, including line 1)
+   * If true, this paragraph is a continuation of the previous paragraph (so should be indented with
+   * the hanging indent, including line 1)
    */
   var continuation = false
 
   /**
-   * Whether this paragraph is allowed to be empty. Paragraphs are
-   * normally merged if this is not set. This allows the line breaker
-   * to call [ParagraphListBuilder.newParagraph] repeatedly without
-   * introducing more than one new paragraph. But for preformatted
-   * text we do want to be able to express repeated blank lines.
+   * Whether this paragraph is allowed to be empty. Paragraphs are normally merged if this is not
+   * set. This allows the line breaker to call [ParagraphListBuilder.newParagraph] repeatedly
+   * without introducing more than one new paragraph. But for preformatted text we do want to be
+   * able to express repeated blank lines.
    */
   var allowEmpty = false
 
   /** Is this paragraph preformatted? */
   var preformatted = false
 
-  /**
-   * Is this paragraph a block paragraph? If so, it must start on its
-   * own line.
-   */
+  /** Is this paragraph a block paragraph? If so, it must start on its own line. */
   var block = false
 
   /** Is this paragraph specifying a kdoc tag like @param? */
   var doc = false
 
   /**
-   * Is this line quoted? (In the future make this an int such that we
-   * can support additional levels.)
+   * Is this line quoted? (In the future make this an int such that we can support additional
+   * levels.)
    */
   var quoted = false
 
@@ -69,10 +67,7 @@ class Paragraph(private val task: FormattingTask) {
   /** Is this a separator line? */
   var separator = false
 
-  /**
-   * Should this paragraph use a hanging indent? (Implies [block] as
-   * well).
-   */
+  /** Should this paragraph use a hanging indent? (Implies [block] as well). */
   var hanging = false
     set(value) {
       block = true
@@ -392,11 +387,10 @@ class Paragraph(private val task: FormattingTask) {
   /**
    * Returns true if it's okay to break at the current word.
    *
-   * We need to check for this, because a word can have a different
-   * meaning at the beginning of a line than in the middle somewhere, so
-   * if it just so happens to be at the break boundary, we need to make
-   * sure we don't make it the first word on the next line since that
-   * would change the documentation.
+   * We need to check for this, because a word can have a different meaning at the beginning of a
+   * line than in the middle somewhere, so if it just so happens to be at the break boundary, we
+   * need to make sure we don't make it the first word on the next line since that would change the
+   * documentation.
    */
   private fun canBreakAt(word: String): Boolean {
     // Can we start a new line with this without interpreting it in a special
@@ -422,13 +416,11 @@ class Paragraph(private val task: FormattingTask) {
   }
 
   /**
-   * Split [text] up into individual "words"; in the case where some
-   * words are not allowed to span lines, it will combine these into
-   * single word. For example, if we have a sentence which ends with a
-   * number, e.g. "the sum is 5.", we want to make sure "5." is never
-   * placed at the beginning of a new line (which would turn it into a
-   * list item), so for this we'll compute the word list "the", "sum",
-   * "is 5.".
+   * Split [text] up into individual "words"; in the case where some words are not allowed to span
+   * lines, it will combine these into single word. For example, if we have a sentence which ends
+   * with a number, e.g. "the sum is 5.", we want to make sure "5." is never placed at the beginning
+   * of a new line (which would turn it into a list item), so for this we'll compute the word list
+   * "the", "sum", "is 5.".
    */
   fun computeWords(): List<String> {
     val words = text.split(Regex("\\s+")).filter { it.isNotBlank() }.map { it.trim() }

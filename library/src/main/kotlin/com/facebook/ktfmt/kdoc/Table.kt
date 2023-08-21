@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
 import kotlin.math.max
 
@@ -30,11 +30,9 @@ class Table(
   }
 
   /**
-   * Format the table. Note that table rows cannot be broken into
-   * multiple lines in Markdown tables, so the [maxWidth] here is used
-   * to decide whether to add padding around the table only, and it's
-   * quite possible for the table to format to wider lengths than
-   * [maxWidth].
+   * Format the table. Note that table rows cannot be broken into multiple lines in Markdown tables,
+   * so the [maxWidth] here is used to decide whether to add padding around the table only, and it's
+   * quite possible for the table to format to wider lengths than [maxWidth].
    */
   fun format(maxWidth: Int = Integer.MAX_VALUE): List<String> {
     val tableMaxWidth =
@@ -105,8 +103,8 @@ class Table(
 
   companion object {
     /**
-     * If the line starting at index [start] begins a table, return that
-     * table as well as the index of the first line after the table.
+     * If the line starting at index [start] begins a table, return that table as well as the index
+     * of the first line after the table.
      */
     fun getTable(
         lines: List<String>,
@@ -185,10 +183,7 @@ class Table(
       return Pair(table, i)
     }
 
-    /**
-     * Returns true if the given String looks like a markdown table
-     * header divider.
-     */
+    /** Returns true if the given String looks like a markdown table header divider. */
     private fun isHeaderDivider(barCount: Int, s: String): Boolean {
       var i = 0
       var count = 0

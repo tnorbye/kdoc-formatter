@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
 class ParagraphListBuilder(
     comment: String,
@@ -587,8 +587,8 @@ class ParagraphListBuilder(
   }
 
   /**
-   * Make a pass over the paragraphs and make sure that we (for example)
-   * place blank lines around preformatted text.
+   * Make a pass over the paragraphs and make sure that we (for example) place blank lines around
+   * preformatted text.
    */
   private fun arrange() {
     if (paragraphs.isEmpty()) {

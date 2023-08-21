@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
 import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -2623,22 +2623,22 @@ class KDocFormatterTest {
             .trimIndent())
   }
 
-    @Test
-    fun testEarlyBreakForTodo() {
-        // Don't break before a TODO
-        val source =
-            """
+  @Test
+  fun testEarlyBreakForTodo() {
+    // Don't break before a TODO
+    val source =
+        """
             /**
              * This is a long line that will break a little early to breaking at TODO:
              *
              * This is a long line that wont break a little early to breaking at DODO:
              */
             """
-                .trimIndent()
-        checkFormatter(
-            source,
-            KDocFormattingOptions(72, 72).apply { optimal = false },
-            """
+            .trimIndent()
+    checkFormatter(
+        source,
+        KDocFormattingOptions(72, 72).apply { optimal = false },
+        """
             /**
              * This is a long line that will break a little early to breaking
              * at TODO:
@@ -2647,9 +2647,8 @@ class KDocFormatterTest {
              * DODO:
              */
             """
-                .trimIndent()
-        )
-    }
+            .trimIndent())
+  }
 
   @Test
   fun testPreformat() {
@@ -2877,9 +2876,9 @@ class KDocFormatterTest {
   @Test
   fun test193246766() {
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * * Do do occaecat sunt in culpa:
              *   * Id id reprehenderit cillum non `adipiscing` enim enim ad occaecat
@@ -2951,9 +2950,9 @@ class KDocFormatterTest {
   fun test209435082() {
     // b/209435082
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * eiusmod.com
              * - - -
@@ -3014,9 +3013,9 @@ class KDocFormatterTest {
   @Test
   fun test236743270() {
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * @return Amet do non adipiscing sed consequat duis non Officia ID (amet sed consequat non
              * adipiscing sed eiusmod), magna consequat.
@@ -3041,9 +3040,9 @@ class KDocFormatterTest {
   @Test
   fun test238279769() {
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * @property dataItemOrderRandomizer sit tempor enim pariatur non culpa id [Pariatur]z in qui anim.
              *  Anim id-lorem sit magna [Consectetur] pariatur.
@@ -4598,9 +4597,9 @@ class KDocFormatterTest {
   @Test
   fun testPropertiesWithBrackets() {
     val source =
-    // From AOSP
-    // tools/base/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/cxx/prefab/PackageModel.kt
-    """
+        // From AOSP
+        // tools/base/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/cxx/prefab/PackageModel.kt
+        """
             /**
              * The Android abi.json schema.
              *
@@ -4915,10 +4914,9 @@ class KDocFormatterTest {
   }
 
   /**
-   * Test utility method: from a source kdoc, derive an "equivalent"
-   * kdoc (same punctuation, whitespace, capitalization and length of
-   * words) with words from Lorem Ipsum. Useful to create test cases for
-   * the formatter without checking in original comments.
+   * Test utility method: from a source kdoc, derive an "equivalent" kdoc (same punctuation,
+   * whitespace, capitalization and length of words) with words from Lorem Ipsum. Useful to create
+   * test cases for the formatter without checking in original comments.
    */
   private fun loremize(s: String): String {
     val lorem =

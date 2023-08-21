@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
 import kotlin.math.min
 
 /** Formatter which can reformat KDoc comments. */
 class KDocFormatter(private val options: KDocFormattingOptions) {
-  /**
-   * Reformats the [comment], which follows the given [initialIndent]
-   * string.
-   */
+  /** Reformats the [comment], which follows the given [initialIndent] string. */
   fun reformatComment(comment: String, initialIndent: String): String {
     return reformatComment(FormattingTask(options, comment, initialIndent))
   }
