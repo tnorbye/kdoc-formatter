@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/version.gradle"
 
     ext {
-        gradlePluginVersion = '8.0.0-alpha09'
+        gradlePluginVersion = '8.2.0-alpha16'
     }
 
     repositories {
@@ -17,15 +17,8 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.7.22'
-    // Formatting is commented out in library/, cli/ and ide-plugin
-    // because it reformats comments  with the old formatter; this
-    // breaks the "check" target because it/ tries to format.
-    //
-    // To manually format, uncomment these, then run
-    //   ./gradlew ktfmtFormat and then run
-    //   kdoc-formatter --max-line-width=72 --add-punctuation --convert-markup --hanging-indent=2 .
-    id 'com.ncorti.ktfmt.gradle' version '0.11.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
+    id 'com.ncorti.ktfmt.gradle' version '0.13.0'
 }
 
 group 'kdocformatter'
@@ -35,16 +28,6 @@ repositories {
     google()
     mavenCentral()
     gradlePluginPortal()
-}
-
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.7.22"
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-}
-
-test {
-    useJUnitPlatform()
 }
 
 task lint {
@@ -74,9 +57,4 @@ task all {
 clean.doFirst {
     delete "${rootDir}/m2"
     delete "${rootDir}/gradle-plugin/build"
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
 }
