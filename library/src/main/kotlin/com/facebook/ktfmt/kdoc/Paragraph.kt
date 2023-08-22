@@ -1,4 +1,20 @@
 /*
+ * Portions Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
  * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -146,9 +162,13 @@ class Paragraph(private val task: FormattingTask) {
   }
 
   private fun convertMarkup(s: String): String {
+    // Whether the tag starts with a capital letter and needs to be cleaned, e.g. `@See` -> `@see`.
+    // (isKDocTag only allows the first letter to be capitalized.)
     val convertKDocTag = s.isKDocTag() && s[1].isUpperCase()
 
-    if (!convertKDocTag && s.none { it == '<' || it == '&' || it == '{' }) return s
+    if (!convertKDocTag && s.none { it == '<' || it == '&' || it == '{' }) {
+      return s
+    }
 
     val sb = StringBuilder(s.length)
     var i = 0
@@ -329,8 +349,7 @@ class Paragraph(private val task: FormattingTask) {
     if (options.alternate ||
         !options.optimal ||
         hanging && hangingIndentSize > 0 ||
-        // If we have an unbreakably long word this tends to make the optimal
-        // algorithm make the other lines shorter which doesn't look great.
+        // An unbreakable long word may make other lines shorter and won't look good
         words.any { it.length > lineWidth }) {
       // Switch to greedy if explicitly turned on, and for hanging indent
       // paragraphs, since the current implementation doesn't have support
@@ -392,7 +411,7 @@ class Paragraph(private val task: FormattingTask) {
    * need to make sure we don't make it the first word on the next line since that would change the
    * documentation.
    */
-  private fun canBreakAt(word: String): Boolean {
+  private fun canBreakAt(prev: String, word: String): Boolean {
     // Can we start a new line with this without interpreting it in a special
     // way?
 
@@ -403,6 +422,10 @@ class Paragraph(private val task: FormattingTask) {
         word.isTodo() ||
         word.startsWith(">")) {
       return false
+    }
+
+    if (prev == "@sample") {
+      return false // https://github.com/facebookincubator/ktfmt/issues/310
     }
 
     if (!word.first().isLetter()) {
@@ -455,26 +478,26 @@ class Paragraph(private val task: FormattingTask) {
         val next = words[i]
         if (next.startsWith("[") && !next.startsWith("[[")) {
           // find end
-          var f = -1
+          var j = -1
           for (k in i until words.size) {
-            if (words[k].contains("]")) {
-              f = k
+            if (']' in words[k]) {
+              j = k
               break
             }
           }
-          if (f != -1) {
-            // combine everything in the string; we can't break link text
-            if (start == from + 1 && canBreakAt(words[start])) {
+          if (j != -1) {
+            // combine everything in the string; we can't break link text or @sample tags
+            if (start == from + 1 && canBreakAt(words[start - 1], words[start])) {
               combined.add(words[from])
               from = start
             }
             // Maybe not break; what if the next word isn't okay?
-            to = f + 1
-            if (to == words.size || canBreakAt(words[to])) {
+            to = j + 1
+            if (to == words.size || canBreakAt(words[to - 1], words[to])) {
               break
             }
           } // else: unterminated [, ignore
-        } else if (canBreakAt(next)) {
+        } else if (canBreakAt(words[i - 1], next)) {
           to = i
           break
         }

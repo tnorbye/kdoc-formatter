@@ -17,10 +17,10 @@
 package com.facebook.ktfmt.kdoc
 
 class FormattingTask(
-    /** Options to format with. */
+    /** Options to format with */
     var options: KDocFormattingOptions,
 
-    /** The original comment to be formatted. */
+    /** The original comment to be formatted */
     var comment: String,
 
     /**

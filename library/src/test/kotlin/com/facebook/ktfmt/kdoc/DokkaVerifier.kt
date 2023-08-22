@@ -18,9 +18,9 @@
 
 package com.facebook.ktfmt.kdoc
 
+import com.google.common.truth.Truth.assertThat
 import java.io.BufferedReader
 import java.io.File
-import org.junit.jupiter.api.Assertions
 
 /**
  * Verifies that two KDoc comment strings render to the same HTML documentation using Dokka. This is
@@ -135,11 +135,11 @@ class DokkaVerifier(private val tempFolder: File) {
       val beforeText = getText(indexBefore)
       val afterText = getText(indexAfter)
       if (beforeText != null && afterText != null) {
-        Assertions.assertEquals(beforeText, afterText)
+        assertThat(beforeText).isEqualTo(afterText)
         return
       }
 
-      Assertions.assertEquals(beforeContents, afterContents)
+      assertThat(beforeContents).isEqualTo(afterContents)
     }
   }
 

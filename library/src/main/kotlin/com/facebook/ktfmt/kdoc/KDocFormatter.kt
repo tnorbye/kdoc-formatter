@@ -129,7 +129,7 @@ class KDocFormatter(private val options: KDocFormattingOptions) {
       }
       sb.append("*/")
     } else if (sb.endsWith(lineSeparator)) {
-      sb.removeSuffix(lineSeparator)
+      @Suppress("ReturnValueIgnored") sb.removeSuffix(lineSeparator)
     }
 
     val formatted =

@@ -127,7 +127,7 @@ fun String.isKDocTag(): Boolean {
           return true
         } else if (i == 1 && c.isLetter() && c.isUpperCase()) {
           // Allow capitalized tgs, such as @See -- this is normally a typo; convertMarkup
-          // should also fix these
+          // should also fix these.
           return true
         }
         return false

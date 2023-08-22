@@ -20,12 +20,8 @@ lint {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
-}
-
-test {
-    useJUnitPlatform()
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "com.google.truth:truth:1.1.5"
 }
 
 java {
