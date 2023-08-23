@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Portions Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,16 +14,34 @@
  * limitations under the License.
  */
 
-package kdocformatter
+/*
+ * Copyright (c) Tor Norbye.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.facebook.ktfmt.kdoc
 
 import kotlin.math.min
 
 class Paragraph(private val task: FormattingTask) {
   private val options: KDocFormattingOptions
     get() = task.options
+
   var content = StringBuilder()
   val text
     get() = content.toString()
+
   var prev: Paragraph? = null
   var next: Paragraph? = null
 
@@ -31,35 +49,31 @@ class Paragraph(private val task: FormattingTask) {
   var separate = false
 
   /**
-   * If true, this paragraph is a continuation of the previous paragraph
-   * (so should be indented with the hanging indent, including line 1)
+   * If true, this paragraph is a continuation of the previous paragraph (so should be indented with
+   * the hanging indent, including line 1)
    */
   var continuation = false
 
   /**
-   * Whether this paragraph is allowed to be empty. Paragraphs are
-   * normally merged if this is not set. This allows the line breaker
-   * to call [ParagraphListBuilder.newParagraph] repeatedly without
-   * introducing more than one new paragraph. But for preformatted
-   * text we do want to be able to express repeated blank lines.
+   * Whether this paragraph is allowed to be empty. Paragraphs are normally merged if this is not
+   * set. This allows the line breaker to call [ParagraphListBuilder.newParagraph] repeatedly
+   * without introducing more than one new paragraph. But for preformatted text we do want to be
+   * able to express repeated blank lines.
    */
   var allowEmpty = false
 
   /** Is this paragraph preformatted? */
   var preformatted = false
 
-  /**
-   * Is this paragraph a block paragraph? If so, it must start on its
-   * own line.
-   */
+  /** Is this paragraph a block paragraph? If so, it must start on its own line. */
   var block = false
 
   /** Is this paragraph specifying a kdoc tag like @param? */
   var doc = false
 
   /**
-   * Is this line quoted? (In the future make this an int such that we
-   * can support additional levels.)
+   * Is this line quoted? (In the future make this an int such that we can support additional
+   * levels.)
    */
   var quoted = false
 
@@ -69,10 +83,7 @@ class Paragraph(private val task: FormattingTask) {
   /** Is this a separator line? */
   var separator = false
 
-  /**
-   * Should this paragraph use a hanging indent? (Implies [block] as
-   * well).
-   */
+  /** Should this paragraph use a hanging indent? (Implies [block] as well). */
   var hanging = false
     set(value) {
       block = true
@@ -151,9 +162,13 @@ class Paragraph(private val task: FormattingTask) {
   }
 
   private fun convertMarkup(s: String): String {
+    // Whether the tag starts with a capital letter and needs to be cleaned, e.g. `@See` -> `@see`.
+    // (isKDocTag only allows the first letter to be capitalized.)
     val convertKDocTag = s.isKDocTag() && s[1].isUpperCase()
 
-    if (!convertKDocTag && s.none { it == '<' || it == '&' || it == '{' }) return s
+    if (!convertKDocTag && s.none { it == '<' || it == '&' || it == '{' }) {
+      return s
+    }
 
     val sb = StringBuilder(s.length)
     var i = 0
@@ -334,8 +349,7 @@ class Paragraph(private val task: FormattingTask) {
     if (options.alternate ||
         !options.optimal ||
         hanging && hangingIndentSize > 0 ||
-        // If we have an unbreakably long word this tends to make the optimal
-        // algorithm make the other lines shorter which doesn't look great.
+        // An unbreakable long word may make other lines shorter and won't look good
         words.any { it.length > lineWidth }) {
       // Switch to greedy if explicitly turned on, and for hanging indent
       // paragraphs, since the current implementation doesn't have support
@@ -392,13 +406,12 @@ class Paragraph(private val task: FormattingTask) {
   /**
    * Returns true if it's okay to break at the current word.
    *
-   * We need to check for this, because a word can have a different
-   * meaning at the beginning of a line than in the middle somewhere, so
-   * if it just so happens to be at the break boundary, we need to make
-   * sure we don't make it the first word on the next line since that
-   * would change the documentation.
+   * We need to check for this, because a word can have a different meaning at the beginning of a
+   * line than in the middle somewhere, so if it just so happens to be at the break boundary, we
+   * need to make sure we don't make it the first word on the next line since that would change the
+   * documentation.
    */
-  private fun canBreakAt(word: String): Boolean {
+  private fun canBreakAt(prev: String, word: String): Boolean {
     // Can we start a new line with this without interpreting it in a special
     // way?
 
@@ -409,6 +422,10 @@ class Paragraph(private val task: FormattingTask) {
         word.isTodo() ||
         word.startsWith(">")) {
       return false
+    }
+
+    if (prev == "@sample") {
+      return false // https://github.com/facebookincubator/ktfmt/issues/310
     }
 
     if (!word.first().isLetter()) {
@@ -422,13 +439,11 @@ class Paragraph(private val task: FormattingTask) {
   }
 
   /**
-   * Split [text] up into individual "words"; in the case where some
-   * words are not allowed to span lines, it will combine these into
-   * single word. For example, if we have a sentence which ends with a
-   * number, e.g. "the sum is 5.", we want to make sure "5." is never
-   * placed at the beginning of a new line (which would turn it into a
-   * list item), so for this we'll compute the word list "the", "sum",
-   * "is 5.".
+   * Split [text] up into individual "words"; in the case where some words are not allowed to span
+   * lines, it will combine these into single word. For example, if we have a sentence which ends
+   * with a number, e.g. "the sum is 5.", we want to make sure "5." is never placed at the beginning
+   * of a new line (which would turn it into a list item), so for this we'll compute the word list
+   * "the", "sum", "is 5.".
    */
   fun computeWords(): List<String> {
     val words = text.split(Regex("\\s+")).filter { it.isNotBlank() }.map { it.trim() }
@@ -463,26 +478,26 @@ class Paragraph(private val task: FormattingTask) {
         val next = words[i]
         if (next.startsWith("[") && !next.startsWith("[[")) {
           // find end
-          var f = -1
+          var j = -1
           for (k in i until words.size) {
-            if (words[k].contains("]")) {
-              f = k
+            if (']' in words[k]) {
+              j = k
               break
             }
           }
-          if (f != -1) {
-            // combine everything in the string; we can't break link text
-            if (start == from + 1 && canBreakAt(words[start])) {
+          if (j != -1) {
+            // combine everything in the string; we can't break link text or @sample tags
+            if (start == from + 1 && canBreakAt(words[start - 1], words[start])) {
               combined.add(words[from])
               from = start
             }
             // Maybe not break; what if the next word isn't okay?
-            to = f + 1
-            if (to == words.size || canBreakAt(words[to])) {
+            to = j + 1
+            if (to == words.size || canBreakAt(words[to - 1], words[to])) {
               break
             }
           } // else: unterminated [, ignore
-        } else if (canBreakAt(next)) {
+        } else if (canBreakAt(words[i - 1], next)) {
           to = i
           break
         }

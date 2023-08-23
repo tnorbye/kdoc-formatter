@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/../version.gradle"
 
     ext {
-        gradlePluginVersion = '8.0.0-alpha09'
+        gradlePluginVersion = '8.2.0-alpha16'
     }
 
     repositories {
@@ -17,11 +17,11 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.7.22'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.0'
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'com.gradle.plugin-publish' version '0.9.10'
-    //id 'com.ncorti.ktfmt.gradle'
+    id 'com.ncorti.ktfmt.gradle' version '0.13.0'
 }
 
 // https://issues.sonatype.org/browse/OSSRH-63191
@@ -47,17 +47,14 @@ dependencies {
     implementation gradleApi()
 }
 
-sourceCompatibility = 11
-targetCompatibility = 11
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
 }
 
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+kotlin {
+    jvmToolchain(17)
 }
 
 gradlePlugin {

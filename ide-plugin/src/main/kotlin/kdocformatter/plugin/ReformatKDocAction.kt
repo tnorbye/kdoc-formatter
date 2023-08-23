@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,13 @@
 
 package kdocformatter.plugin
 
+import com.facebook.ktfmt.kdoc.CommentType
+import com.facebook.ktfmt.kdoc.FormattingTask
+import com.facebook.ktfmt.kdoc.KDocFormatter
+import com.facebook.ktfmt.kdoc.KDocFormattingOptions
+import com.facebook.ktfmt.kdoc.computeIndents
+import com.facebook.ktfmt.kdoc.findSamePosition
+import com.facebook.ktfmt.kdoc.isLineComment
 import com.intellij.application.options.CodeStyle
 import com.intellij.lang.Language
 import com.intellij.openapi.actionSystem.ActionPlaces
@@ -38,13 +45,6 @@ import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.refactoring.suggested.endOffset
 import com.intellij.refactoring.suggested.startOffset
 import com.intellij.util.ThrowableRunnable
-import kdocformatter.CommentType
-import kdocformatter.FormattingTask
-import kdocformatter.KDocFormatter
-import kdocformatter.KDocFormattingOptions
-import kdocformatter.computeIndents
-import kdocformatter.findSamePosition
-import kdocformatter.isLineComment
 import kotlin.math.min
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.kdoc.psi.api.KDoc

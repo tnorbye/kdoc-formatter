@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,14 @@
 
 package kdocformatter.cli
 
+import com.facebook.ktfmt.kdoc.KDocFormattingOptions
+import com.facebook.ktfmt.kdoc.Version
 import java.io.File
-import kdocformatter.KDocFormattingOptions
-import kdocformatter.Version
 import kotlin.system.exitProcess
 
 /**
- * Options for configuring whole files or directories. The
- * [formattingOptions] property specifies the KDoc specific formatting
- * options; the rest of the options are related to how to (and whether
+ * Options for configuring whole files or directories. The [formattingOptions] property specifies
+ * the KDoc specific formatting options; the rest of the options are related to how to (and whether
  * to) process files.
  */
 class KDocFileFormattingOptions {
@@ -43,8 +42,8 @@ class KDocFileFormattingOptions {
   var includeMd: Boolean = false
 
   /**
-   * Applies any options explicitly specified via command line options
-   * to the given formatting options.
+   * Applies any options explicitly specified via command line options to the given formatting
+   * options.
    */
   var overrideOptions: (KDocFormattingOptions) -> Unit = {}
 

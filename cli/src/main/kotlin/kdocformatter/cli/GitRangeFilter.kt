@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,12 +22,10 @@ import java.io.InputStreamReader
 import java.nio.file.Files
 
 /**
- * Searches the current git commit for modified regions and returns
- * these.
+ * Searches the current git commit for modified regions and returns these.
  *
- * TODO: Allow specifying an arbitrary range of git sha's. This requires
- *     some work to figure out the correct line numbers in the current
- *     version from older patches.
+ * TODO: Allow specifying an arbitrary range of git sha's. This requires some work to figure out the
+ *   correct line numbers in the current version from older patches.
  */
 class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(rangeMap) {
   companion object {
@@ -58,8 +56,8 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
     }
 
     /**
-     * Creates range from the given diff contents. Extracted to be
-     * separate from the git invocation above for unit test purposes.
+     * Creates range from the given diff contents. Extracted to be separate from the git invocation
+     * above for unit test purposes.
      */
     fun create(root: File?, diff: String): GitRangeFilter {
       val rangeMap = RangeMap()
@@ -135,10 +133,7 @@ class GitRangeFilter private constructor(rangeMap: RangeMap) : LineRangeFilter(r
       }
     }
 
-    /**
-     * Returns the .git folder for the [file] or directory somewhere in
-     * the report.
-     */
+    /** Returns the .git folder for the [file] or directory somewhere in the report. */
     private fun findGitRepo(file: File): File? {
       var curr = file.absoluteFile
       while (true) {

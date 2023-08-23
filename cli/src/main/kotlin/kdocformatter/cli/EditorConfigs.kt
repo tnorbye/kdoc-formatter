@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,27 +16,23 @@
 
 package kdocformatter.cli
 
+import com.facebook.ktfmt.kdoc.KDocFormattingOptions
 import java.io.File
 import java.util.*
-import kdocformatter.KDocFormattingOptions
 
 /**
- * Basic support for [.editorconfig] files
- * (http://https://editorconfig.org/).
+ * Basic support for [.editorconfig] files (http://https://editorconfig.org/).
  *
- * This will construct [KDocFormattingOptions] applicable for
- * a given file. The [KDocFormattingOptions.maxLineWidth]
- * property is initialized from the [.editorconfig] property
+ * This will construct [KDocFormattingOptions] applicable for a given file. The
+ * [KDocFormattingOptions.maxLineWidth] property is initialized from the [.editorconfig] property
  * `max_line_length` applicable to Kotlin source files, and the
- * [KDocFormattingOptions.maxCommentWidth] is initialized from the
- * property `max_line_length` applicable to Markdown source files (but
- * **not** inherited from non-Markdown specific declarations such as
- * [*].]
+ * [KDocFormattingOptions.maxCommentWidth] is initialized from the property `max_line_length`
+ * applicable to Markdown source files (but **not** inherited from non-Markdown specific
+ * declarations such as [*].]
  *
- * We're processing it ourselves here instead of using one of the
- * available editorconfig libraries on GitHub because of that special
- * handling of markdown settings where we want to consult values without
- * inheritance.
+ * We're processing it ourselves here instead of using one of the available editorconfig libraries
+ * on GitHub because of that special handling of markdown settings where we want to consult values
+ * without inheritance.
  */
 object EditorConfigs {
   var root: KDocFormattingOptions? = null
@@ -44,6 +40,7 @@ object EditorConfigs {
       dirToConfig.clear()
       field = value
     }
+
   private val dirToConfig = mutableMapOf<File, EditorConfig>()
 
   fun getOptions(file: File): KDocFormattingOptions {

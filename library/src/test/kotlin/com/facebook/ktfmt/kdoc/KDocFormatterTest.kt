@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Portions Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,17 +14,35 @@
  * limitations under the License.
  */
 
-package kdocformatter
+/*
+ * Copyright (c) Tor Norbye.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import java.io.File
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
+package com.facebook.ktfmt.kdoc
 
+import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import kotlin.io.path.createTempDirectory
+import org.junit.Ignore
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
+
+@RunWith(JUnit4::class)
 class KDocFormatterTest {
-  @field:TempDir lateinit var tempDir: File
+  private val tempDir = createTempDirectory().toFile()
 
   private fun checkFormatter(
       task: FormattingTask,
@@ -41,7 +59,7 @@ class KDocFormatterTest {
     // Because .trimIndent() will remove it:
     val indentedExpected = expected.split("\n").joinToString("\n") { indent + it }
 
-    assertEquals(indentedExpected, reformatted)
+    assertThat(reformatted).isEqualTo(indentedExpected)
 
     if (verifyDokka && !options.addPunctuation) {
       DokkaVerifier(tempDir).verify(source, reformatted)
@@ -58,10 +76,9 @@ class KDocFormatterTest {
               task.orderedParameterNames)
       val formattedAgain = reformatComment(again)
       if (reformatted != formattedAgain) {
-        assertEquals(
-            "$indent// FORMATTED ONCE\n\n$reformatted",
-            "$indent// FORMATTED TWICE (implies unstable formatting)\n\n$formattedAgain",
-            "Formatting is unstable: if formatted a second time, it changes")
+        assertWithMessage("Formatting is unstable: if formatted a second time, it changes")
+            .that("$indent// FORMATTED TWICE (implies unstable formatting)\n\n$formattedAgain")
+            .isEqualTo("$indent// FORMATTED ONCE\n\n$reformatted")
       }
     }
   }
@@ -135,8 +152,8 @@ class KDocFormatterTest {
     checkFormatter(source, KDocFormattingOptions(72), reformatted, indent = "    ")
     val initialOffset = source.indexOf("default")
     val newOffset = findSamePosition(source, initialOffset, reformatted)
-    assertNotEquals(initialOffset, newOffset)
-    assertEquals("default", reformatted.substring(newOffset, newOffset + "default".length))
+    assertThat(newOffset).isNotEqualTo(initialOffset)
+    assertThat(reformatted.substring(newOffset, newOffset + "default".length)).isEqualTo("default")
   }
 
   @Test
@@ -160,8 +177,8 @@ class KDocFormatterTest {
     checkFormatter(source, KDocFormattingOptions(72), reformatted, indent = "    ")
     val initialOffset = source.indexOf("default")
     val newOffset = findSamePosition(source, initialOffset, reformatted)
-    assertNotEquals(initialOffset, newOffset)
-    assertEquals("default", reformatted.substring(newOffset, newOffset + "default".length))
+    assertThat(newOffset).isNotEqualTo(initialOffset)
+    assertThat(reformatted.substring(newOffset, newOffset + "default".length)).isEqualTo("default")
   }
 
   @Test
@@ -658,12 +675,12 @@ class KDocFormatterTest {
              */
             """
             .trimIndent(),
-        KDocFormattingOptions(40),
+        KDocFormattingOptions(40).apply { hangingIndent = 2 },
         """
             /**
              * @param client the client to
-             *     report errors to and to use
-             *     to read files
+             *   report errors to and to use to
+             *   read files
              */
             """
             .trimIndent())
@@ -1207,15 +1224,14 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(40),
+        KDocFormattingOptions(40).apply { hangingIndent = 2 },
         """
             /**
              * @param configuration the
-             *     configuration to look up
-             *     which issues are enabled etc
-             *     from
+             *   configuration to look up which
+             *   issues are enabled etc from
              * @param platforms the platforms
-             *     applying to this analysis
+             *   applying to this analysis
              */
             """
             .trimIndent())
@@ -1564,13 +1580,13 @@ class KDocFormatterTest {
              */
             """
             .trimIndent(),
-        KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 60),
+        KDocFormattingOptions(maxLineWidth = 100, maxCommentWidth = 60).apply { hangingIndent = 2 },
         """
             /**
              * <ul>
              * <li>Incremental merge will never clean the output.
              * <li>The inputs must be able to tell which changes to
-             *     relative files have been made.
+             *   relative files have been made.
              * <li>Intermediate state must be saved between merges.
              * </ul>
              */
@@ -1921,7 +1937,10 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(72).apply { orderDocTags = true },
+        KDocFormattingOptions(72).apply {
+          orderDocTags = true
+          hangingIndent = 2
+        },
         // Note how this places the "#" in column 0 which will then
         // be re-interpreted as a header next time we format it!
         // Idea: @{link #} should become {@link#} or with a nbsp;
@@ -1944,20 +1963,20 @@ class KDocFormatterTest {
              * @return this for constructor chaining
              *
              * TODO: Adds the given dependency graph (the output of the Gradle
-             *     dependency task) to be constructed when mocking a Gradle
-             *     model for this project.
+             *   dependency task) to be constructed when mocking a Gradle model
+             *   for this project.
              * TODO: More stuff to do here
              * TODO: Consider looking at the localization="suggested" attribute
-             *     in the platform attrs.xml to catch future recommended
-             *     attributes.
+             *   in the platform attrs.xml to catch future recommended
+             *   attributes.
              * TODO: Also adds the given dependency graph (the output of the
-             *     Gradle dependency task) to be constructed when mocking a
-             *     Gradle model for this project.
+             *   Gradle dependency task) to be constructed when mocking a Gradle
+             *   model for this project.
              * TODO(b/144576310): Cover multi-module search. Searching in the
-             *     search bar should show an option to change module if there
-             *     are resources in it.
+             *   search bar should show an option to change module if there are
+             *   resources in it.
              * TODO(myldap): Cover filter usage. Eg: Look for a framework
-             *     resource by enabling its filter.
+             *   resource by enabling its filter.
              */
             """
             .trimIndent(),
@@ -1989,7 +2008,7 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         FormattingTask(
-            KDocFormattingOptions(72),
+            KDocFormattingOptions(72).apply { hangingIndent = 2 },
             source,
             "    ",
             orderedParameterNames = listOf("file", "start", "end")),
@@ -2002,8 +2021,8 @@ class KDocFormatterTest {
              * end. If the length of the range is not known, end may be null.
              *
              * @param file the associated file (but see the documentation for
-             *     [Location.file] for more information on what the file
-             *     represents)
+             *   [Location.file] for more information on what the file
+             *   represents)
              * @param start the starting position, or null
              * @param end the ending position, or null
              * @return Something
@@ -2045,22 +2064,22 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(72, 72),
+        KDocFormattingOptions(72, 72).apply { hangingIndent = 2 },
         """
             /**
              * Shows an authentication prompt to the user.
              *
              * @param host A wrapper for the component that will host the prompt.
              * @param crypto A cryptographic object to be associated with this
-             *     authentication.
+             *   authentication.
              * @return [AuthenticationResult] for a successful authentication.
              * @throws AuthPromptErrorException when an unrecoverable error has been
-             *     encountered and authentication has stopped.
+             *   encountered and authentication has stopped.
              * @throws AuthPromptFailureException when an authentication attempt by
-             *     the user has been rejected.
+             *   the user has been rejected.
              * @sample androidx.biometric.samples.auth.credentialAuth
              * @see CredentialAuthPrompt.authenticate( AuthPromptHost host,
-             *     BiometricPrompt.CryptoObject, AuthPromptCallback )
+             *   BiometricPrompt.CryptoObject, AuthPromptCallback )
              */
             """
             .trimIndent(),
@@ -2328,7 +2347,7 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(120, 120),
+        KDocFormattingOptions(120, 120).apply { hangingIndent = 2 },
         """
             /**
              * Interface to be implemented by lint detectors that want to analyze Java source files (or other similar source
@@ -2340,12 +2359,12 @@ class KDocFormatterTest {
              * <li> Instantiating a given class. For this, see [getApplicableConstructorTypes] and [visitConstructor]</li>
              * <li> Referencing a given constant. For this, see [getApplicableReferenceNames] and [visitReference]</li>
              * <li> Extending a given class or implementing a given interface. For this, see [applicableSuperClasses] and
-             *     [visitClass]</li>
+             *   [visitClass]</li>
              * <li> More complicated scenarios: perform a general AST traversal with a visitor. In this case, first tell lint
-             *     which AST node types you're interested in with the [getApplicableUastTypes] method, and then provide a
-             *     [UElementHandler] from the [createUastHandler] where you override the various applicable handler methods.
-             *     This is done rather than a general visitor from the root node to avoid having to have every single lint
-             *     detector (there are hundreds) do a full tree traversal on its own.</li>
+             *   which AST node types you're interested in with the [getApplicableUastTypes] method, and then provide a
+             *   [UElementHandler] from the [createUastHandler] where you override the various applicable handler methods. This
+             *   is done rather than a general visitor from the root node to avoid having to have every single lint detector
+             *   (there are hundreds) do a full tree traversal on its own.</li>
              * </ul>
              *
              * {@linkplain SourceCodeScanner} exposes the UAST API to lint checks. UAST is short for "Universal AST" and is an
@@ -2623,22 +2642,22 @@ class KDocFormatterTest {
             .trimIndent())
   }
 
-    @Test
-    fun testEarlyBreakForTodo() {
-        // Don't break before a TODO
-        val source =
-            """
+  @Test
+  fun testEarlyBreakForTodo() {
+    // Don't break before a TODO
+    val source =
+        """
             /**
              * This is a long line that will break a little early to breaking at TODO:
              *
              * This is a long line that wont break a little early to breaking at DODO:
              */
             """
-                .trimIndent()
-        checkFormatter(
-            source,
-            KDocFormattingOptions(72, 72).apply { optimal = false },
-            """
+            .trimIndent()
+    checkFormatter(
+        source,
+        KDocFormattingOptions(72, 72).apply { optimal = false },
+        """
             /**
              * This is a long line that will break a little early to breaking
              * at TODO:
@@ -2647,9 +2666,8 @@ class KDocFormatterTest {
              * DODO:
              */
             """
-                .trimIndent()
-        )
-    }
+            .trimIndent())
+  }
 
   @Test
   fun testPreformat() {
@@ -2853,7 +2871,10 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(100, 100).apply { optimal = false },
+        KDocFormattingOptions(100, 100).apply {
+          optimal = false
+          hangingIndent = 2
+        },
         """
             /**
              * Handles a chain of qualified expressions, i.e. `a[5].b!!.c()[4].f()`
@@ -2866,9 +2887,9 @@ class KDocFormatterTest {
              * part, emitting it to the [builder] while closing and opening groups.
              *
              * @param brokeBeforeBrace used for tracking if a break was taken right before the lambda
-             *     expression. Useful for scoping functions where we want good looking indentation. For
-             *     example, here we have correct indentation before `bar()` and `car()` because we can
-             *     detect the break after the equals:
+             *   expression. Useful for scoping functions where we want good looking indentation. For
+             *   example, here we have correct indentation before `bar()` and `car()` because we can detect
+             *   the break after the equals:
              */
              """
             .trimIndent())
@@ -2877,9 +2898,9 @@ class KDocFormatterTest {
   @Test
   fun test193246766() {
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * * Do do occaecat sunt in culpa:
              *   * Id id reprehenderit cillum non `adipiscing` enim enim ad occaecat
@@ -2940,8 +2961,7 @@ class KDocFormatterTest {
             /**
              * This is my SampleInterface interface.
              *
-             * @sample
-             *     com.example.java.sample.library.extra.long.path.MyCustomSampleInterfaceImplementationForTesting
+             * @sample com.example.java.sample.library.extra.long.path.MyCustomSampleInterfaceImplementationForTesting
              */
             """
             .trimIndent())
@@ -2951,9 +2971,9 @@ class KDocFormatterTest {
   fun test209435082() {
     // b/209435082
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * eiusmod.com
              * - - -
@@ -3014,9 +3034,9 @@ class KDocFormatterTest {
   @Test
   fun test236743270() {
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * @return Amet do non adipiscing sed consequat duis non Officia ID (amet sed consequat non
              * adipiscing sed eiusmod), magna consequat.
@@ -3024,15 +3044,15 @@ class KDocFormatterTest {
             """
             .trimIndent()
     val lorem = loremize(source)
-    assertEquals(source, lorem)
+    assertThat(lorem).isEqualTo(source)
     checkFormatter(
         source,
-        KDocFormattingOptions(72, 72),
+        KDocFormattingOptions(72, 72).apply { hangingIndent = 2 },
         """
             /**
              * @return Amet do non adipiscing sed consequat duis non Officia ID
-             *     (amet sed consequat non adipiscing sed eiusmod), magna
-             *     consequat.
+             *   (amet sed consequat non adipiscing sed eiusmod), magna
+             *   consequat.
              */
             """
             .trimIndent())
@@ -3041,9 +3061,9 @@ class KDocFormatterTest {
   @Test
   fun test238279769() {
     val source =
-    // Nonsensical text derived from the original using the lorem() method and
-    // replacing same-length & same capitalization words from lorem ipsum
-    """
+        // Nonsensical text derived from the original using the lorem() method and
+        // replacing same-length & same capitalization words from lorem ipsum
+        """
             /**
              * @property dataItemOrderRandomizer sit tempor enim pariatur non culpa id [Pariatur]z in qui anim.
              *  Anim id-lorem sit magna [Consectetur] pariatur.
@@ -3058,20 +3078,20 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(72, 72),
+        KDocFormattingOptions(72, 72).apply { hangingIndent = 2 },
         """
             /**
              * @property dataItemOrderRandomizer sit tempor enim pariatur non
-             *     culpa id [Pariatur]z in qui anim. Anim id-lorem sit magna
-             *     [Consectetur] pariatur.
+             *   culpa id [Pariatur]z in qui anim. Anim id-lorem sit magna
+             *   [Consectetur] pariatur.
              * @property randomBytesProvider non mollit anim pariatur non culpa
-             *     qui qui `mollit` lorem amet consectetur [Pariatur]z in
-             *     IssuerSignedItem culpa.
+             *   qui qui `mollit` lorem amet consectetur [Pariatur]z in
+             *   IssuerSignedItem culpa.
              * @property preserveMapOrder officia id pariatur non culpa id lorem
-             *     pariatur culpa culpa id o est amet consectetur sed sed do
-             *     ENIM minim.
+             *   pariatur culpa culpa id o est amet consectetur sed sed do ENIM
+             *   minim.
              * @property reprehenderit p esse cillum officia est do enim enim
-             *     nostrud nisi d non sunt mollit id est tempor enim.
+             *   nostrud nisi d non sunt mollit id est tempor enim.
              */
             """
             .trimIndent())
@@ -4598,9 +4618,9 @@ class KDocFormatterTest {
   @Test
   fun testPropertiesWithBrackets() {
     val source =
-    // From AOSP
-    // tools/base/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/cxx/prefab/PackageModel.kt
-    """
+        // From AOSP
+        // tools/base/build-system/gradle-core/src/main/java/com/android/build/gradle/internal/cxx/prefab/PackageModel.kt
+        """
             /**
              * The Android abi.json schema.
              *
@@ -4616,18 +4636,18 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(maxLineWidth = 72),
+        KDocFormattingOptions(maxLineWidth = 72).apply { hangingIndent = 2 },
         """
             /**
              * The Android abi.json schema.
              *
              * @property[abi] The ABI name of the described library. These names
-             *     match the tag field for
-             *     [com.android.build.gradle.internal.core.Abi].
+             *   match the tag field for
+             *   [com.android.build.gradle.internal.core.Abi].
              * @property[api] The minimum OS version supported by the library. i.e.
-             *     the library's `minSdkVersion`.
+             *   the library's `minSdkVersion`.
              * @property[ndk] The major version of the NDK that this library was
-             *     built with.
+             *   built with.
              * @property[stl] The STL that this library was built with.
              * @property[static] If true then the library is .a, if false then .so.
              */
@@ -4706,19 +4726,19 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(maxLineWidth = 72),
+        KDocFormattingOptions(maxLineWidth = 72).apply { hangingIndent = 2 },
         """
             /**
              * Construct a rectangle from its left and top edges as well as its
              * width and height.
              *
              * @param offset Offset to represent the top and left parameters of the
-             *     Rect
+             *   Rect
              * @param size Size to determine the width and height of this [Rect].
              * @return Rect with [Rect.left] and [Rect.top] configured to [Offset.x]
-             *     and [Offset.y] as [Rect.right] and [Rect.bottom] to
-             *     [Offset.x] + [Size.width] and [Offset.y] + [Size.height]
-             *     respectively
+             *   and [Offset.y] as [Rect.right] and [Rect.bottom] to
+             *   [Offset.x] + [Size.width] and [Offset.y] + [Size.height]
+             *   respectively
              */
             """
             .trimIndent(),
@@ -4776,7 +4796,7 @@ class KDocFormatterTest {
             .trimIndent()
     checkFormatter(
         source,
-        KDocFormattingOptions(maxLineWidth = 72),
+        KDocFormattingOptions(maxLineWidth = 72).apply { hangingIndent = 2 },
         """
             /**
              * Updates z order index for [SurfaceControlWrapper]. Note that
@@ -4793,7 +4813,7 @@ class KDocFormatterTest {
              *
              * @param surfaceControl surface control to set the z order of.
              * @param zOrder desired layer z order to set the
-             *     surfaceControl.
+             *   surfaceControl.
              */
             """
             .trimIndent(),
@@ -4915,10 +4935,9 @@ class KDocFormatterTest {
   }
 
   /**
-   * Test utility method: from a source kdoc, derive an "equivalent"
-   * kdoc (same punctuation, whitespace, capitalization and length of
-   * words) with words from Lorem Ipsum. Useful to create test cases for
-   * the formatter without checking in original comments.
+   * Test utility method: from a source kdoc, derive an "equivalent" kdoc (same punctuation,
+   * whitespace, capitalization and length of words) with words from Lorem Ipsum. Useful to create
+   * test cases for the formatter without checking in original comments.
    */
   private fun loremize(s: String): String {
     val lorem =
@@ -4997,7 +5016,7 @@ class KDocFormatterTest {
   // right yet.
   // --------------------------------------------------------------------
 
-  @Disabled("Lists within quoted blocks not yet supported")
+  @Ignore("Lists within quoted blocks not yet supported")
   @Test
   fun testNestedWithinQuoted() {
     val source =

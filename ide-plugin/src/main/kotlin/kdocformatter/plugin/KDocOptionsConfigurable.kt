@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,6 +33,7 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
   @Nls override fun getDisplayName() = "KDoc Formatting"
 
   @Suppress("SpellCheckingInspection") override fun getId() = "kdocformatter.options"
+
   private val formatProcessorCheckBox =
       JBCheckBox("Participate in IDE formatting operations, such as Code > Reformat Code")
   private val alternateCheckBox =
@@ -101,8 +102,8 @@ class KDocOptionsConfigurable : SearchableConfigurable, Configurable.NoScroll {
   }
 
   /**
-   * Property accessing a text field's value as an integer, with the
-   * special support that 0 translates to blank.
+   * Property accessing a text field's value as an integer, with the special support that 0
+   * translates to blank.
    */
   private var JBTextField.int: Int
     get() = text.trim().toIntOrNull()?.coerceAtLeast(0) ?: 0

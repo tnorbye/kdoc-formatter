@@ -2,6 +2,10 @@
 
 # KDoc Formatter Changelog
 
+## [1.6.0]
+- Updated dependencies and fixed a few minor bugs, including
+  issue 398 from ktfmt.
+
 ## [1.5.9]
 - Compatibility with IntelliJ 2023.1
 

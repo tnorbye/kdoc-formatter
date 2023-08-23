@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,20 +16,19 @@
 
 package kdocformatter.cli
 
+import com.facebook.ktfmt.kdoc.CommentType
+import com.facebook.ktfmt.kdoc.FormattingTask
+import com.facebook.ktfmt.kdoc.KDocFormatter
+import com.facebook.ktfmt.kdoc.KDocFormattingOptions
+import com.facebook.ktfmt.kdoc.computeIndents
+import com.facebook.ktfmt.kdoc.getIndentSize
+import com.facebook.ktfmt.kdoc.isBlockComment
 import java.io.File
-import kdocformatter.CommentType
-import kdocformatter.FormattingTask
-import kdocformatter.KDocFormatter
-import kdocformatter.KDocFormattingOptions
-import kdocformatter.computeIndents
-import kdocformatter.getIndentSize
-import kdocformatter.isBlockComment
 import kotlin.math.min
 
 /**
- * This class attempts to iterate over an entire Kotlin source file
- * and reformat all the KDocs it finds within. This is based on some
- * light-weight lexical analysis to identify comments.
+ * This class attempts to iterate over an entire Kotlin source file and reformat all the KDocs it
+ * finds within. This is based on some light-weight lexical analysis to identify comments.
  */
 class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
   init {
@@ -143,10 +142,9 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
   }
 
   /**
-   * Reformats the given Kotlin source file contents using the given
-   * [formattingOptions]. The corresponding [file] can be consulted in
-   * case we want to limit filtering to particular lines (for example
-   * modified git lines)
+   * Reformats the given Kotlin source file contents using the given [formattingOptions]. The
+   * corresponding [file] can be consulted in case we want to limit filtering to particular lines
+   * (for example modified git lines)
    */
   private fun reformatKotlinFile(
       source: String,

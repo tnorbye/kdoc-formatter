@@ -15,11 +15,11 @@
  */
 package kdocformatter.plugin
 
+import com.facebook.ktfmt.kdoc.KDocFormattingOptions
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
-import kdocformatter.KDocFormattingOptions
 
 @State(name = "KDocFormatter", storages = [Storage("kdocFormatter.xml")])
 class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentState> {

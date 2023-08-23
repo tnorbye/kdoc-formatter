@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
 import java.util.regex.Pattern
 import kotlin.math.min
@@ -96,8 +96,7 @@ fun String.isDirectiveMarker(): Boolean {
 }
 
 /**
- * Returns true if the string ends with a symbol that implies more text
- * is coming, e.g. ":" or ","
+ * Returns true if the string ends with a symbol that implies more text is coming, e.g. ":" or ","
  */
 fun String.isExpectingMore(): Boolean {
   val last = lastOrNull { !it.isWhitespace() } ?: return false
@@ -105,9 +104,8 @@ fun String.isExpectingMore(): Boolean {
 }
 
 /**
- * Does this String represent a divider line? (Markdown also requires
- * it to be surrounded by empty lines which has to be checked by the
- * caller)
+ * Does this String represent a divider line? (Markdown also requires it to be surrounded by empty
+ * lines which has to be checked by the caller)
  */
 fun String.isLine(minCount: Int = 3): Boolean {
   return startsWith('-') && containsOnly('-', ' ') && count { it == '-' } >= minCount ||
@@ -129,7 +127,7 @@ fun String.isKDocTag(): Boolean {
           return true
         } else if (i == 1 && c.isLetter() && c.isUpperCase()) {
           // Allow capitalized tgs, such as @See -- this is normally a typo; convertMarkup
-          // should also fix these
+          // should also fix these.
           return true
         }
         return false
@@ -141,8 +139,8 @@ fun String.isKDocTag(): Boolean {
 }
 
 /**
- * If this String represents a KDoc `@param` tag, returns the
- * corresponding parameter name, otherwise null.
+ * If this String represents a KDoc `@param` tag, returns the corresponding parameter name,
+ * otherwise null.
  */
 fun String.getParamName(): String? {
   val length = this.length
@@ -202,16 +200,13 @@ private fun getIndent(start: Int, lookup: (Int) -> Char): String {
 }
 
 /**
- * Given a character [lookup] function in a document of [max]
- * characters, for a comment starting at offset [start], compute
- * the effective indent on the first line and on subsequent lines.
+ * Given a character [lookup] function in a document of [max] characters, for a comment starting at
+ * offset [start], compute the effective indent on the first line and on subsequent lines.
  *
- * For a comment starting on its own line, the two will be the same.
- * But for a comment that is at the end of a line containing code, the
- * first line indent will not be the indentation of the earlier code, it
- * will be the full indent as if all the code characters were whitespace
- * characters (which lets the formatter figure out how much space is
- * available on the first line).
+ * For a comment starting on its own line, the two will be the same. But for a comment that is at
+ * the end of a line containing code, the first line indent will not be the indentation of the
+ * earlier code, it will be the full indent as if all the code characters were whitespace characters
+ * (which lets the formatter figure out how much space is available on the first line).
  */
 fun computeIndents(start: Int, lookup: (Int) -> Char, max: Int): Pair<String, String> {
   val originalIndent = getIndent(start, lookup)
@@ -263,8 +258,7 @@ fun computeIndents(start: Int, lookup: (Int) -> Char, max: Int): Pair<String, St
 }
 
 /**
- * Attempt to preserve the caret position across reformatting. Returns
- * the delta in the new comment.
+ * Attempt to preserve the caret position across reformatting. Returns the delta in the new comment.
  */
 fun findSamePosition(comment: String, delta: Int, reformattedComment: String): Int {
   // First see if the two comments are identical up to the delta; if so, same

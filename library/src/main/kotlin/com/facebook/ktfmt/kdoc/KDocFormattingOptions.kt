@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Portions Copyright (c) Meta Platforms, Inc. and affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,23 @@
  * limitations under the License.
  */
 
-package kdocformatter
+/*
+ * Copyright (c) Tor Norbye.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.facebook.ktfmt.kdoc
 
 import kotlin.math.min
 
@@ -23,37 +39,29 @@ class KDocFormattingOptions(
     /** Right hand side margin to write lines at. */
     var maxLineWidth: Int = 72,
     /**
-     * Limit comment to be at most [maxCommentWidth] characters even if
-     * more would fit on the line.
+     * Limit comment to be at most [maxCommentWidth] characters even if more would fit on the line.
      */
     var maxCommentWidth: Int = min(maxLineWidth, 72)
 ) {
-  /**
-   * Whether to collapse multi-line comments that would fit on a single
-   * line into a single line.
-   */
+  /** Whether to collapse multi-line comments that would fit on a single line into a single line. */
   var collapseSingleLine: Boolean = true
 
   /** Whether to collapse repeated spaces. */
   var collapseSpaces: Boolean = true
 
-  /**
-   * Whether to convert basic markup like **bold** into **bold**, < into
-   * <, etc.
-   */
+  /** Whether to convert basic markup like **bold** into **bold**, < into <, etc. */
   var convertMarkup: Boolean = true
 
   /**
-   * Whether to add punctuation where missing, such as ending sentences
-   * with a period. (TODO: Make sure the FIRST sentence ends with
-   * one too! Especially if the subsequent sentence is separated.)
+   * Whether to add punctuation where missing, such as ending sentences with a period. (TODO: Make
+   * sure the FIRST sentence ends with one too! Especially if the subsequent sentence is separated.)
    */
   var addPunctuation: Boolean = false
 
   /**
-   * How many spaces to use for hanging indents in numbered lists and
-   * after block tags. Using 4 or more here will result in subsequent
-   * lines being interpreted as block formatted by IntelliJ (not Dokka).
+   * How many spaces to use for hanging indents in numbered lists and after block tags. Using 4 or
+   * more here will result in subsequent lines being interpreted as block formatted by IntelliJ (but
+   * not Dokka).
    */
   var hangingIndent: Int = 4
 
@@ -80,33 +88,28 @@ class KDocFormattingOptions(
   var optimal: Boolean = true
 
   /**
-   * If true, reformat markdown tables such that the column markers line
-   * up. When false, markdown tables are left alone (except for left
-   * hand side cleanup.)
+   * If true, reformat markdown tables such that the column markers line up. When false, markdown
+   * tables are left alone (except for left hand side cleanup.)
    */
   var alignTableColumns: Boolean = true
 
   /**
-   * If true, moves any kdoc tags to the end of the comment and
-   * `@return` tags after `@param` tags.
+   * If true, moves any kdoc tags to the end of the comment and `@return` tags after `@param` tags.
    */
   var orderDocTags: Boolean = true
 
   /**
-   * If true, perform "alternative" formatting. This is only relevant
-   * in the IDE. You can invoke the action repeatedly and it will
-   * jump between normal formatting an alternative formatting. For
-   * single-line comments it will alternate between single and multiple
-   * lines. For longer comments it will alternate between optimal line
-   * breaking and greedy line breaking.
+   * If true, perform "alternative" formatting. This is only relevant in the IDE. You can invoke the
+   * action repeatedly and it will jump between normal formatting an alternative formatting. For
+   * single-line comments it will alternate between single and multiple lines. For longer comments
+   * it will alternate between optimal line breaking and greedy line breaking.
    */
   var alternate: Boolean = false
 
   /**
-   * KDoc allows param tag to be specified using an alternate bracket
-   * syntax. KDoc formatter ties to unify the format of comments, so it
-   * will rewrite them into the canonical syntax unless this option is
-   * true.
+   * KDoc allows param tag to be specified using an alternate bracket syntax. KDoc formatter ties to
+   * unify the format of comments, so it will rewrite them into the canonical syntax unless this
+   * option is true.
    */
   var allowParamBrackets: Boolean = false
 

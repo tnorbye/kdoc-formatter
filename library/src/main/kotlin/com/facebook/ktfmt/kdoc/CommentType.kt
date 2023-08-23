@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
 enum class CommentType(
     /** The opening string of the comment. */
     val prefix: String,
     /** The closing string of the comment. */
     val suffix: String,
-    /**
-     * For multi line comments, the prefix at each comment line after
-     * the first one.
-     */
+    /** For multi line comments, the prefix at each comment line after the first one. */
     val linePrefix: String
 ) {
   KDOC("/**", "*/", " * "),
@@ -32,16 +29,16 @@ enum class CommentType(
   LINE("//", "", "// ");
 
   /**
-   * The number of characters needed to fit a comment on a line: the
-   * prefix, suffix and a single space padding inside these.
+   * The number of characters needed to fit a comment on a line: the prefix, suffix and a single
+   * space padding inside these.
    */
   fun singleLineOverhead(): Int {
     return prefix.length + suffix.length + 1 + if (suffix.isEmpty()) 0 else 1
   }
 
   /**
-   * The number of characters required in addition to the line comment
-   * for each line in a multi line comment.
+   * The number of characters required in addition to the line comment for each line in a multi line
+   * comment.
    */
   fun lineOverhead(): Int {
     return linePrefix.length

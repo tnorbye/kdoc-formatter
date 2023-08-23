@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,8 +16,8 @@
 
 package kdocformatter.cli
 
+import com.facebook.ktfmt.kdoc.getLineNumber
 import java.io.File
-import kdocformatter.getLineNumber
 
 open class LineRangeFilter protected constructor(private val rangeMap: RangeMap) : RangeFilter() {
   var valid: Boolean = false
@@ -56,12 +56,15 @@ open class LineRangeFilter protected constructor(private val rangeMap: RangeMap)
 
   protected class RangeMap {
     private val fileToRanges = HashMap<File, MutableList<Range>>()
+
     fun getRanges(file: File): List<Range> {
       return fileToRanges[file] ?: emptyList()
     }
+
     fun isEmpty(): Boolean {
       return fileToRanges.isEmpty()
     }
+
     fun addRange(file: File, startLine: Int, endLine: Int) {
       val list = fileToRanges[file] ?: ArrayList<Range>().also { fileToRanges[file] = it }
       list.add(Range(startLine, endLine))

@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,34 +16,28 @@
 
 @file:Suppress("PropertyName", "PrivatePropertyName")
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
+import com.google.common.truth.Truth.assertThat
 import java.io.BufferedReader
 import java.io.File
-import org.junit.jupiter.api.Assertions
 
 /**
- * Verifies that two KDoc comment strings render to the same HTML
- * documentation using Dokka. This is used by the test infrastructure to
- * make sure that the transformations we're allowing are not changing
- * the appearance of the documentation.
+ * Verifies that two KDoc comment strings render to the same HTML documentation using Dokka. This is
+ * used by the test infrastructure to make sure that the transformations we're allowing are not
+ * changing the appearance of the documentation.
  *
- * Unfortunately, just diffing HTML strings isn't always enough, because
- * dokka will preserve some text formatting which is immaterial to
- * the HTML appearance. Therefore, if you've also installed Pandoc,
- * it will use that to generate a text rendering of the HTML which is
- * then used for diffing instead. (Even this isn't fullproof because
- * pandoc also preserves some details that should not matter). Text
- * rendering does drop a lot of markup (such as bold and italics)
- * so it would be better to compare in some other format, such as
- * PDF, but unfortunately, the PDF rendering doesn't appear to be
- * stable; rendering the same document twice yields a binary diff.
+ * Unfortunately, just diffing HTML strings isn't always enough, because dokka will preserve some
+ * text formatting which is immaterial to the HTML appearance. Therefore, if you've also installed
+ * Pandoc, it will use that to generate a text rendering of the HTML which is then used for diffing
+ * instead. (Even this isn't fullproof because pandoc also preserves some details that should not
+ * matter). Text rendering does drop a lot of markup (such as bold and italics) so it would be
+ * better to compare in some other format, such as PDF, but unfortunately, the PDF rendering doesn't
+ * appear to be stable; rendering the same document twice yields a binary diff.
  *
- * Dokka no longer provides a fat/shadow jar; instead you have
- * to download a bunch of different dependencies. Therefore, for
- * convenience this is set up to point to an AndroidX checkout, which
- * has all the prebuilts. Point the below to AndroidX and the rest
- * should work.
+ * Dokka no longer provides a fat/shadow jar; instead you have to download a bunch of different
+ * dependencies. Therefore, for convenience this is set up to point to an AndroidX checkout, which
+ * has all the prebuilts. Point the below to AndroidX and the rest should work.
  */
 class DokkaVerifier(private val tempFolder: File) {
   // Configuration parameters
@@ -141,11 +135,11 @@ class DokkaVerifier(private val tempFolder: File) {
       val beforeText = getText(indexBefore)
       val afterText = getText(indexAfter)
       if (beforeText != null && afterText != null) {
-        Assertions.assertEquals(beforeText, afterText)
+        assertThat(beforeText).isEqualTo(afterText)
         return
       }
 
-      Assertions.assertEquals(beforeContents, afterContents)
+      assertThat(beforeContents).isEqualTo(afterContents)
     }
   }
 

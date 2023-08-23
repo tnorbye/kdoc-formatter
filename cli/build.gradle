@@ -3,7 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
     id 'application'
     id 'com.android.lint'
-    //id 'com.ncorti.ktfmt.gradle'
+    id 'com.ncorti.ktfmt.gradle'
 }
 
 group = "kdoc-formatter"
@@ -29,6 +29,7 @@ dependencies {
 }
 
 lint {
+    disable 'JavaPluginLanguageLevel'
     textReport true
 }
 
@@ -37,6 +38,11 @@ test {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
 }

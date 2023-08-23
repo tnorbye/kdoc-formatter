@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2022 Tor Norbye
+ * Copyright (c) Tor Norbye.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,26 +14,28 @@
  * limitations under the License.
  */
 
-package kdocformatter
+package com.facebook.ktfmt.kdoc
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class UtilitiesTest {
   @Test
   fun testFindSamePosition() {
     fun check(newWithCaret: String, oldWithCaret: String) {
       val oldCaretIndex = oldWithCaret.indexOf('|')
       val newCaretIndex = newWithCaret.indexOf('|')
-      assertTrue(oldCaretIndex != -1)
-      assertTrue(newCaretIndex != -1)
+      assertThat(oldCaretIndex != -1).isTrue()
+      assertThat(newCaretIndex != -1).isTrue()
       val old = oldWithCaret.substring(0, oldCaretIndex) + oldWithCaret.substring(oldCaretIndex + 1)
       val new = newWithCaret.substring(0, newCaretIndex) + newWithCaret.substring(newCaretIndex + 1)
       val newPos = findSamePosition(old, oldCaretIndex, new)
 
       val actual = new.substring(0, newPos) + "|" + new.substring(newPos)
-      assertEquals(newWithCaret, actual)
+      assertThat(actual).isEqualTo(newWithCaret)
     }
 
     // Prefix match
@@ -92,13 +94,13 @@ class UtilitiesTest {
 
   @Test
   fun testGetParamName() {
-    assertEquals("foo", "@param foo".getParamName())
-    assertEquals("foo", "@param foo bar".getParamName())
-    assertEquals("foo", "@param foo;".getParamName())
-    assertEquals("foo", "  \t@param\t   foo  bar.".getParamName())
-    assertEquals("foo", "@param[foo]".getParamName())
-    assertEquals("foo", "@param  [foo]".getParamName())
-    assertEquals(null, "@param ".getParamName())
+    assertThat("@param foo".getParamName()).isEqualTo("foo")
+    assertThat("@param foo bar".getParamName()).isEqualTo("foo")
+    assertThat("@param foo;".getParamName()).isEqualTo("foo")
+    assertThat("  \t@param\t   foo  bar.".getParamName()).isEqualTo("foo")
+    assertThat("@param[foo]".getParamName()).isEqualTo("foo")
+    assertThat("@param  [foo]".getParamName()).isEqualTo("foo")
+    assertThat("@param ".getParamName()).isNull()
   }
 
   @Test
@@ -113,7 +115,7 @@ class UtilitiesTest {
       customizeParagraph(paragraph)
       val words = paragraph.computeWords()
 
-      assertEquals(expected.describe(), words.describe())
+      assertThat(words.describe()).isEqualTo(expected.describe())
     }
     check("Foo", listOf("Foo"))
     check("Foo Bar Baz", listOf("Foo", "Bar", "Baz"))
