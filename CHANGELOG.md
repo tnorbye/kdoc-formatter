@@ -2,6 +2,9 @@
 
 # KDoc Formatter Changelog
 
+## [1.6.1]
+- IDE plugin update only.
+
 ## [1.6.0]
 - Updated dependencies and fixed a few minor bugs, including
   issue 398 from ktfmt.
