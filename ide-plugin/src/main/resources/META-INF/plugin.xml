@@ -3,9 +3,6 @@
   <name>Kotlin KDoc Formatter</name>
   <vendor email="tor.norbye@gmail.com" url="https://github.com/tnorbye/kdoc-formatter">Tor Norbye</vendor>
 
-  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-  <idea-version since-build="202.0"/>
-
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
   <depends>com.intellij.modules.platform</depends>

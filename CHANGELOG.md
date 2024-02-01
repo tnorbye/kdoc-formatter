@@ -2,6 +2,10 @@
 
 # KDoc Formatter Changelog
 
+## [1.6.2]
+
+- IDE plugin update only: Compatibility with IntelliJ 2024.1 EAP.
+
 ## [1.6.1]
 - IDE plugin update only.
 

@@ -2,6 +2,10 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.6.2]
+
+- Compatibility with IntelliJ 2024.1 EAP.
+
 ## [1.6.1]
 
 - Compatibility with IntelliJ 2023.3 EAP.
