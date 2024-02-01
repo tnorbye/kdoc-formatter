@@ -25,10 +25,7 @@ import com.facebook.ktfmt.kdoc.findSamePosition
 import com.facebook.ktfmt.kdoc.isLineComment
 import com.intellij.application.options.CodeStyle
 import com.intellij.lang.Language
-import com.intellij.openapi.actionSystem.ActionPlaces
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.DumbAware
@@ -52,6 +49,10 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtCallableDeclaration
 
 class ReformatKDocAction : AnAction(), DumbAware {
+  override fun getActionUpdateThread(): ActionUpdateThread {
+    return ActionUpdateThread.EDT
+  }
+
   override fun actionPerformed(event: AnActionEvent) {
     val dataContext = event.dataContext
     val project = CommonDataKeys.PROJECT.getData(dataContext) ?: return

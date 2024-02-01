@@ -138,7 +138,8 @@ object EditorConfigs {
     private fun computeOptions(): KDocFormattingOptions {
       val options =
           (if (!root) parent?.getOptions()?.copy() else null)
-              ?: EditorConfigs.root?.copy() ?: KDocFormattingOptions()
+              ?: EditorConfigs.root?.copy()
+              ?: KDocFormattingOptions()
 
       getValue("max_line_length", "*.kt")?.let { stringValue ->
         if (stringValue == "unset") {
@@ -175,7 +176,7 @@ object EditorConfigs {
       val oneline =
           getValue("kdoc_formatter_doc_do_not_wrap_if_one_line", "*.kt")
               ?: getValue("ij_kotlin_doc_do_not_wrap_if_one_line", "*.kt")
-                  ?: getValue("ij_java_doc_do_not_wrap_if_one_line", "*.java")
+              ?: getValue("ij_java_doc_do_not_wrap_if_one_line", "*.java")
       oneline?.let { stringValue ->
         if (stringValue == "unset") {
           EditorConfigs.root?.collapseSingleLine?.let { options.collapseSingleLine = it }
