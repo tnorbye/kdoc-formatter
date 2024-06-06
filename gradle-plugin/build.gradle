@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/../version.gradle"
 
     ext {
-        gradlePluginVersion = '8.2.2'
+        gradlePluginVersion = '8.4.1'
     }
 
     repositories {
@@ -17,11 +17,11 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.22'
+    id 'org.jetbrains.kotlin.jvm' version '2.0.0'
     id 'java-gradle-plugin'
     id 'maven-publish'
-    id 'com.gradle.plugin-publish' version '1.2.1'
-    id 'com.ncorti.ktfmt.gradle' version '0.17.0'
+    id 'com.gradle.plugin-publish' version '0.9.10'
+    id 'com.ncorti.ktfmt.gradle' version '0.18.0'
 }
 
 // https://issues.sonatype.org/browse/OSSRH-63191

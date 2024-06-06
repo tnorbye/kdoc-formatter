@@ -2,7 +2,7 @@ buildscript {
     apply from: "$rootDir/version.gradle"
 
     ext {
-        gradlePluginVersion = '8.2.2'
+        gradlePluginVersion = '8.4.1'
     }
 
     repositories {
@@ -17,8 +17,8 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.22'
-    id 'com.ncorti.ktfmt.gradle' version '0.17.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.0.0'
+    id 'com.ncorti.ktfmt.gradle' version '0.18.0'
 }
 
 group 'kdocformatter'

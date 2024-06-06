@@ -120,7 +120,7 @@ Options:
 @<filename>
      Read filenames from file.
 
-kdoc-formatter: Version 1.6.2
+kdoc-formatter: Version 1.6.3
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -171,15 +171,15 @@ Gradle Plugin Usage
 -------------------
 The plugin is not yet distributed, so for now, download the zip file and
 install it somewhere, then add this to your build.gradle file:
-```
+```groovy
 buildscript {
     repositories {
         maven { url '/path/to/m2' }
     }
     dependencies {
-        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.5.7"
+        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.6.3"
         // (Sorry about the vanity URL --
-        // I tried to get kdoc-formatter:kdoc-formatter:1.3.2 but that
+        // I tried to get kdoc-formatter:kdoc-formatter:1.6.3 but that
         // didn't meet the naming requirements for publishing:
         // https://issues.sonatype.org/browse/OSSRH-63191)
     }
@@ -189,6 +189,21 @@ plugins {
 }
 kdocformatter {
     options = "--single-line-comments=collapse --max-line-width=100"
+}
+```
+
+Or in build.gradle.kts:
+```kts
+buildscript {
+    repositories {
+        maven { url = uri("/path/to/m2") }
+    }
+    dependencies {
+        classpath("com.github.tnorbye.kdoc-formatter:kdocformatter:1.6.3")
+    }
+}
+plugins {
+    id("kdoc-formatter")
 }
 ```
 
