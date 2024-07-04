@@ -2,6 +2,10 @@
 
 # KDoc Formatter Changelog
 
+## [1.6.4]
+
+- Backport https://github.com/facebook/ktfmt/issues/406
+
 ## [1.6.3]
 
 - Mark plugin as compatible with K2

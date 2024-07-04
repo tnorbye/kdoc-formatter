@@ -2,6 +2,10 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.6.4]
+
+- Backport https://github.com/facebook/ktfmt/issues/406
+
 ## [1.6.3]
 
 - Compatibility with IntelliJ 2024.2 EAP
