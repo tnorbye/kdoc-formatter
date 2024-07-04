@@ -148,6 +148,15 @@ class KDocFileFormattingOptions {
         }
       }
 
+      if (files.size == 1 && files[0].isFile) {
+        // If you directly try to format a Markdown file, don't require specifying
+        // the flag for that.
+        val path = files[0].path
+        if (path.endsWith(".md") || path.endsWith(".md.html")) {
+          options.includeMd = true
+        }
+      }
+
       if ((options.gitHead || options.gitStaged) && files.isNotEmpty()) {
         // Delayed initialization because the git path and the paths to the
         // repository is typically specified after this flag
@@ -237,7 +246,8 @@ class KDocFileFormattingOptions {
                   """
                 Move KDoc tags to the end of comments, and order them in a canonical
                 order (@param before @return, and so on)""",
-              "--no-order-doc-tags" to """
+              "--no-order-doc-tags" to
+                  """
                 Do not move or reorder KDoc tags""",
               "--include-block-comments" to
                   """
@@ -257,7 +267,8 @@ class KDocFileFormattingOptions {
                   """
                 Line range(s) to format, like 5:10 (1-based; default is all). Can be
                 specified multiple times.""",
-              "--include-md-files" to """
+              "--include-md-files" to
+                  """
                 Format markdown (*.md) files""",
               "--greedy" to
                   """
@@ -267,13 +278,17 @@ class KDocFileFormattingOptions {
                   """
                 Prints the paths of the files whose contents would change if the
                 formatter were run normally.""",
-              "--quiet, -q" to """
+              "--quiet, -q" to
+                  """
                 Quiet mode""",
-              "--verbose, -v" to """
+              "--verbose, -v" to
+                  """
                 Verbose mode""",
-              "--help, -help, -h" to """
+              "--help, -help, -h" to
+                  """
                 Print this usage statement.""",
-              "@<filename>" to """
+              "@<filename>" to
+                  """
                 Read filenames from file.""")
 
       val fileOptions = KDocFileFormattingOptions()

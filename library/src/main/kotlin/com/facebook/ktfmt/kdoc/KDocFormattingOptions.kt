@@ -41,7 +41,7 @@ class KDocFormattingOptions(
     /**
      * Limit comment to be at most [maxCommentWidth] characters even if more would fit on the line.
      */
-    var maxCommentWidth: Int = min(maxLineWidth, 72)
+    var maxCommentWidth: Int = min(maxLineWidth, 72),
 ) {
   /** Whether to collapse multi-line comments that would fit on a single line into a single line. */
   var collapseSingleLine: Boolean = true
@@ -63,7 +63,7 @@ class KDocFormattingOptions(
    * more here will result in subsequent lines being interpreted as block formatted by IntelliJ (but
    * not Dokka).
    */
-  var hangingIndent: Int = 4
+  var hangingIndent: Int = 3
 
   /** When there are nested lists etc, how many spaces to indent by. */
   var nestedListIndent: Int = 3

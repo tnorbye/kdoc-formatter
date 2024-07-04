@@ -2,20 +2,27 @@
 
 # KDoc Formatter Changelog
 
-## [1.6.3]
+## [1.6.4]
+- Switch continuation indent from 4 to 3. (IntelliJ's Dokka preview
+  treats an indent of 4 or more as preformatted text even on a continued
+  line; Dokka itself (and Markdown) does not.
+- Add ability to override the continuation indent in the IDE plugin
+  settings.
+- Don't reorder `@sample` tags (backported
+  https://github.com/facebook/ktfmt/issues/406)
 
+## [1.6.3]
 - Mark plugin as compatible with K2
 
 ## [1.6.2]
-
 - IDE plugin update only: Compatibility with IntelliJ 2024.1 EAP.
 
 ## [1.6.1]
 - IDE plugin update only.
 
 ## [1.6.0]
-- Updated dependencies and fixed a few minor bugs, including
-  issue 398 from ktfmt.
+- Updated dependencies and fixed a few minor bugs, including issue 398
+  from ktfmt.
 
 ## [1.5.9]
 - Compatibility with IntelliJ 2023.1
