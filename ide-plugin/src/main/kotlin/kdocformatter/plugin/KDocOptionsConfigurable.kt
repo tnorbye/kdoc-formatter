@@ -83,7 +83,7 @@ class KDocOptionsConfigurable :
       separator()
       row {
         label(
-            "Override line widths (if blank or 0, the code style line width or .editorconfig is used) :")
+            "Override line widths (if blank or 0, the code style line width or .editorconfig is used):")
       }
 
       row("Line Width") {
@@ -97,23 +97,39 @@ class KDocOptionsConfigurable :
             .columns(4)
             .trimmedTextValidation(widthValidator)
       }
+
+      separator()
+      row { label("Override continuation indent (@param lists, etc); leave blank to use default:") }
+
+      row("Continuation Indentation") {
+        textField()
+            .bindWidth(state::overrideHangingIndent, -1)
+            .columns(4)
+            .trimmedTextValidation(indentValidator)
+      }
     }
   }
 
-  private fun <T : JTextComponent> Cell<T>.bindWidth(prop: KMutableProperty0<Int>): Cell<T> {
-    return bindWidth(prop.toMutableProperty())
+  private fun <T : JTextComponent> Cell<T>.bindWidth(
+      prop: KMutableProperty0<Int>,
+      useDefault: Int = 0
+  ): Cell<T> {
+    return bindWidth(prop.toMutableProperty(), useDefault)
   }
 
-  // Like bindIntText, but treats blank as 0
-  private fun <T : JTextComponent> Cell<T>.bindWidth(prop: MutableProperty<Int>): Cell<T> {
+  // Like bindIntText, but treats blank as [default]
+  private fun <T : JTextComponent> Cell<T>.bindWidth(
+      prop: MutableProperty<Int>,
+      useDefault: Int = 0
+  ): Cell<T> {
     return bindText(
         getter = {
           val value = prop.get()
-          if (value == 0) "" else value.toString()
+          if (value == useDefault) "" else value.toString()
         },
         setter = { value: String ->
           if (value.isEmpty()) {
-            prop.set(0)
+            prop.set(useDefault)
           } else {
             val v = value.toIntOrNull()
             if (v != null) {
@@ -128,5 +144,12 @@ class KDocOptionsConfigurable :
         val value = it
         value.isNotEmpty() && value.any { digit -> !digit.isDigit() } ||
             (value.toIntOrNull() == null || value.toInt() < 10)
+      }
+
+  private val indentValidator: DialogValidation.WithParameter<() -> String> =
+      validationErrorIf<String>("Field must be empty or an integer in the range 0 to 12") {
+        val value = it
+        value.isNotEmpty() && value.any { digit -> !digit.isDigit() } ||
+            (value.toIntOrNull() == null || value.toInt() > 12)
       }
 }

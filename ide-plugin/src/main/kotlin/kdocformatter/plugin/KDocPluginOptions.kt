@@ -57,6 +57,7 @@ class KDocPluginOptions : PersistentStateComponent<KDocPluginOptions.ComponentSt
 
     var overrideLineWidth: Int = 0
     var overrideCommentWidth: Int = 0
+    var overrideHangingIndent: Int = -1
   }
 
   companion object {

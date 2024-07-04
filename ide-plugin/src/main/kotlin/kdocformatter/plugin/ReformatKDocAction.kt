@@ -393,6 +393,9 @@ fun createFormattingOptions(
     if (state.overrideCommentWidth > 0) {
       maxCommentWidth = state.overrideCommentWidth
     }
+    if (state.overrideHangingIndent >= 0) {
+      hangingIndent = state.overrideHangingIndent
+    }
     if (!state.maxCommentWidthEnabled) {
       maxCommentWidth = maxLineWidth
     }

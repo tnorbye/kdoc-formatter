@@ -18,7 +18,7 @@ buildscript {
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '2.0.0'
-    id 'com.ncorti.ktfmt.gradle' version '0.18.0'
+    id 'com.ncorti.ktfmt.gradle' version '0.19.0'
 }
 
 group 'kdocformatter'

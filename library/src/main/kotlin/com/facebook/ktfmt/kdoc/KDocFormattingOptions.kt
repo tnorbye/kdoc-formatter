@@ -63,7 +63,7 @@ class KDocFormattingOptions(
    * more here will result in subsequent lines being interpreted as block formatted by IntelliJ (but
    * not Dokka).
    */
-  var hangingIndent: Int = 4
+  var hangingIndent: Int = 3
 
   /** When there are nested lists etc, how many spaces to indent by. */
   var nestedListIndent: Int = 3

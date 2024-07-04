@@ -21,7 +21,7 @@ plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'com.gradle.plugin-publish' version '0.9.10'
-    id 'com.ncorti.ktfmt.gradle' version '0.18.0'
+    id 'com.ncorti.ktfmt.gradle' version '0.19.0'
 }
 
 // https://issues.sonatype.org/browse/OSSRH-63191
