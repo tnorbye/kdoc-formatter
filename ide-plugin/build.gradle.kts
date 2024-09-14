@@ -8,9 +8,8 @@ fun properties(key: String) = project.findProperty(key).toString()
 plugins {
   id("java")
   id("org.jetbrains.kotlin.jvm")
-  id("org.jetbrains.intellij") version "1.17.3"
-  id("org.jetbrains.changelog") version "2.2.0"
-  id("org.jetbrains.qodana") version "0.1.13"
+  id("org.jetbrains.intellij") version "1.17.4"
+  id("org.jetbrains.changelog") version "2.2.1"
   id("com.android.lint")
   id("com.ncorti.ktfmt.gradle")
 }
@@ -40,13 +39,6 @@ changelog {
   version.set(pluginVersion)
   groups.set(emptyList())
   repositoryUrl.set(properties("pluginRepositoryUrl"))
-}
-
-qodana {
-  cachePath.set(projectDir.resolve(".qodana").canonicalPath)
-  reportPath.set(projectDir.resolve("build/reports/inspections").canonicalPath)
-  saveReport.set(true)
-  showReport.set(System.getenv("QODANA_SHOW_REPORT")?.toBoolean() ?: false)
 }
 
 tasks {

@@ -2,6 +2,9 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.6.5]
+- Mark plugin as compatible with 2024.3.
+
 ## [1.6.4]
 - Switch continuation indent from 4 to 3. (IntelliJ's Dokka preview
   treats an indent of 4 or more as preformatted text even on a continued
