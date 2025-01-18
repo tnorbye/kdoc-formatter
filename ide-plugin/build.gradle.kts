@@ -1,6 +1,7 @@
 import java.util.Properties
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 fun properties(key: String) = project.findProperty(key).toString()
@@ -47,7 +48,7 @@ tasks {
       sourceCompatibility = it
       targetCompatibility = it
     }
-    withType<KotlinCompile> { kotlinOptions.jvmTarget = it }
+    withType<KotlinCompile> { compilerOptions.jvmTarget.set(JvmTarget.fromTarget(it)) }
   }
 
   patchPluginXml {
@@ -109,7 +110,12 @@ tasks {
     // Specify pre-release label to publish the plugin in a custom Release Channel automatically.
     // Read more:
     // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
-    channels.set(listOf(pluginVersion.split('-').getOrElse(1) { "default" }.split('.').first()))
+    val channelName: String = pluginVersion.split('-')
+      .getOrElse(1) { "default" }
+      .split('.')
+      .first()
+
+    channels.set(listOf(channelName))
   }
 }
 
