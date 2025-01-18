@@ -17,8 +17,8 @@
   <extensions defaultExtensionNs="com.intellij">
     <applicationService serviceImplementation="kdocformatter.plugin.KDocPluginOptions"/>
     <applicationConfigurable groupId="editor" groupWeight="112" id="kdocformatter.options"
-                             provider="kdocformatter.plugin.KDocOptionsConfigurableProvider"
-                             displayName="KDoc Formatter" />
+                             instance="kdocformatter.plugin.KDocOptionsConfigurable"
+                             displayName="KDoc Formatting" />
     <postFormatProcessor implementation="kdocformatter.plugin.KDocPostFormatProcessor"/>
   </extensions>
 
