@@ -2,6 +2,10 @@
 
 # KDoc Formatter Changelog
 
+## [1.6.6]
+- IDE-only update: Marked compatible with IntelliJ IDEA 2025.1.
+- Updated dependencies
+
 ## [1.6.5]
 - IDE-only update: Marked compatible with IntelliJ IDEA 2024.3.
 - Updated dependencies

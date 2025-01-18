@@ -65,8 +65,7 @@ class ReformatKDocAction : AnAction(), DumbAware {
       val file = documentManager.getPsiFile(document) ?: return
       val currentCaret = editor.caretModel.currentCaret
       val oldCaretOffset = currentCaret.offset
-      val element = file.findElementAt(oldCaretOffset) ?: return
-      val kdoc = PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false) ?: return
+      val kdoc = findComment(file, oldCaretOffset) ?: return
       var commentText = kdoc.text
       val startOffset: Int
       val endOffset: Int
@@ -287,6 +286,21 @@ class ReformatKDocAction : AnAction(), DumbAware {
     FILE
   }
 
+  private fun findComment(file: PsiFile, caretOffset: Int): PsiComment? {
+    val element = file.findElementAt(caretOffset) ?: return null
+    val prev = element.prevSibling
+    return if (element is PsiWhiteSpace &&
+        prev is PsiComment &&
+        element.textRange.startOffset == caretOffset) {
+      // When reformatting line-comment blocks, the caret may be right at the
+      // end of a line; findElementAt will point to the separating newline whitespace;
+      // the comment is not its parent.
+      prev
+    } else {
+      PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false)
+    }
+  }
+
   private fun getApplicableCommentType(event: AnActionEvent): CommentType {
     val dataContext = event.dataContext
     val project = CommonDataKeys.PROJECT.getData(dataContext) ?: return CommentType.NONE
@@ -298,10 +312,7 @@ class ReformatKDocAction : AnAction(), DumbAware {
               ?: return CommentType.NONE
       file.virtualFile ?: return CommentType.NONE
       val currentCaret = editor.caretModel.currentCaret
-      val element = file.findElementAt(currentCaret.offset) ?: return CommentType.NONE
-      val comment =
-          PsiTreeUtil.getParentOfType(element, PsiComment::class.java, false)
-              ?: return CommentType.NONE
+      val comment = findComment(file, currentCaret.offset) ?: return CommentType.NONE
       if (comment is KDoc) {
         return CommentType.KDOC
       } else if (KDocPluginOptions.instance.globalState.lineComments && isLineComment(comment)) {

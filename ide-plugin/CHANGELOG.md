@@ -2,6 +2,11 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.6.6]
+- Add support for 2025.1 EAP, and migrate to 2.x version of IntelliJ gradle plugin.
+- Fix https://github.com/tnorbye/kdoc-formatter/issues/106
+- Allow line comment block reformatting to work at the end of lines
+
 ## [1.6.5]
 - Mark plugin as compatible with 2024.3.
 
