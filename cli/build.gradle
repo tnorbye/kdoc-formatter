@@ -22,8 +22,8 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
-    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.11.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter-params:5.11.4'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
     implementation project(':library')
 }
