@@ -25,7 +25,11 @@ import com.facebook.ktfmt.kdoc.findSamePosition
 import com.facebook.ktfmt.kdoc.isLineComment
 import com.intellij.application.options.CodeStyle
 import com.intellij.lang.Language
-import com.intellij.openapi.actionSystem.*
+import com.intellij.openapi.actionSystem.ActionUiKind
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.project.DumbAware
@@ -39,8 +43,8 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.PsiWhiteSpace
 import com.intellij.psi.util.PsiTreeUtil
-import com.intellij.refactoring.suggested.endOffset
-import com.intellij.refactoring.suggested.startOffset
+import com.intellij.psi.util.endOffset
+import com.intellij.psi.util.startOffset
 import com.intellij.util.ThrowableRunnable
 import kotlin.math.min
 import org.jetbrains.kotlin.idea.KotlinLanguage
@@ -263,7 +267,7 @@ class ReformatKDocAction : AnAction(), DumbAware {
     val presentation = event.presentation
     val type = getApplicableCommentType(event)
     val available = type != CommentType.NONE
-    if (ActionPlaces.isPopupPlace(event.place)) {
+    if (event.uiKind == ActionUiKind.POPUP) {
       presentation.isEnabledAndVisible = available
     } else {
       presentation.isEnabled = available
@@ -349,7 +353,9 @@ fun createFormattingTask(
   if (task.type == CommentType.KDOC && options.orderDocTags) {
     val parent = kdoc.parent
     if (parent is KtCallableDeclaration) {
-      task.orderedParameterNames = parent.valueParameters.mapNotNull { it.name }.toList()
+      task.orderedParameterNames =
+          parent.typeParameters.mapNotNull { it.name } +
+              parent.valueParameters.mapNotNull { it.name }
     }
   }
 

@@ -346,14 +346,28 @@ class KotlinLexer(private val source: String) {
       skipSpace()
       val token = nextToken() ?: return null
       if (token == "fun") {
-        // Find beginning of parameter list
+        val parameters = mutableListOf<String>()
+
+        // Find beginning of parameter list, and pick up
+        // any type parameters in the signature
         while (i < length) {
-          val name = nextToken(matchParens = false) ?: return null
-          if (name == "(") {
+          val token = nextToken(matchParens = false) ?: return null
+          if (token == "<") {
+            var nextIsVariable = true
+            while (i < length) {
+              val varName = nextToken(matchParens = false) ?: return null
+              if (nextIsVariable && varName.isIdentifier()) {
+                parameters.add(varName)
+              }
+              if (varName == ">") {
+                break
+              }
+              nextIsVariable = varName == ","
+            }
+          } else if (token == "(") {
             break
           }
         }
-        val parameters = mutableListOf<String>()
 
         while (i < length) {
           // Name is last symbol before ":"
@@ -398,6 +412,10 @@ class KotlinLexer(private val source: String) {
     }
 
     return null
+  }
+
+  private fun String.isIdentifier(): Boolean {
+    return this[0].isJavaIdentifierStart() && this.all { it.isJavaIdentifierPart() }
   }
 
   companion object {
