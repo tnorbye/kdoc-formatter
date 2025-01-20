@@ -826,28 +826,48 @@ class ParagraphListBuilder(
     if (!options.addPunctuation || paragraphs.isEmpty()) {
       return
     }
-    val last = paragraphs.last()
-    if (last.preformatted || last.doc || last.hanging && !last.continuation || last.isEmpty()) {
-      return
-    }
-
-    val text = last.content
-    if (!text.startsWithUpperCaseLetter()) {
-      return
-    }
-
-    for (i in text.length - 1 downTo 0) {
-      val c = text[i]
-      if (c.isWhitespace()) {
+    for (last in paragraphs) {
+      if (last.preformatted || last.doc || last.hanging && !last.continuation || last.isEmpty()) {
         continue
       }
-      if (c.isLetterOrDigit() || c.isCloseSquareBracket()) {
-        text.setLength(i + 1)
-        text.append('.')
+
+      val text = last.content
+      if (!text.startsWithUpperCaseLetter() || text.contentEquals("TODO")) {
+        continue
       }
-      break
+
+      for (i in text.length - 1 downTo 0) {
+        val c = text[i]
+        if (c.isWhitespace()) {
+          continue
+        }
+        val isQuoteEnd = c.isCloseSquareBracket() || c == '`'
+        if (c.isLetterOrDigit() || isQuoteEnd) {
+          if (!isQuoteEnd && isUrlOrPathEnd(text, i)) {
+            break
+          }
+          text.setLength(i + 1)
+          text.append('.')
+        }
+        break
+      }
     }
   }
+}
+
+/** Returns true if the given string appears to be the tail end of a URL or path reference. */
+private fun isUrlOrPathEnd(s: CharSequence, offset: Int): Boolean {
+  var i = offset - 1
+  while (i >= 0) {
+    val c = s[i]
+    if (c == '/' || c == '.') {
+      return true
+    } else if (c.isWhitespace()) {
+      break
+    }
+    i--
+  }
+  return false
 }
 
 fun String.containsOnly(vararg s: Char): Boolean {

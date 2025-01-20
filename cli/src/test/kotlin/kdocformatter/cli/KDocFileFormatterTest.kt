@@ -371,6 +371,100 @@ class KDocFileFormatterTest {
   }
 
   @Test
+  fun testKDocOrderingForGenerics() {
+    // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/104
+    val source =
+        """
+        class KType
+        class Test {
+            /**
+             * @param type The [KType] representing the type to be instantiated.
+             * @param T The type of the instance to be created.
+             * @return An instance of the specified type, or `null` if instantiation fails.
+             */
+            public fun <T : Any> createInstance(type: KType): T? {
+                return null
+            }
+        }
+
+        /**
+         * @param clazz the class
+         * @param constructor to invoke
+         * @param T the view
+         * @param S the stage
+         */
+        fun <S : Stage<*>?, T : StageView<*>?> bind(clazz: Class<S>, constructor: BiFunction<TaskProfilersView?, S, T>) {
+        }
+
+        object Kt {
+          /**
+           * Run the loop and wait until condition is true or the retry limit is reached. Returns the
+           * result afterwards.
+           *
+           * @param supplier a function that returns the desired result.
+           * @param condition tests whether the result is desired.
+           * @param retryLimit Limit to retry before return the result. If not specified, try forever.
+           * @param <T> type of the desired result.
+           * @return the result from the last run (condition met or timeout).
+           */
+          fun <T> waitForAndReturn(
+            supplier: () -> T,
+            condition: (T) -> Boolean,
+            retryLimit: Int = NO_LIMIT,
+          ): T = TODO()
+        }
+        """
+            .trimIndent()
+
+    val reformatted = reformatFile(source, KDocFormattingOptions(72).apply { orderDocTags = true })
+    assertEquals(
+        """
+            class KType
+            class Test {
+                /**
+                 * @param T The type of the instance to be created.
+                 * @param type The [KType] representing the type to be instantiated.
+                 * @return An instance of the specified type, or `null` if
+                 *    instantiation fails.
+                 */
+                public fun <T : Any> createInstance(type: KType): T? {
+                    return null
+                }
+            }
+
+            /**
+             * @param S the stage
+             * @param T the view
+             * @param clazz the class
+             * @param constructor to invoke
+             */
+            fun <S : Stage<*>?, T : StageView<*>?> bind(clazz: Class<S>, constructor: BiFunction<TaskProfilersView?, S, T>) {
+            }
+
+            object Kt {
+              /**
+               * Run the loop and wait until condition is true or the retry limit is
+               * reached. Returns the result afterwards.
+               *
+               * @param <T> type of the desired result.
+               * @param supplier a function that returns the desired result.
+               * @param condition tests whether the result is desired.
+               * @param retryLimit Limit to retry before return the result. If not
+               *    specified, try forever.
+               * @return the result from the last run (condition met or timeout).
+               */
+              fun <T> waitForAndReturn(
+                supplier: () -> T,
+                condition: (T) -> Boolean,
+                retryLimit: Int = NO_LIMIT,
+              ): T = TODO()
+            }
+            """
+            .trimIndent(),
+        reformatted.trim())
+  }
+
+  @Test
   fun testLineWidth() {
     // Perform in KDocFileFormatter test too to make sure we properly account
     // for indent!

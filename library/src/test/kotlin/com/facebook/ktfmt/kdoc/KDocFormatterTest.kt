@@ -737,6 +737,82 @@ class KDocFormatterTest {
   }
 
   @Test
+  fun testAddPunctuationWithBlocks() {
+    // Regression test for https://github.com/tnorbye/kdoc-formatter/issues/105
+    val source =
+        """
+        /**
+        * This is a test
+        * ```kotlin
+        * println("true")
+        * ```
+        * This is a test
+        */
+        """
+            .trimIndent()
+
+    val options = KDocFormattingOptions(72)
+    options.addPunctuation = true
+    checkFormatter(
+        source,
+        options,
+        """
+        /**
+         * This is a test.
+         *
+         * ```kotlin
+         * println("true")
+         * ```
+         *
+         * This is a test.
+         */
+         """
+            .trimIndent())
+  }
+
+  @Test
+  fun testDoNotPunctuateUrls() {
+    // * Make sure we don't punctuate file paths and URLs
+    // * Do punctuate sentences that end with `
+    val source =
+        """
+      /**
+      * Calling `setCommunicationDevice()` without `clearCommunicationDevice()`
+      *
+      * Creates a [Pattern] corresponding to a [ReplaceString.oldPattern]
+      *
+      * There is more documentation for this tool in lint/docs/internal/document-checks.md.html
+      *
+      * Initial focus is on the subset used and supported by GitHub:
+      * https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/sarif-support-for-code-scanning#supported-sarif-output-file-properties
+      */
+      """
+            .trimIndent()
+
+    val options = KDocFormattingOptions(72)
+    options.addPunctuation = true
+    checkFormatter(
+        source,
+        options,
+        """
+      /**
+       * Calling `setCommunicationDevice()` without
+       * `clearCommunicationDevice()`.
+       *
+       * Creates a [Pattern] corresponding to a
+       * [ReplaceString.oldPattern].
+       *
+       * There is more documentation for this tool in
+       * lint/docs/internal/document-checks.md.html
+       *
+       * Initial focus is on the subset used and supported by GitHub:
+       * https://docs.github.com/en/github/finding-security-vulnerabilities-and-errors-in-your-code/sarif-support-for-code-scanning#supported-sarif-output-file-properties
+       */
+       """
+            .trimIndent())
+  }
+
+  @Test
   fun testWrapingOfLinkText() {
     val source =
         """

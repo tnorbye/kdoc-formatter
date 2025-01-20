@@ -2,6 +2,11 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.6.7]
+- Updated code to replace deprecated API usages
+- Fix issue #104: Include type parameters in parameter list reordering
+- Fix issue #105: Make add punctuation apply to all paragraphs, not just last
+
 ## [1.6.6]
 - Add support for 2025.1 EAP, and migrate to 2.x version of IntelliJ gradle plugin.
 - Fix https://github.com/tnorbye/kdoc-formatter/issues/106

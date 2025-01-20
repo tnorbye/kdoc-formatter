@@ -161,7 +161,7 @@ fun String.getParamName(): String? {
     }
   }
 
-  if (start < length && this[start] == '[') {
+  if (start < length && (this[start] == '[' || this[start] == '<')) {
     start++
     while (start < length) {
       if (this[start].isWhitespace()) {
