@@ -2,6 +2,9 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.6.8]
+- Add support for IJP 2025.2 EAP
+
 ## [1.6.7]
 - Updated code to replace deprecated API usages
 - Fix issue #104: Include type parameters in parameter list reordering
