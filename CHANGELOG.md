@@ -2,6 +2,9 @@
 
 # KDoc Formatter Changelog
 
+## [1.6.8]
+- IDE-only update: Marked compatible with IntelliJ IDEA 2025.2.
+
 ## [1.6.7]
 - Fix issue #104: Include type parameters in parameter list reordering
 - Fix issue #105: Make add punctuation apply to all paragraphs, not just last
