@@ -16,9 +16,9 @@ plugins {
 }
 
 val pluginVersion: String =
-  Properties()
-    .apply { load(file("../library/src/main/resources/version.properties").inputStream()) }
-    .getProperty("buildVersion")
+    Properties()
+        .apply { load(file("../library/src/main/resources/version.properties").inputStream()) }
+        .getProperty("buildVersion")
 
 group = properties("pluginGroup")
 
@@ -53,55 +53,52 @@ tasks {
     untilBuild.set(properties("pluginUntilBuild"))
 
     pluginDescription.set(
-      projectDir
-        .resolve("README.md")
-        .readText()
-        .lines()
-        .run {
-          val start = "<!-- Plugin description -->"
-          val end = "<!-- Plugin description end -->"
+        projectDir
+            .resolve("README.md")
+            .readText()
+            .lines()
+            .run {
+              val start = "<!-- Plugin description -->"
+              val end = "<!-- Plugin description end -->"
 
-          if (!containsAll(listOf(start, end))) {
-            throw GradleException(
-              "Plugin description section not found in README.md:\n$start ... $end"
-            )
-          }
-          subList(indexOf(start) + 1, indexOf(end))
-        }
-        .joinToString("\n")
-        .run { markdownToHTML(this) }
-    )
+              if (!containsAll(listOf(start, end))) {
+                throw GradleException(
+                    "Plugin description section not found in README.md:\n$start ... $end")
+              }
+              subList(indexOf(start) + 1, indexOf(end))
+            }
+            .joinToString("\n")
+            .run { markdownToHTML(this) })
 
     // Get the latest available change notes from the changelog file
     changeNotes.set(
-      provider {
-        with(changelog) {
-          renderItem(
-            getOrNull(properties("pluginVersion"))
-              ?: runCatching { getLatest() }.getOrElse { getUnreleased() },
-            Changelog.OutputType.HTML,
-          )
-        }
-      }
-    )
+        provider {
+          with(changelog) {
+            renderItem(
+                getOrNull(properties("pluginVersion"))
+                    ?: runCatching { getLatest() }.getOrElse { getUnreleased() },
+                Changelog.OutputType.HTML,
+            )
+          }
+        })
   }
 
   // Read more: https://github.com/JetBrains/intellij-ui-test-robot
   val runIdeForUiTests by
-    intellijPlatformTesting.runIde.registering {
-      task {
-        jvmArgumentProviders += CommandLineArgumentProvider {
-          listOf(
-            "-Drobot-server.port=8082",
-            "-Dide.mac.message.dialogs.as.sheets=false",
-            "-Djb.privacy.policy.text=<!--999.999-->",
-            "-Djb.consents.confirmation.enabled=false",
-          )
+      intellijPlatformTesting.runIde.registering {
+        task {
+          jvmArgumentProviders += CommandLineArgumentProvider {
+            listOf(
+                "-Drobot-server.port=8082",
+                "-Dide.mac.message.dialogs.as.sheets=false",
+                "-Djb.privacy.policy.text=<!--999.999-->",
+                "-Djb.consents.confirmation.enabled=false",
+            )
+          }
         }
-      }
 
-      plugins { robotServerPlugin() }
-    }
+        plugins { robotServerPlugin() }
+      }
 }
 
 lint {
