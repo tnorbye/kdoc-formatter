@@ -17,11 +17,11 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '2.0.20'
+    id 'org.jetbrains.kotlin.jvm' version '2.1.21'
     id 'java-gradle-plugin'
     id 'maven-publish'
-    id 'com.gradle.plugin-publish' version '0.9.10'
-    id 'com.ncorti.ktfmt.gradle' version '0.20.1'
+    id 'com.gradle.plugin-publish' version '1.3.1'
+    id 'com.ncorti.ktfmt.gradle' version '0.22.0'
 }
 
 // https://issues.sonatype.org/browse/OSSRH-63191
@@ -58,25 +58,16 @@ kotlin {
 }
 
 gradlePlugin {
-    plugins {
-        kdocformatter {
-            id = "kdoc-formatter"
-            displayName = 'KDoc Formatting'
-            implementationClass = "kdocformatter.gradle.KDocFormatterPlugin"
-        }
-    }
-}
-
-pluginBundle {
     website = 'https://github.com/tnorbye/kdoc-formatter'
     vcsUrl = 'https://github.com/tnorbye/kdoc-formatter.git'
-    tags = ['kotlin', 'kdoc', 'formatter', 'formatting']
 
     plugins {
         kdocformatter {
             id = "kdoc-formatter"
             displayName = 'KDoc Formatting'
             description = 'Plugin which can reformat Kotlin KDoc comments'
+            implementationClass = "kdocformatter.gradle.KDocFormatterPlugin"
+            tags.set(['kotlin', 'kdoc', 'formatter', 'formatting'])
         }
     }
 }
