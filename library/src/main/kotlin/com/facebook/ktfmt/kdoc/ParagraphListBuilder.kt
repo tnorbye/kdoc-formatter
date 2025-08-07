@@ -841,7 +841,7 @@ class ParagraphListBuilder(
         if (c.isWhitespace()) {
           continue
         }
-        val isQuoteEnd = c.isCloseSquareBracket() || c == '`'
+        val isQuoteEnd = c.isCloseSquareBracket() || c == '`' || c == ')'
         if (c.isLetterOrDigit() || isQuoteEnd) {
           if (!isQuoteEnd && isUrlOrPathEnd(text, i)) {
             break

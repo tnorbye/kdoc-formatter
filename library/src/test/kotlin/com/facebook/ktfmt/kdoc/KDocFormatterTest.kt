@@ -134,6 +134,25 @@ class KDocFormatterTest {
   }
 
   @Test
+  fun testPunctuationWithLink() {
+    val source =
+        """
+             /** See [this link](https://example.com) */
+            """
+            .trimIndent()
+
+    val options = KDocFormattingOptions(72)
+    options.addPunctuation = true
+    checkFormatter(
+        source,
+        options,
+        """
+             /** See [this link](https://example.com). */
+            """
+            .trimIndent())
+  }
+
+  @Test
   fun testWithOffset() {
     val source =
         """
