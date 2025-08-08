@@ -424,6 +424,11 @@ class Paragraph(private val task: FormattingTask) {
       return false
     }
 
+    val noBreakAfter = setOf("@see", "@throws", "@exception")
+    if (noBreakAfter.contains(prev)) {
+      return false
+    }
+
     if (prev == "@sample") {
       return false // https://github.com/facebook/ktfmt/issues/310
     }

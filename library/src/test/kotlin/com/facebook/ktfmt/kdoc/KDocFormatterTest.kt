@@ -134,6 +134,49 @@ class KDocFormatterTest {
   }
 
   @Test
+  fun testLongSeeTag() {
+    val source =
+        """
+            /**
+             * Enables the warning explicit api mode.
+             *
+             * @see org.jetbrains.kotlin.gradle.dsl.KotlinTopLevelExtensionConfig.explicitApiWarning
+             */
+            """
+            .trimIndent()
+    checkFormatter(
+        source,
+        KDocFormattingOptions(72),
+        """
+            /**
+             * Enables the warning explicit api mode.
+             *
+             * @see org.jetbrains.kotlin.gradle.dsl.KotlinTopLevelExtensionConfig.explicitApiWarning
+             */
+            """
+            .trimIndent())
+  }
+
+  @Test
+  fun testPunctuationWithLink() {
+    val source =
+        """
+             /** See [this link](https://example.com) */
+            """
+            .trimIndent()
+
+    val options = KDocFormattingOptions(72)
+    options.addPunctuation = true
+    checkFormatter(
+        source,
+        options,
+        """
+             /** See [this link](https://example.com). */
+            """
+            .trimIndent())
+  }
+
+  @Test
   fun testWithOffset() {
     val source =
         """
