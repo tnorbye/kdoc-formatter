@@ -28,7 +28,7 @@ class EditorConfigsTest {
     @TempDir @JvmField var temporaryFolder: File? = null
   }
 
-  class ConfigFile(val relativePath: String, @Language("EditorConfig") val contents: String)
+  class ConfigFile(val relativePath: String, @param:Language("EditorConfig") val contents: String)
 
   private fun createFileTree(vararg files: ConfigFile): File {
     val root = temporaryFolder!!

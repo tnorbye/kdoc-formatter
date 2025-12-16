@@ -8,3 +8,4 @@ m2
 *.swp
 .intellijPlatform
 .kotlin
+local.properties
