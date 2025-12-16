@@ -308,10 +308,10 @@ class KDocFileFormattingOptions {
           }
 
       return """
-            Usage: kdoc-formatter [options] file(s)
+      Usage: kdoc-formatter [options] file(s)
 
-            Options:
-            """
+      Options:
+      """
           .trimIndent() +
           "\n" +
           formattedOptions +

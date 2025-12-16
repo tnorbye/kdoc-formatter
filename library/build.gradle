@@ -22,7 +22,7 @@ lint {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
     testImplementation "junit:junit:4.13.2"
-    testImplementation "com.google.truth:truth:1.4.4"
+    testImplementation "com.google.truth:truth:1.4.5"
 }
 
 java {

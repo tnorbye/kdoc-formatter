@@ -2,6 +2,9 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.6.9]
+- Add support for 2025.3 EAP
+
 ## [1.6.8]
 - Add support for IJP 2025.2 EAP
 
