@@ -12,8 +12,7 @@ open class KDocFormatterTask : DefaultTask() {
   fun action() {
     val convention = convention.findPlugin(JavaPluginConvention::class.java)
     val dirs =
-        convention?.sourceSets?.map { it.allSource }?.map { it.outputDir }?.toList()
-            ?: listOf(File("."))
+        convention?.sourceSets?.flatMap { it.allSource.srcDirs }?.toList() ?: listOf(File("."))
 
     val extension = project.extensions.findByName("kdocformatter") as KDocFormatterExtension
     val flags = extension.options
