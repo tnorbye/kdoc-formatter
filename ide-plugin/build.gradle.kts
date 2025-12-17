@@ -8,11 +8,11 @@ private fun properties(key: String) = project.findProperty(key).toString()
 
 plugins {
   id("java")
-  id("org.jetbrains.kotlin.jvm")
-  id("org.jetbrains.intellij.platform") version "2.10.5"
-  id("org.jetbrains.changelog") version "2.5.0"
-  id("com.android.lint")
-  id("com.ncorti.ktfmt.gradle")
+  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.intellij.platform)
+  alias(libs.plugins.changelog)
+  alias(libs.plugins.android.lint)
+  alias(libs.plugins.ktfmt)
 }
 
 val pluginVersion: String =
