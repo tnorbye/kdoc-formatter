@@ -28,6 +28,7 @@ repositories {
   google()
   mavenCentral()
   intellijPlatform { defaultRepositories() }
+  maven { url = uri("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev") }
 }
 
 intellijPlatform { pluginConfiguration { name = properties("pluginName") } }
