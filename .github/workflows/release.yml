@@ -1,0 +1,136 @@
+name: Release
+
+# Pushing a `vX.Y.Z` tag that matches `buildVersion` in
+# library/src/main/resources/version.properties builds, verifies, and publishes a release.
+# Running the workflow manually (workflow_dispatch) does the same checks and uploads the
+# archives as workflow artifacts, without publishing anything.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build and verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      - name: Check tag matches version.properties
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="$(sed -n 's/^buildVersion *= *//p' library/src/main/resources/version.properties)"
+          if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "Error: tag ${GITHUB_REF_NAME} does not match buildVersion ${VERSION}"
+            exit 1
+          fi
+
+      - name: Check changelog entries
+        run: |
+          VERSION="$(sed -n 's/^buildVersion *= *//p' library/src/main/resources/version.properties)"
+          for f in CHANGELOG.md ide-plugin/CHANGELOG.md; do
+            if ! grep -q "^## \[${VERSION}\]" "$f"; then
+              echo "Error: $f has no '## [${VERSION}]' entry"
+              exit 1
+            fi
+          done
+
+      - name: Build, test, and verify the IDE plugin
+        run: ./gradlew build test :cli:distZip :ide-plugin:buildPlugin :ide-plugin:verifyPlugin
+
+      - name: Stage release files
+        run: |
+          mkdir -p dist
+          cp cli/build/distributions/*.zip dist/
+          cp ide-plugin/build/distributions/*.zip dist/
+          (cd dist && sha256sum *.zip > SHA256SUMS.txt && cat SHA256SUMS.txt)
+
+      - name: Upload release files
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-files
+          path: dist/*
+          if-no-files-found: error
+
+  github-release:
+    name: Publish GitHub Release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download release files
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-files
+          path: dist
+
+      # The release notes are this version's CHANGELOG.md entry.
+      - name: Extract release notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          awk -v heading="## [${VERSION}]" '
+            index($0, heading) == 1 { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          cat release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          files: dist/*
+          body_path: release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+
+  marketplace:
+    name: Publish to JetBrains Marketplace
+    # Only after the GitHub Release exists, so a failed build never reaches the Marketplace.
+    needs: github-release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # Create the token at https://plugins.jetbrains.com/author/me/tokens and store it as
+      # the repository secret PUBLISH_TOKEN. Without it, this step is skipped.
+      - name: Publish plugin
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        run: |
+          if [ -z "$PUBLISH_TOKEN" ]; then
+            echo "::warning::PUBLISH_TOKEN is not set; skipping JetBrains Marketplace upload."
+            exit 0
+          fi
+          ./gradlew :ide-plugin:publishPlugin

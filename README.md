@@ -86,7 +86,7 @@ Usage: kdoc-formatter [options] file(s)
 
 Options:
 --max-line-width=<n>
-     Sets the length of lines. Defaults to 72.
+    Sets the length of lines. Defaults to 72.
 --max-comment-width=<n>
     Sets the maximum width of comments. This is helpful in a codebase
     with large line lengths, such as 140 in the IntelliJ codebase.
@@ -101,7 +101,7 @@ Options:
     Convert unnecessary HTML entities and tags into KDoc markup (for
     example `&lt;` into `<`, and `<b>bold</b>` into `**bold**`).
 --no-convert-markup
-     Do not convert HTML markup into equivalent KDoc markup.
+    Do not convert HTML markup into equivalent KDoc markup.
 --add-punctuation
     Add missing punctuation, such as a period at the end of a
     capitalized paragraph.
@@ -110,18 +110,18 @@ Options:
     fits, and with `expand` it will always format comments with /** and
     */ on their own lines. The default is `collapse`.
 --align-table-columns
-     Reformat tables such that the |column|separators| line up
+    Reformat tables such that the |column|separators| line up
 --no-align-table-columns
-     Do not adjust formatting within table cells
+    Do not adjust formatting within table cells
 --order-doc-tags
     Move KDoc tags to the end of comments, and order them in a canonical
     order (@param before @return, and so on)
 --no-order-doc-tags
-     Do not move or reorder KDoc tags
+    Do not move or reorder KDoc tags
 --include-block-comments
-     Format /* block comments */ as well
+    Format /* block comments */ as well
 --include-line-comments
-     Format // line comments as well
+    Format // line comments as well
 --overlaps-git-changes=<HEAD | staged>
     If git is on the path, and the command is invoked in a git
     repository, kdoc-formatter will invoke git to find the changes
@@ -140,13 +140,13 @@ Options:
     Prints the paths of the files whose contents would change if the
     formatter were run normally.
 --quiet, -q
-     Quiet mode
+    Quiet mode
 --verbose, -v
-     Verbose mode
+    Verbose mode
 --help, -help, -h
-     Print this usage statement.
+    Print this usage statement.
 @<filename>
-     Read filenames from file.
+    Read filenames from file.
 
 kdoc-formatter: Version 1.7.1
 https://github.com/tnorbye/kdoc-formatter
@@ -283,3 +283,35 @@ cd gradle-plugin
 This will create a Maven local repository in m2/ which you can then
 point to from your consuming projects as shown in the Gradle Plugin
 Usage section above.
+
+Releasing
+---------
+
+The version is defined once, as `buildVersion` in
+[library/src/main/resources/version.properties](library/src/main/resources/version.properties).
+To cut a release:
+
+1. Update `buildVersion`, and the version references in this README
+   (the `ReadmeTest` test fails until they match).
+2. Add a `## [X.Y.Z]` entry to both [CHANGELOG.md](CHANGELOG.md) and
+   [ide-plugin/CHANGELOG.md](ide-plugin/CHANGELOG.md). The IDE plugin's
+   change notes come from the latter.
+3. To support a new IntelliJ release, update `platformVersion`,
+   `pluginUntilBuild`, and `pluginVerifierIdeVersions` in
+   [ide-plugin/gradle.properties](ide-plugin/gradle.properties), then
+   run `./gradlew :ide-plugin:verifyPlugin`.
+4. Commit, then push a matching tag:
+
+```
+git tag vX.Y.Z
+git push origin main vX.Y.Z
+```
+
+The tag runs [.github/workflows/release.yml](.github/workflows/release.yml),
+which checks that the tag matches `buildVersion` and that both
+changelogs have an entry, runs the tests and the plugin verifier, and
+creates a GitHub Release with the command-line zip and the IDE plugin
+zip. It then publishes the plugin to the JetBrains Marketplace if the
+`PUBLISH_TOKEN` repository secret is set (create a token at
+https://plugins.jetbrains.com/author/me/tokens). Running the workflow
+manually from the Actions tab does the same checks without publishing.
