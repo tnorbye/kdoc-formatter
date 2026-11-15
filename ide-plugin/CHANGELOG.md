@@ -2,6 +2,11 @@
 
 # KDoc Formatter Plugin Changelog
 
+## [1.7.1]
+- Built against IntelliJ IDEA 2026.3
+- Long headings no longer wrap, fenced code blocks indented in lists
+  and nested fences are kept, and GitHub alerts are supported
+
 ## [1.7.0]
 - Add support for 2026.1 and 2026.2 EAP
 

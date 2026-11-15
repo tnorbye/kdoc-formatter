@@ -148,7 +148,7 @@ Options:
 @<filename>
      Read filenames from file.
 
-kdoc-formatter: Version 1.7.0
+kdoc-formatter: Version 1.7.1
 https://github.com/tnorbye/kdoc-formatter
 ```
 
@@ -205,9 +205,9 @@ buildscript {
         maven { url '/path/to/m2' }
     }
     dependencies {
-        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.0"
+        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.1"
         // (Sorry about the vanity URL --
-        // I tried to get kdoc-formatter:kdoc-formatter:1.7.0 but that
+        // I tried to get kdoc-formatter:kdoc-formatter:1.7.1 but that
         // didn't meet the naming requirements for publishing:
         // https://issues.sonatype.org/browse/OSSRH-63191)
     }
@@ -227,7 +227,7 @@ buildscript {
         maven { url = uri("/path/to/m2") }
     }
     dependencies {
-        classpath("com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.0")
+        classpath("com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.1")
     }
 }
 plugins {

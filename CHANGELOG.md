@@ -2,6 +2,17 @@
 
 # KDoc Formatter Changelog
 
+## [1.7.1]
+- Markdown and KDoc fixes: long headings no longer wrap, fenced code
+  blocks indented in lists and nested fences are kept, GitHub alerts
+  (`> [!NOTE]` and so on) are supported, blank lines before quotes are
+  kept, and Markdown files keep their trailing newline.
+- Point to [markfmt](https://github.com/tnorbye/markfmt), a dedicated
+  Markdown formatter, in the README, the `--include-md-files` help, and
+  a tip after formatting Markdown files.
+- Help text and README fixes.
+- IDE plugin: built and tested against IntelliJ IDEA 2026.3.
+
 ## [1.7.0]
 - IDE-only update: Marked compatible with IntelliJ IDEA 2026.1.
 
