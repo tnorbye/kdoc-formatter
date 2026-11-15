@@ -1303,4 +1303,26 @@ class KDocFileFormatterTest {
             .trimIndent()
     assertEquals(nested, formatter.reformatFile(File("test.md"), nested))
   }
+
+  @Test
+  fun testMarkdownAlertMarkerOnlyOnFirstQuoteLine() {
+    val formatter =
+        KDocFileFormatter(
+            KDocFileFormattingOptions().apply {
+              formattingOptions = KDocFormattingOptions(72)
+              includeMd = true
+            })
+    fun format(source: String) = formatter.reformatFile(File("test.md"), source)
+
+    // After the first line of a quote, GitHub shows a marker as plain text, so the quote must
+    // stay a single quote (joining its lines renders the same).
+    assertEquals(
+        "> A plain quote. [!NOTE] is literal here.\n",
+        format("> A plain quote.\n> [!NOTE] is literal here.\n"))
+    assertEquals(
+        "> Quote first: [!WARNING] Still the same quote.\n",
+        format("> Quote first:\n> [!WARNING]\n> Still the same quote.\n"))
+    // On the first line it is an alert, and the marker stays on its own line.
+    assertEquals("> [!TIP]\n> Body text.\n", format("> [!TIP]\n> Body text.\n"))
+  }
 }

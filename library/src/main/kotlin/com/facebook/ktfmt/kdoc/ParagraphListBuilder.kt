@@ -335,7 +335,10 @@ class ParagraphListBuilder(
                 until = { it.contains("</pre>", ignoreCase = true) })
       } else if (lineWithoutIndentation.isQuoted()) {
         val wasSeparate = paragraph.isEmpty() && paragraph.separate
-        if (lineWithoutIndentation.substring(2).trim().isGitHubAlert()) {
+        // GitHub only treats `[!NOTE]` etc. as an alert on the first line of a quote; on a
+        // later line it is literal text (we've already ++'ed i above).
+        val startsQuote = i == 1 || !lineContent(lines[i - 2]).startsWith(">")
+        if (startsQuote && lineWithoutIndentation.substring(2).trim().isGitHubAlert()) {
           val alertParagraph = newParagraph(i - 1)
           alertParagraph.separate = wasSeparate
           alertParagraph.quoted = true
@@ -358,8 +361,7 @@ class ParagraphListBuilder(
                         w.isKDocTag() ||
                         w.isTodo() ||
                         w.isDirectiveMarker() ||
-                        w.isHeader() ||
-                        (w.isQuoted() && w.substring(2).trim().isGitHubAlert())
+                        w.isHeader()
                   },
                   customize = { _, p -> p.quoted = true },
                   includeEnd = false)

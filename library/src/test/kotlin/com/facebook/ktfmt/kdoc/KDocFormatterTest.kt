@@ -5375,12 +5375,12 @@ class KDocFormatterTest {
          * > Alert text that is long enough to wrap across lines without
          * > merging into the marker.
          *
-         * > Regular quote followed immediately by an alert:
-         *
-         * > [!NOTE]
-         * > Second alert body.
+         * > Regular quote followed immediately by an alert: [!NOTE] Second
+         * > alert body.
          */
         """
             .trimIndent())
+    // GitHub only recognizes `[!NOTE]` on the first line of a quote, so the marker above is
+    // literal text: splitting the quote there would turn it into a real alert.
   }
 }
