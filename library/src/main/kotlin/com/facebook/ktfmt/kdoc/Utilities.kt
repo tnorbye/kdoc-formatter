@@ -91,6 +91,14 @@ fun String.isQuoted(): Boolean {
   return startsWith("> ")
 }
 
+fun String.isGitHubAlert(): Boolean {
+  return equals("[!NOTE]", ignoreCase = true) ||
+      equals("[!TIP]", ignoreCase = true) ||
+      equals("[!IMPORTANT]", ignoreCase = true) ||
+      equals("[!WARNING]", ignoreCase = true) ||
+      equals("[!CAUTION]", ignoreCase = true)
+}
+
 fun String.isDirectiveMarker(): Boolean {
   return startsWith("<!--") || startsWith("-->")
 }

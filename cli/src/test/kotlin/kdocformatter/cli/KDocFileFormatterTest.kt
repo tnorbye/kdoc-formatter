@@ -1208,4 +1208,99 @@ class KDocFileFormatterTest {
             .trimIndent(),
         reformatted)
   }
+
+  @Test
+  fun testMarkdownHeadingsIndentedFencesAlertsAndTrailingNewline() {
+    val source =
+        """
+        # This Is a Very Long Markdown Heading That Must Not Wrap Onto a Second Line
+
+        > [!IMPORTANT]
+        > Every change merges only after the full gate passes with zero regressions across the suite.
+
+        1. First step:
+           ```bash
+           export FOO=bar
+           # Comment inside indented code block
+           ./gradlew build
+           ```
+        2. Second step with prose that is long enough to be wrapped nicely at seventy-two columns.
+
+        ```bash
+        # Top-level code block comment that is also quite long and must not wrap
+        echo "hello world"
+        ```
+        """
+            .trimIndent() + "\n"
+
+    val formatter =
+        KDocFileFormatter(
+            KDocFileFormattingOptions().apply {
+              formattingOptions = KDocFormattingOptions(72)
+              includeMd = true
+            })
+    val reformatted = formatter.reformatFile(File("test.md"), source)
+    assertEquals(
+        """
+        # This Is a Very Long Markdown Heading That Must Not Wrap Onto a Second Line
+
+        > [!IMPORTANT]
+        > Every change merges only after the full gate passes with zero
+        > regressions across the suite.
+        1. First step:
+           ```bash
+           export FOO=bar
+           # Comment inside indented code block
+           ./gradlew build
+           ```
+        2. Second step with prose that is long enough to be wrapped nicely at
+           seventy-two columns.
+
+        ```bash
+        # Top-level code block comment that is also quite long and must not wrap
+        echo "hello world"
+        ```
+        """
+            .trimIndent() + "\n",
+        reformatted)
+  }
+
+  @Test
+  fun testMarkdownSingleLineAlternateAndNestedFences() {
+    val formatter =
+        KDocFileFormatter(
+            KDocFileFormattingOptions().apply {
+              formattingOptions =
+                  KDocFormattingOptions(72).apply {
+                    alternate = true
+                    convertMarkup = true
+                  }
+              includeMd = true
+            })
+
+    assertEquals(
+        "# Short Single Line Heading",
+        formatter.reformatFile(File("test.md"), "# Short Single Line Heading"))
+    assertEquals(
+        "# Short Single Line Heading\n",
+        formatter.reformatFile(File("test.md"), "# Short Single Line Heading\n"))
+
+    val nested =
+        """
+        ````markdown
+        ```kotlin
+        val x = 1
+        ```
+        ````
+
+        And another block.
+
+        ```markdown
+        ```bash
+        echo "not a closing fence"
+        ```
+        """
+            .trimIndent()
+    assertEquals(nested, formatter.reformatFile(File("test.md"), nested))
+  }
 }

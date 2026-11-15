@@ -68,6 +68,9 @@ class Paragraph(private val task: FormattingTask) {
   /** Is this paragraph a block paragraph? If so, it must start on its own line. */
   var block = false
 
+  /** Is this paragraph a heading? If so, it must not wrap across lines. */
+  var heading = false
+
   /** Is this paragraph specifying a kdoc tag like @param? */
   var doc = false
 
@@ -300,6 +303,9 @@ class Paragraph(private val task: FormattingTask) {
   }
 
   fun reflow(firstLineMaxWidth: Int, maxLineWidth: Int): List<String> {
+    if (heading) {
+      return listOf(text.collapseSpaces())
+    }
     val lineWidth = maxLineWidth - getIndentSize(indent, options)
     val hangingIndentSize = getIndentSize(hangingIndent, options) - if (quoted) 2 else 0 // "> "
     if (text.length < (firstLineMaxWidth - hangingIndentSize)) {

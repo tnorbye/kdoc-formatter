@@ -123,7 +123,14 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     // adds 3 characters to the line requirements (" * " on each line after the
     // opening "/**") so we duplicate the options and pre-add 3 to account for
     // this
-    val formatter = KDocFormatter(formattingOptions.copy().apply { maxLineWidth += 3 })
+    val formatter =
+        KDocFormatter(
+            formattingOptions.copy().apply {
+              maxLineWidth += 3
+              // Never collapse Markdown into a single-line `/** ... */` comment (and
+              // account for KDocFormatter inverting collapseSingleLine when alternate=true)
+              collapseSingleLine = alternate
+            })
     val comment = "/**\n" + source.split("\n").joinToString(separator = "\n") { " * $it" } + "\n*/"
     val reformattedComment =
         " " +
@@ -145,7 +152,17 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
             it
           }
         }
-    return reformatted
+    val trailingNewline =
+        when {
+          source.endsWith("\r\n") -> "\r\n"
+          source.endsWith("\n") -> "\n"
+          else -> ""
+        }
+    return if (trailingNewline.isNotEmpty() && !reformatted.endsWith(trailingNewline)) {
+      reformatted + trailingNewline
+    } else {
+      reformatted
+    }
   }
 
   /**

@@ -232,6 +232,7 @@ class ParagraphListBuilder(
       }
 
       if (lineWithIndentation.startsWith("    ") && // markdown preformatted text
+          !lineWithoutIndentation.startsWith("```") &&
           (i == 1 || lineContent(lines[i - 2]).isBlank()) && // we've already ++'ed i above
           // Make sure it's not just deeply indented inside a different block
           (paragraph.prev == null ||
@@ -262,7 +263,9 @@ class ParagraphListBuilder(
           lineWithoutIndentation.firstOrNull { it != '#' }?.equals(' ') ==
               true) { // not isHeader() because <h> is handled separately
         // ## Header
-        newParagraph(i - 1).block = true
+        val headingParagraph = newParagraph(i - 1)
+        headingParagraph.block = true
+        headingParagraph.heading = true
         appendText(lineWithoutIndentation)
         newParagraph(i).block = true
       } else if (lineWithoutIndentation.startsWith("*") &&
@@ -275,8 +278,14 @@ class ParagraphListBuilder(
         newParagraph(i - 1).block = true
         appendText(lineWithoutIndentation)
         newParagraph(i).block = true
-      } else if (lineWithoutIndentation.startsWith("```")) {
-        i = addPreformatted(i - 1, expectClose = true) { it.trimStart().startsWith("```") }
+      } else if (lineWithoutIndentation.startsWith("```") &&
+          !lineWithoutIndentation.dropWhile { it == '`' }.contains('`')) {
+        val fence = lineWithoutIndentation.takeWhile { it == '`' }
+        i =
+            addPreformatted(i - 1, expectClose = true) {
+              val trimmed = it.trim()
+              trimmed.length >= fence.length && trimmed.all { ch -> ch == '`' }
+            }
       } else if (lineWithoutIndentation.startsWith("<pre>", ignoreCase = true)) {
         i =
             addPreformatted(
@@ -325,24 +334,37 @@ class ParagraphListBuilder(
                 },
                 until = { it.contains("</pre>", ignoreCase = true) })
       } else if (lineWithoutIndentation.isQuoted()) {
-        i--
-        val paragraph = newParagraph(i)
-        paragraph.quoted = true
-        paragraph.block = false
-        i =
-            addLines(
-                i,
-                until = { _, w, _ ->
-                  w.isBlank() ||
-                      w.isListItem() ||
-                      w.isKDocTag() ||
-                      w.isTodo() ||
-                      w.isDirectiveMarker() ||
-                      w.isHeader()
-                },
-                customize = { _, p -> p.quoted = true },
-                includeEnd = false)
-        newParagraph(i)
+        val wasSeparate = paragraph.isEmpty() && paragraph.separate
+        if (lineWithoutIndentation.substring(2).trim().isGitHubAlert()) {
+          val alertParagraph = newParagraph(i - 1)
+          alertParagraph.separate = wasSeparate
+          alertParagraph.quoted = true
+          alertParagraph.block = true
+          alertParagraph.heading = true
+          appendText(lineWithoutIndentation.substring(2).trim())
+          newParagraph(i)
+        } else {
+          i--
+          val paragraph = newParagraph(i)
+          paragraph.separate = wasSeparate
+          paragraph.quoted = true
+          paragraph.block = false
+          i =
+              addLines(
+                  i,
+                  until = { _, w, _ ->
+                    w.isBlank() ||
+                        w.isListItem() ||
+                        w.isKDocTag() ||
+                        w.isTodo() ||
+                        w.isDirectiveMarker() ||
+                        w.isHeader() ||
+                        (w.isQuoted() && w.substring(2).trim().isGitHubAlert())
+                  },
+                  customize = { _, p -> p.quoted = true },
+                  includeEnd = false)
+          newParagraph(i)
+        }
       } else if (lineWithoutIndentation.equals("<ul>", true) ||
           lineWithoutIndentation.equals("<ol>", true)) {
         newParagraph(i - 1).block = true
@@ -382,7 +404,7 @@ class ParagraphListBuilder(
                         w.isQuoted() ||
                         w.isKDocTag() ||
                         w.isTodo() ||
-                        s.startsWith("```") ||
+                        (w.startsWith("```") && !w.dropWhile { it == '`' }.contains('`')) ||
                         w.startsWith("<pre>") ||
                         w.isDirectiveMarker() ||
                         w.isLine() ||
@@ -472,6 +494,7 @@ class ParagraphListBuilder(
                 options.convertMarkup &&
                 paragraph.isEmpty()) {
               paragraph.separate = true
+              paragraph.heading = true
               val count = lineWithoutIndentation[lineWithoutIndentation.length - 2] - '0'
               for (j in 0 until count.coerceAtLeast(0).coerceAtMost(8)) {
                 appendText("#")
@@ -733,11 +756,11 @@ class ParagraphListBuilder(
             paragraph.preformatted ->
                 !prev.preformatted &&
                     !text.startsWith("<pre", true) &&
-                    (!text.startsWith("```") || !prev.text.isExpectingMore())
+                    (!text.trimStart().startsWith("```") || !prev.text.isExpectingMore())
             prev.preformatted && prev.text.startsWith("</pre>", true) -> false
             paragraph.continuation -> true
             paragraph.hanging -> false
-            paragraph.quoted -> prev.quoted
+            paragraph.quoted -> prev.quoted && !prev.text.trim().isGitHubAlert()
             text.isHeader() -> true
             text.startsWith("<p>", true) || text.startsWith("<p/>", true) -> true
             else -> !paragraph.block && !paragraph.isEmpty()

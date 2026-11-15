@@ -5242,4 +5242,145 @@ class KDocFormatterTest {
         """
             .trimIndent())
   }
+
+  @Test
+  fun testLongHeadingsDoNotWrap() {
+    val source =
+        """
+        /**
+         * # This Is a Very Long KDoc Heading That Must Not Wrap Onto a Second Line
+         *
+         * Some body text that is long enough to wrap normally at the seventy-two column limit.
+         *
+         * <h2>This Is Also a Very Long HTML Heading That Must Not Wrap After Conversion</h2>
+         *
+         * More body text.
+         */
+        """
+            .trimIndent()
+    checkFormatter(
+        source,
+        KDocFormattingOptions(maxLineWidth = 72, maxCommentWidth = 72).apply {
+          convertMarkup = true
+        },
+        """
+        /**
+         * # This Is a Very Long KDoc Heading That Must Not Wrap Onto a Second Line
+         *
+         * Some body text that is long enough to wrap normally at the
+         * seventy-two column limit.
+         *
+         * ## This Is Also a Very Long HTML Heading That Must Not Wrap After Conversion
+         *
+         * More body text.
+         */
+        """
+            .trimIndent())
+  }
+
+  @Test
+  fun testIndentedFencedCodeBlocksAndInlineBackticks() {
+    val source =
+        """
+        /**
+         * ```foo``` is an inline code span at the start of a line that is long enough to wrap across multiple lines.
+         *
+         * 1. First step:
+         *    ```kotlin
+         *    val first = "must stay preformatted inside list item"
+         *    ```
+         * 10. Tenth step with blank line before four-space indented fence:
+         *
+         *     ```kotlin
+         *     val tenth = "must not be split by blank line"
+         *
+         *     val afterBlank = true
+         *     ```
+         *
+         * ````markdown
+         * ```kotlin
+         * val nested = 1
+         * ```
+         * ````
+         *
+         * ```markdown
+         * ```java
+         * int x = 1;
+         * ```
+         */
+        """
+            .trimIndent()
+    checkFormatter(
+        source,
+        KDocFormattingOptions(maxLineWidth = 72, maxCommentWidth = 72),
+        """
+        /**
+         * ```foo``` is an inline code span at the start of a line that is
+         * long enough to wrap across multiple lines.
+         * 1. First step:
+         *    ```kotlin
+         *    val first = "must stay preformatted inside list item"
+         *    ```
+         * 10. Tenth step with blank line before four-space indented fence:
+         *
+         *     ```kotlin
+         *     val tenth = "must not be split by blank line"
+         *
+         *     val afterBlank = true
+         *     ```
+         * ````markdown
+         * ```kotlin
+         * val nested = 1
+         * ```
+         * ````
+         * ```markdown
+         * ```java
+         * int x = 1;
+         * ```
+         */
+        """
+            .trimIndent(),
+        verifyDokka = false)
+  }
+
+  @Test
+  fun testBlankLineBeforeQuotedAndGitHubAlerts() {
+    val source =
+        """
+        /**
+         * # Heading
+         *
+         * > A regular quote preceded by a blank line should keep the blank line before it.
+         *
+         * > [!IMPORTANT]
+         * > Alert text that is long enough to wrap across lines without merging into the marker.
+         *
+         * > Regular quote followed immediately by an alert:
+         * > [!NOTE]
+         * > Second alert body.
+         */
+        """
+            .trimIndent()
+    checkFormatter(
+        source,
+        KDocFormattingOptions(maxLineWidth = 72, maxCommentWidth = 72),
+        """
+        /**
+         * # Heading
+         *
+         * > A regular quote preceded by a blank line should keep the blank
+         * > line before it.
+         *
+         * > [!IMPORTANT]
+         * > Alert text that is long enough to wrap across lines without
+         * > merging into the marker.
+         *
+         * > Regular quote followed immediately by an alert:
+         *
+         * > [!NOTE]
+         * > Second alert body.
+         */
+        """
+            .trimIndent())
+  }
 }
