@@ -27,10 +27,3 @@ tasks.register("runIde") { dependsOn(":ide-plugin:runIde") }
 tasks.register("plugin") { dependsOn(":ide-plugin:buildPlugin") }
 
 tasks.register("all") { dependsOn("clean", "install", "plugin", "zip") }
-
-tasks.named<Delete>("clean") {
-  doFirst {
-    delete("$rootDir/m2")
-    delete("$rootDir/gradle-plugin/build")
-  }
-}

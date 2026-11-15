@@ -14,10 +14,4 @@ include("cli")
 
 include("library")
 
-include(
-    "ide-plugin")
-
-// Including this in the same project causes Gradle sync
-// to repeated sources, which makes the IDE experience poor.
-// Instead, this is now a separate project.
-// include("gradle-plugin")
+include("ide-plugin")

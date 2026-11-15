@@ -16,13 +16,12 @@
 
 package kdocformatter.cli
 
-import com.facebook.ktfmt.kdoc.Version
 import java.io.File
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
-/** Keeps the README in sync with the CLI and the version in version.properties. */
+/** Keeps the README in sync with the CLI, including its version (from version.properties). */
 class ReadmeTest {
   private val readme: String by lazy {
     // Gradle runs tests from the module directory; IDEs may use the repository root.
@@ -40,17 +39,5 @@ class ReadmeTest {
         KDocFileFormattingOptions.usage().trimEnd(),
         readme.substring(bodyStart, bodyEnd).trimEnd(),
         "Update the README's Command Usage block with the output of `kdoc-formatter`")
-  }
-
-  @Test
-  fun testVersionReferencesMatchVersionProperties() {
-    val references = Regex("""kdoc-?formatter:(\d+\.\d+\.\d+)""").findAll(readme).toList()
-    assertTrue(references.isNotEmpty(), "README has no versioned artifact references")
-    for (reference in references) {
-      assertEquals(
-          Version.versionString,
-          reference.groupValues[1],
-          "README reference `${reference.value}` does not match version.properties")
-    }
   }
 }

@@ -29,7 +29,6 @@ Features
 * IDE plugin to format selected files or current comment. Preserves
   caret position in the current comment. Also hooks into the IDE
   formatting action.
-* Gradle plugin to format the source folders in the current project.
 * Block tags (like @param) are separated out from the main text, and
   subsequent lines are indented. Blank spaces between doc tags are
   removed. Preformatted text (indented 4 spaces or more) is left alone.
@@ -195,49 +194,6 @@ search for Keymap, and then in the Keymap search field look for
 The plugin is available from the JetBrains Marketplace at
 [https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter](https://plugins.jetbrains.com/plugin/15734-kotlin-kdoc-formatter)
 
-Gradle Plugin Usage
--------------------
-The plugin is not yet distributed, so for now, download the zip file and
-install it somewhere, then add this to your build.gradle file:
-```groovy
-buildscript {
-    repositories {
-        maven { url '/path/to/m2' }
-    }
-    dependencies {
-        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.1"
-        // (Sorry about the vanity URL --
-        // I tried to get kdoc-formatter:kdoc-formatter:1.7.1 but that
-        // didn't meet the naming requirements for publishing:
-        // https://issues.sonatype.org/browse/OSSRH-63191)
-    }
-}
-plugins {
-    id 'kdoc-formatter'
-}
-kdocformatter {
-    options = "--single-line-comments=collapse --max-line-width=100"
-}
-```
-
-Or in build.gradle.kts:
-```kts
-buildscript {
-    repositories {
-        maven { url = uri("/path/to/m2") }
-    }
-    dependencies {
-        classpath("com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.1")
-    }
-}
-plugins {
-    id("kdoc-formatter")
-}
-```
-
-Here, the [options] property lets you use any of the command line flags
-from the kdoc-formatter command.
-
 Building and testing
 --------------------
 To create an installation of the command line tool, run
@@ -274,16 +230,6 @@ To reformat the source tree run
 ./gradlew ktfmtFormat
 ```
 
-To build the Gradle plugin locally:
-```
-cd gradle-plugin
-./gradlew publish
-```
-
-This will create a Maven local repository in m2/ which you can then
-point to from your consuming projects as shown in the Gradle Plugin
-Usage section above.
-
 Releasing
 ---------
 
@@ -291,8 +237,9 @@ The version is defined once, as `buildVersion` in
 [library/src/main/resources/version.properties](library/src/main/resources/version.properties).
 To cut a release:
 
-1. Update `buildVersion`, and the version references in this README
-   (the `ReadmeTest` test fails until they match).
+1. Update `buildVersion`, and regenerate the Command Usage block in
+   this README from the output of `kdoc-formatter` (the `ReadmeTest`
+   test fails until it matches).
 2. Add a `## [X.Y.Z]` entry to both [CHANGELOG.md](CHANGELOG.md) and
    [ide-plugin/CHANGELOG.md](ide-plugin/CHANGELOG.md). The IDE plugin's
    change notes come from the latter.
