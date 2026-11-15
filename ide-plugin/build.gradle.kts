@@ -28,10 +28,23 @@ repositories {
   google()
   mavenCentral()
   intellijPlatform { defaultRepositories() }
-  maven { url = uri("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev") }
 }
 
-intellijPlatform { pluginConfiguration { name = properties("pluginName") } }
+intellijPlatform {
+  pluginConfiguration { name = properties("pluginName") }
+  // `publishPlugin` uploads to the JetBrains Marketplace; the release workflow passes the
+  // token from the PUBLISH_TOKEN repository secret.
+  publishing { token = providers.environmentVariable("PUBLISH_TOKEN") }
+  // `verifyPlugin` checks the plugin against each of these IDEs (the oldest and newest
+  // supported releases), catching uses of APIs that are missing or removed there.
+  pluginVerification {
+    ides {
+      properties("pluginVerifierIdeVersions").split(',').forEach {
+        create(properties("platformType"), it.trim())
+      }
+    }
+  }
+}
 
 changelog {
   version.set(pluginVersion)
@@ -76,7 +89,7 @@ tasks {
         provider {
           with(changelog) {
             renderItem(
-                getOrNull(properties("pluginVersion"))
+                getOrNull(project.version.toString())
                     ?: runCatching { getLatest() }.getOrElse { getUnreleased() },
                 Changelog.OutputType.HTML,
             )
@@ -108,10 +121,13 @@ lint {
 }
 
 dependencies {
-  implementation(project(":library"))
+  // IntelliJ ships its own Kotlin standard library; bundling another copy can cause
+  // ClassNotFoundException or version mismatches at runtime.
+  implementation(project(":library")) { exclude(group = "org.jetbrains.kotlin") }
   intellijPlatform {
     create(properties("platformType"), properties("platformVersion"))
     bundledPlugins(properties("platformPlugins").split(','))
+    pluginVerifier()
   }
 }
 

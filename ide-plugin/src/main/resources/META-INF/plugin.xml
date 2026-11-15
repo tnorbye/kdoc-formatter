@@ -8,10 +8,10 @@
   <depends>com.intellij.modules.platform</depends>
   <depends>org.jetbrains.kotlin</depends>
 
-   <!-- This is temporary mechanism to mark certain plugins as K2-compatible. See IntelliJ commit cf213fb139 for details. -->
+  <!-- Works with both the K1 and K2 Kotlin plugin modes. See
+       https://kotlin.github.io/analysis-api/migrating-from-k1.html -->
   <extensions defaultExtensionNs="org.jetbrains.kotlin">
-    <!--suppress PluginXmlValidity -->
-    <supportsKotlinK2Mode/>
+    <supportsKotlinPluginMode supportsK1="true" supportsK2="true"/>
   </extensions>
 
   <extensions defaultExtensionNs="com.intellij">
