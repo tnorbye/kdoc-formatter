@@ -44,8 +44,9 @@ Features
 * Removes trailing spaces.
 * Realigns table columns in Markdown tables and adds padding.
 * Reorders KDoc tags into a canonical order (for example placing
+  @param before @return) and moves them to the end of the comment.
 * Can optionally convert various remaining HTML tags in the comments to
-  the corresponding KDoc/markdown text. For example, \*\*bold** is
+  the corresponding KDoc/markdown text. For example, \<b>bold\</b> is
   converted into **bold**, \<p> is converted to a blank line,
   \<h1>Heading\</h1> is converted into # Heading, and so on.
 * Support for .editorconfig configuration files to automatically pick up
@@ -55,6 +56,27 @@ Features
   line widths of for example 140 but limit comments to 70 characters
   (possibly indented). For code, avoiding line breaking is helpful, but
   for text, shorter lines are better for reading.
+
+Formatting Markdown Files
+-------------------------
+
+kdoc-formatter can also format standalone Markdown files
+(`--include-md-files`), and many people use it for that. That mode
+reuses the KDoc comment formatter, so it only knows the parts of
+Markdown that appear in comments. For `.md` files, use
+[markfmt](https://github.com/tnorbye/markfmt) instead. It's a dedicated
+Markdown formatter that grew out of this mode, and adds:
+
+* full CommonMark and GFM support, checked so formatting never changes
+  how the document renders
+* `--check` and `--diff` for CI, a pre-commit hook, `.editorconfig` and
+  `.markfmt.toml` settings, and formatting only lines with git changes
+* other wrap styles, including one sentence per line
+* Markdeep (`.md.html`) files and AI agent instruction files
+  (`AGENTS.md`, `CLAUDE.md`, `SKILL.md`)
+
+It's a single native binary: `cargo install markfmt`, or see its
+[installation options](https://github.com/tnorbye/markfmt#installation).
 
 Command Usage
 -------------
@@ -74,9 +96,10 @@ Options:
     readable. Defaults to 72 (or max-line-width, if set lower than 72.)
 --hanging-indent=<n>
     Sets the number of spaces to use for hanging indents, e.g. second
-    and subsequent lines in a bulleted list or kdoc blog tag.
+    and subsequent lines in a bulleted list or kdoc block tag.
 --convert-markup
-     Convert unnecessary HTML tags like < and > into < and >.
+    Convert unnecessary HTML entities and tags into KDoc markup (for
+    example `&lt;` into `<`, and `<b>bold</b>` into `**bold**`).
 --no-convert-markup
      Do not convert HTML markup into equivalent KDoc markup.
 --add-punctuation
@@ -84,7 +107,7 @@ Options:
     capitalized paragraph.
 --single-line-comments=<collapse | expand>
     With `collapse`, turns multi-line comments into a single line if it
-    fits, and with `expand` it will always format commands with /** and
+    fits, and with `expand` it will always format comments with /** and
     */ on their own lines. The default is `collapse`.
 --align-table-columns
      Reformat tables such that the |column|separators| line up
@@ -95,16 +118,21 @@ Options:
     order (@param before @return, and so on)
 --no-order-doc-tags
      Do not move or reorder KDoc tags
+--include-block-comments
+     Format /* block comments */ as well
+--include-line-comments
+     Format // line comments as well
 --overlaps-git-changes=<HEAD | staged>
     If git is on the path, and the command is invoked in a git
     repository, kdoc-formatter will invoke git to find the changes
-    either in the HEAD commit or in the staged files, and will format
-    only the KDoc comments that overlap these changes.
+    either in the HEAD commit or in the staged files, and will
+    format only the KDoc comments that overlap these changes.
 --lines <start:end>, --line <start>
     Line range(s) to format, like 5:10 (1-based; default is all). Can be
     specified multiple times.
 --include-md-files
-     Format markdown (*.md) files
+    Format markdown (*.md) files. For a dedicated Markdown formatter,
+    see markfmt: https://github.com/tnorbye/markfmt
 --greedy
     Instead of the optimal line breaking normally used by
     kdoc-formatter, do greedy line breaking instead
@@ -128,7 +156,7 @@ IntelliJ Plugin Usage
 ---------------------
 Install the IDE plugin. Open up the KDoc Formatting Options and inspect
 the settings to see if you want to change any of the options. By
-default, KDoc Formatter will use the line width configured for in the
+default, KDoc Formatter will use the line width configured in the
 Kotlin editor code style for line breaking, but it will **also** look
 up the Markdown line width (typically 72) and use that as the maximum
 comment width. This means that by default, comments will be at most 72
@@ -177,9 +205,9 @@ buildscript {
         maven { url '/path/to/m2' }
     }
     dependencies {
-        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.6.4"
+        classpath "com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.0"
         // (Sorry about the vanity URL --
-        // I tried to get kdoc-formatter:kdoc-formatter:1.6.4 but that
+        // I tried to get kdoc-formatter:kdoc-formatter:1.7.0 but that
         // didn't meet the naming requirements for publishing:
         // https://issues.sonatype.org/browse/OSSRH-63191)
     }
@@ -199,7 +227,7 @@ buildscript {
         maven { url = uri("/path/to/m2") }
     }
     dependencies {
-        classpath("com.github.tnorbye.kdoc-formatter:kdocformatter:1.6.4")
+        classpath("com.github.tnorbye.kdoc-formatter:kdocformatter:1.7.0")
     }
 }
 plugins {
@@ -218,7 +246,7 @@ To create an installation of the command line tool, run
 ./gradlew install
 ```
 
-The installation will be located in cli/build/install/kdocformatter.
+The installation will be located in cli/build/install/kdoc-formatter.
 
 To create a zip, run
 
@@ -243,7 +271,7 @@ To run/test the plugin in the IDE, run
 To reformat the source tree run
 
 ```
-./gradlew format
+./gradlew ktfmtFormat
 ```
 
 To build the Gradle plugin locally:

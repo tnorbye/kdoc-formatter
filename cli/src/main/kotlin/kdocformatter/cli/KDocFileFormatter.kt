@@ -35,6 +35,10 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     EditorConfigs.root = options.formattingOptions
   }
 
+  /** Whether [formatFile] has processed at least one Markdown file. */
+  var formattedMarkdown = false
+    private set
+
   /** Formats the given file or directory recursively. */
   fun formatFile(file: File): Int {
     if (file.isDirectory) {
@@ -53,6 +57,9 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
 
     val formatter = file.getFormatter() ?: return 0
     if (file.isFile && options.filter.includes(file)) {
+      if (isMarkdownFile(file)) {
+        formattedMarkdown = true
+      }
       val original = file.readText()
       val reformatted = reformat(file, original, formatter)
       if (reformatted != original) {
@@ -73,7 +80,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
   private fun File.getFormatter(): ((String, KDocFormattingOptions, File?) -> String)? {
     return if (path.endsWith(".kt")) {
       ::reformatKotlinFile
-    } else if (options.includeMd && (path.endsWith(".md") || path.endsWith(".md.html"))) {
+    } else if (options.includeMd && isMarkdownFile(this)) {
       ::reformatMarkdownFile
     } else {
       null
@@ -268,3 +275,7 @@ class KDocFileFormatter(private val options: KDocFileFormattingOptions) {
     return source.substring(i + 1, start)
   }
 }
+
+/** Whether [file] is a Markdown (`.md`) or Markdeep (`.md.html`) file. */
+internal fun isMarkdownFile(file: File): Boolean =
+    file.path.endsWith(".md") || file.path.endsWith(".md.html")

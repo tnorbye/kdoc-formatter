@@ -49,10 +49,21 @@ fun main(args: Array<String>) {
 
   if (!options.quiet) {
     println("Formatted $count files")
+    // Messages go to stderr so --dry-run's list of paths stays machine-readable.
+    if (formatter.formattedMarkdown) {
+      System.err.println(MARKFMT_TIP)
+    } else if (!options.includeMd && files.any { it.isFile && isMarkdownFile(it) }) {
+      System.err.println("Skipped Markdown files; pass --include-md-files to format them.")
+      System.err.println(MARKFMT_TIP)
+    }
   }
 
   exitProcess(0)
 }
+
+private const val MARKFMT_TIP =
+    "Tip: for Markdown files, markfmt is a dedicated formatter with more features: " +
+        "https://github.com/tnorbye/markfmt"
 
 fun error(message: String): Nothing {
   System.err.println(message)

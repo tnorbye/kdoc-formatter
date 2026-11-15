@@ -151,8 +151,7 @@ class KDocFileFormattingOptions {
       if (files.size == 1 && files[0].isFile) {
         // If you directly try to format a Markdown file, don't require specifying
         // the flag for that.
-        val path = files[0].path
-        if (path.endsWith(".md") || path.endsWith(".md.html")) {
+        if (isMarkdownFile(files[0])) {
           options.includeMd = true
         }
       }
@@ -220,10 +219,11 @@ class KDocFileFormattingOptions {
               "--hanging-indent=<n>" to
                   """
                 Sets the number of spaces to use for hanging indents, e.g. second
-                and subsequent lines in a bulleted list or kdoc blog tag.""",
+                and subsequent lines in a bulleted list or kdoc block tag.""",
               "--convert-markup" to
                   """
-                Convert unnecessary HTML tags like &lt; and &gt; into < and >.""",
+                Convert unnecessary HTML entities and tags into KDoc markup (for
+                example `&lt;` into `<`, and `<b>bold</b>` into `**bold**`).""",
               "--no-convert-markup" to
                   """
                 Do not convert HTML markup into equivalent KDoc markup.""",
@@ -234,7 +234,7 @@ class KDocFileFormattingOptions {
               "--single-line-comments=<collapse | expand>" to
                   """
                 With `collapse`, turns multi-line comments into a single line if it
-                fits, and with `expand` it will always format commands with /** and
+                fits, and with `expand` it will always format comments with /** and
                 */ on their own lines. The default is `collapse`.""",
               "--align-table-columns" to
                   """
@@ -269,7 +269,8 @@ class KDocFileFormattingOptions {
                 specified multiple times.""",
               "--include-md-files" to
                   """
-                Format markdown (*.md) files""",
+                Format markdown (*.md) files. For a dedicated Markdown formatter, see
+                markfmt: https://github.com/tnorbye/markfmt""",
               "--greedy" to
                   """
                 Instead of the optimal line breaking normally used by kdoc-formatter,
