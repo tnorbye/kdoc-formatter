@@ -11,7 +11,9 @@
   Markdown formatter, in the README, the `--include-md-files` help, and
   a tip after formatting Markdown files.
 - Help text and README fixes.
-- IDE plugin: built and tested against IntelliJ IDEA 2026.3.
+- IDE plugin: built against IntelliJ IDEA 2026.3 and verified with
+  2026.1 and 2026.3; no longer bundles the Kotlin standard library, and
+  is named "Kotlin KDoc Formatter" again.
 
 ## [1.7.0]
 - IDE-only update: Marked compatible with IntelliJ IDEA 2026.1.

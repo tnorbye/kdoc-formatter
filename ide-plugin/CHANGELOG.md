@@ -3,7 +3,9 @@
 # KDoc Formatter Plugin Changelog
 
 ## [1.7.1]
-- Built against IntelliJ IDEA 2026.3
+- Built against IntelliJ IDEA 2026.3, and verified with 2026.1 and 2026.3
+- No longer bundles its own copy of the Kotlin standard library
+- Restore the plugin name "Kotlin KDoc Formatter"
 - Long headings no longer wrap, fenced code blocks indented in lists
   and nested fences are kept, and GitHub alerts are supported
 
